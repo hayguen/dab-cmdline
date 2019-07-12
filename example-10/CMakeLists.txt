@@ -305,6 +305,7 @@ endif ()
              ./dab_tables.h
 	     ./server-thread/tcp-server.h
 	     ../dab-api.h
+	     ../convenience.h
 	     ../devices/device-handler.h
 	     ../library/includes/dab-constants.h
 	     ../library/includes/dab-processor.h
@@ -351,6 +352,7 @@ endif ()
 	     ./band-handler.cpp
 	     ./dab_tables.cpp
 	     ./server-thread/tcp-server.cpp
+	     ../convenience.c
 	     ../devices/device-handler.cpp
 	     ../library/dab-api.cpp
 	     ../library/src/dab-processor.cpp

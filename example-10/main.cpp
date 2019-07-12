@@ -53,6 +53,7 @@
 #endif
 
 #include "dab_tables.h"
+#include "../convenience.h"
 
 using std::cerr;
 using std::endl;
@@ -81,6 +82,14 @@ std::string prepCsvStr( const std::string & s ) {
 
 /* where to output program/scan infos, when using option '-E' */
 static FILE * infoStrm = stderr;
+
+/* where to output audio stream */
+static FILE * audioSink = stdout;
+static const char	* outWaveFilename = nullptr;
+static int32_t outFrequency = 0;
+static double recDuration = -1.0;
+static uint32_t recDurationSmp = 0;
+
 
 struct MyServiceData {
     MyServiceData (void) {
@@ -367,6 +376,8 @@ int16_t i;
 #endif
 	(void)ctx;
 }
+
+
 //
 //	This function is overloaded. In the normal form it
 //	handles a buffer full of PCM samples. We pass them on to the
@@ -378,10 +389,35 @@ void	pcmHandler (int16_t *buffer, int size, int rate,
 	                              bool isStereo, void *ctx) {
 	if (scanOnly)
 	   return;
+
+	if (outWaveFilename) {
+	   audioSink = fopen(outWaveFilename, "wb");
+	   if (!audioSink) {
+	      fprintf(stderr, "Failed to open %s\n", outWaveFilename);
+	      exit(1);
+	   }
+	   fprintf(stderr, "Open %s for write with samplerate %d in %s\n", outWaveFilename, rate, (isStereo ? "stereo" : "mono"));
+	   waveWriteHeader(rate, outFrequency, 16, (isStereo ? 2:1), audioSink);
+	   outWaveFilename = nullptr;
+	}
+	if ( recDuration > 0 ) {
+	   recDurationSmp = recDuration * rate;
+	   recDuration = -1.0;
+	}
+
 	// output rate, isStereo once
-	fwrite ((void *)buffer, size, 2, stdout);
-	(void)isStereo;
-	(void)ctx;
+	fwrite ((void *)buffer, size, 2, audioSink);
+	waveDataSize += size * 2;
+
+	if (recDurationSmp) {
+	   int sz = isStereo ? (size /2) : size;
+	   if (recDurationSmp > sz)
+	      recDurationSmp -= sz;
+	   else {
+	      fprintf (stderr, "recording duration reached, terminating!\n");
+	      run. store (false);
+	   }
+	}
 }
 
 
@@ -632,6 +668,9 @@ bool	err;
 	   exit (1);
 	}
 
+	audioSink = stdout;
+
+
 //	For file input we do not need options like Q, G and C,
 //	We do need an option to specify the filename
 #if	defined (HAVE_WAVFILES) || defined (HAVE_RAWFILES)
@@ -654,7 +693,7 @@ bool	err;
 	#endif
 #endif
 
-	while ((opt = getopt (argc, argv, "W:A:M:B:P:p:S:E:ct:a:r:xO:" FILE_OPTS NON_FILE_OPTS RTLSDR_OPTS RTL_TCP_OPTS )) != -1) {
+	while ((opt = getopt (argc, argv, "W:A:M:B:P:p:S:E:ct:a:r:xO:w:n:" FILE_OPTS NON_FILE_OPTS RTLSDR_OPTS RTL_TCP_OPTS )) != -1) {
 	   fprintf (stderr, "opt = %c\n", opt);
 	   switch (opt) {
 
@@ -712,6 +751,8 @@ bool	err;
 
 	      case 'P':
 	         programName	= optarg;
+	         serviceIdentifier = -1;
+	         fprintf(stderr, "read option -P : tune to program '%s'\n", optarg );
 	         break;
 
 	      case 'p':
@@ -767,6 +808,19 @@ bool	err;
 	         std::stringstream ss;
 	         ss << std::hex << optarg;
 	         ss >> serviceIdentifier;
+	         if ( ss )
+	           programName.clear();
+	         fprintf(stderr, "read option -S : tune to program SId '%X'\n", serviceIdentifier );
+	         break;
+	      }
+	
+	      case 'w': {
+	         outWaveFilename = optarg;
+	         break;
+	      }
+
+	      case 'n': {
+	         recDuration = atof(optarg);
 	         break;
 	      }
 
@@ -782,6 +836,8 @@ bool	err;
 	sigaction( SIGINT, &sigact, nullptr );
 
 	int32_t frequency	= dabBand. Frequency (theBand, theChannel);
+	outFrequency = frequency;
+
 	try {
 #ifdef	HAVE_SDRPLAY
 	   theDevice	= new sdrplayHandler (frequency,
@@ -1426,6 +1482,12 @@ static	int count	= 10;
 	fprintf(stderr, "\n" FMT_DURATION "at dabStop()\n" SINCE_START );
 #endif
 
+	if ( audioSink != stdout ) {
+		waveFinalizeHeader(audioSink);
+		fclose(audioSink);
+		audioSink = stdout;
+	}
+
 	FAST_EXIT( 123 );
 	dabStop	(theRadio);
 	theDevice	-> stopReader ();
@@ -1475,6 +1537,8 @@ void    printOptions (void) {
 	-I port      port number to rtl_tcp\n"
 #endif
 #endif
-"	-S hexnumber use hexnumber to identify program\n\n", T_UNITS, T_UNITS );
+"	-S hexnumber use hexnumber to identify program\n"
+"	-w fileName  write audio to wave file\n"
+"	-n runtime   stream/save runtime seconds of audio, then exit\n\n", T_UNITS, T_UNITS );
 }
 
