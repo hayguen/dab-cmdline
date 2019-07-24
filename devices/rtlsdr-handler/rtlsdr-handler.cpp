@@ -64,7 +64,8 @@ void	controlThread (rtlsdrHandler *theStick) {
 }
 //
 //	Our wrapper is a simple classs
-	rtlsdrHandler::rtlsdrHandler (int32_t	frequency,
+	rtlsdrHandler::rtlsdrHandler (bool openDevice,
+	                              int32_t	frequency,
 	                              int16_t	ppmCorrection,
 	                              int16_t	gain,
 	                              bool	autogain,
@@ -105,8 +106,11 @@ int16_t	i;
 	}
 
 	libraryLoaded	= true;
-	if (!load_rtlFunctions ())
+	if (!load_rtlFunctions (libraryString))
 	   throw (42);
+
+	if (!openDevice)
+	   return;
 //
 //	Ok, from here we have the library functions accessible
 	deviceCount 		= this -> rtlsdr_get_device_count ();
@@ -207,6 +211,13 @@ int16_t	i;
 	open = false;
 }
 
+const char *	rtlsdrHandler::get_opt_help(int longInfo) {
+	if (rtlsdr_get_opt_help)
+		return rtlsdr_get_opt_help(longInfo);
+	return NULL;
+}
+
+
 //
 bool	rtlsdrHandler::restartReader	(int32_t frequency) {
 int32_t	r;
@@ -280,46 +291,46 @@ int32_t	rtlsdrHandler::Samples	(void) {
 	return _I_Buffer	-> GetRingBufferReadAvailable () / 2;
 }
 //
-bool	rtlsdrHandler::load_rtlFunctions (void) {
+bool	rtlsdrHandler::load_rtlFunctions (const char *libraryString) {
 //
 //	link the required procedures
 	rtlsdr_get_index_by_serial = (pfnrtlsdr_get_index_by_serial)
 	                       GETPROCADDRESS (Handle, "rtlsdr_get_index_by_serial");
 	if (rtlsdr_get_index_by_serial == NULL) {
-	   fprintf (stderr, "Could not find rtlsdr_get_index_by_serial\n");
+	   fprintf (stderr, "Could not find rtlsdr_get_index_by_serial in %s\n", libraryString);
 	   return false;
 	}
 	rtlsdr_open	= (pfnrtlsdr_open)
 	                       GETPROCADDRESS (Handle, "rtlsdr_open");
 	if (rtlsdr_open == NULL) {
-	   fprintf (stderr, "Could not find rtlsdr_open\n");
+	   fprintf (stderr, "Could not find rtlsdr_open in %s\n", libraryString);
 	   return false;
 	}
 	rtlsdr_close	= (pfnrtlsdr_close)
 	                     GETPROCADDRESS (Handle, "rtlsdr_close");
 	if (rtlsdr_close == NULL) {
-	   fprintf (stderr, "Could not find rtlsdr_close\n");
+	   fprintf (stderr, "Could not find rtlsdr_close in %s\n", libraryString);
 	   return false;
 	}
 
 	rtlsdr_set_sample_rate =
 	    (pfnrtlsdr_set_sample_rate)GETPROCADDRESS (Handle, "rtlsdr_set_sample_rate");
 	if (rtlsdr_set_sample_rate == NULL) {
-	   fprintf (stderr, "Could not find rtlsdr_set_sample_rate\n");
+	   fprintf (stderr, "Could not find rtlsdr_set_sample_rate in %s\n", libraryString);
 	   return false;
 	}
 
 	rtlsdr_get_sample_rate	=
 	    (pfnrtlsdr_get_sample_rate)GETPROCADDRESS (Handle, "rtlsdr_get_sample_rate");
 	if (rtlsdr_get_sample_rate == NULL) {
-	   fprintf (stderr, "Could not find rtlsdr_get_sample_rate\n");
+	   fprintf (stderr, "Could not find rtlsdr_get_sample_rate in %s\n", libraryString);
 	   return false;
 	}
 
 	rtlsdr_get_tuner_gains		= (pfnrtlsdr_get_tuner_gains)
 	                     GETPROCADDRESS (Handle, "rtlsdr_get_tuner_gains");
 	if (rtlsdr_get_tuner_gains == NULL) {
-	   fprintf (stderr, "Could not find rtlsdr_get_tuner_gains\n");
+	   fprintf (stderr, "Could not find rtlsdr_get_tuner_gains in %s\n", libraryString);
 	   return false;
 	}
 
@@ -327,100 +338,106 @@ bool	rtlsdrHandler::load_rtlFunctions (void) {
 	rtlsdr_set_tuner_gain_mode	= (pfnrtlsdr_set_tuner_gain_mode)
 	                     GETPROCADDRESS (Handle, "rtlsdr_set_tuner_gain_mode");
 	if (rtlsdr_set_tuner_gain_mode == NULL) {
-	   fprintf (stderr, "Could not find rtlsdr_set_tuner_gain_mode\n");
+	   fprintf (stderr, "Could not find rtlsdr_set_tuner_gain_mode in %s\n", libraryString);
 	   return false;
 	}
 
 	rtlsdr_set_agc_mode	= (pfnrtlsdr_set_agc_mode)
 	                     GETPROCADDRESS (Handle, "rtlsdr_set_agc_mode");
 	if (rtlsdr_set_agc_mode == NULL) {
-	   fprintf (stderr, "Could not find rtlsdr_set_agc_mode\n");
+	   fprintf (stderr, "Could not find rtlsdr_set_agc_mode in %s\n", libraryString);
 	   return false;
 	}
 
 	rtlsdr_set_tuner_gain	= (pfnrtlsdr_set_tuner_gain)
 	                     GETPROCADDRESS (Handle, "rtlsdr_set_tuner_gain");
 	if (rtlsdr_set_tuner_gain == NULL) {
-	   fprintf (stderr, "Cound not find rtlsdr_set_tuner_gain\n");
+	   fprintf (stderr, "Cound not find rtlsdr_set_tuner_gain in %s\n", libraryString);
 	   return false;
 	}
 
 	rtlsdr_get_tuner_gain	= (pfnrtlsdr_get_tuner_gain)
 	                     GETPROCADDRESS (Handle, "rtlsdr_get_tuner_gain");
 	if (rtlsdr_get_tuner_gain == NULL) {
-	   fprintf (stderr, "Could not find rtlsdr_get_tuner_gain\n");
+	   fprintf (stderr, "Could not find rtlsdr_get_tuner_gain in %s\n", libraryString);
 	   return false;
 	}
 	rtlsdr_set_center_freq	= (pfnrtlsdr_set_center_freq)
 	                     GETPROCADDRESS (Handle, "rtlsdr_set_center_freq");
 	if (rtlsdr_set_center_freq == NULL) {
-	   fprintf (stderr, "Could not find rtlsdr_set_center_freq\n");
+	   fprintf (stderr, "Could not find rtlsdr_set_center_freq in %s\n", libraryString);
 	   return false;
 	}
 
 	rtlsdr_get_center_freq	= (pfnrtlsdr_get_center_freq)
 	                     GETPROCADDRESS (Handle, "rtlsdr_get_center_freq");
 	if (rtlsdr_get_center_freq == NULL) {
-	   fprintf (stderr, "Could not find rtlsdr_get_center_freq\n");
+	   fprintf (stderr, "Could not find rtlsdr_get_center_freq in %s\n", libraryString);
 	   return false;
 	}
 
 	rtlsdr_reset_buffer	= (pfnrtlsdr_reset_buffer)
 	                     GETPROCADDRESS (Handle, "rtlsdr_reset_buffer");
 	if (rtlsdr_reset_buffer == NULL) {
-	   fprintf (stderr, "Could not find rtlsdr_reset_buffer\n");
+	   fprintf (stderr, "Could not find rtlsdr_reset_buffer in %s\n", libraryString);
 	   return false;
 	}
 
 	rtlsdr_read_async	= (pfnrtlsdr_read_async)
 	                     GETPROCADDRESS (Handle, "rtlsdr_read_async");
 	if (rtlsdr_read_async == NULL) {
-	   fprintf (stderr, "Cound not find rtlsdr_read_async\n");
+	   fprintf (stderr, "Cound not find rtlsdr_read_async in %s\n", libraryString);
 	   return false;
 	}
 
 	rtlsdr_get_device_count	= (pfnrtlsdr_get_device_count)
 	                     GETPROCADDRESS (Handle, "rtlsdr_get_device_count");
 	if (rtlsdr_get_device_count == NULL) {
-	   fprintf (stderr, "Could not find rtlsdr_get_device_count\n");
+	   fprintf (stderr, "Could not find rtlsdr_get_device_count in %s\n", libraryString);
 	   return false;
 	}
 
 	rtlsdr_cancel_async	= (pfnrtlsdr_cancel_async)
 	                     GETPROCADDRESS (Handle, "rtlsdr_cancel_async");
 	if (rtlsdr_cancel_async == NULL) {
-	   fprintf (stderr, "Could not find rtlsdr_cancel_async\n");
+	   fprintf (stderr, "Could not find rtlsdr_cancel_async in %s\n", libraryString);
 	   return false;
 	}
 
 	rtlsdr_set_direct_sampling = (pfnrtlsdr_set_direct_sampling)
 	                  GETPROCADDRESS (Handle, "rtlsdr_set_direct_sampling");
 	if (rtlsdr_set_direct_sampling == NULL) {
-	   fprintf (stderr, "Could not find rtlsdr_set_direct_sampling\n");
+	   fprintf (stderr, "Could not find rtlsdr_set_direct_sampling in %s\n", libraryString);
 	   return false;
 	}
 
 	rtlsdr_set_freq_correction = (pfnrtlsdr_set_freq_correction)
 	                  GETPROCADDRESS (Handle, "rtlsdr_set_freq_correction");
 	if (rtlsdr_set_freq_correction == NULL) {
-	   fprintf (stderr, "Could not find rtlsdr_set_freq_correction\n");
+	   fprintf (stderr, "Could not find rtlsdr_set_freq_correction in %s\n", libraryString);
 	   return false;
 	}
 	
 	rtlsdr_get_device_name = (pfnrtlsdr_get_device_name)
 	                  GETPROCADDRESS (Handle, "rtlsdr_get_device_name");
 	if (rtlsdr_get_device_name == NULL) {
-	   fprintf (stderr, "Could not find rtlsdr_get_device_name\n");
+	   fprintf (stderr, "Could not find rtlsdr_get_device_name in %s\n", libraryString);
 	   return false;
+	}
+
+	rtlsdr_get_opt_help = (pfnrtlsdr_get_opt_help)
+	                  GETPROCADDRESS (Handle, "rtlsdr_get_opt_help");
+	if (rtlsdr_get_opt_help == NULL) {
+	   fprintf (stderr, "Warning: Could not find rtlsdr_get_opt_help in %s\n", libraryString);
 	}
 
 	rtlsdr_set_opt_string = (pfnrtlsdr_set_opt_string)
 	                  GETPROCADDRESS (Handle, "rtlsdr_set_opt_string");
-	if (rtlsdr_get_device_name == NULL) {
-	   fprintf (stderr, "Could not find rtlsdr_set_opt_string\n");
+	if (rtlsdr_set_opt_string == NULL) {
+	   fprintf (stderr, "Warning: Could not find rtlsdr_set_opt_string in %s\n", libraryString);
 	}
 
-	fprintf (stderr, "OK, functions seem to be loaded\n");
+	fprintf (stderr, "OK, required functions seem to be loaded\n");
 	return true;
 }
 

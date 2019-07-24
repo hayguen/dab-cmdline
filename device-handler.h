@@ -36,6 +36,7 @@ class	deviceHandler {
 public:
 			deviceHandler 	(void);
 virtual			~deviceHandler 	(void);
+virtual		const char * get_opt_help(int longInfo) { return NULL; }
 virtual		int32_t	defaultFrequency	(void);
 virtual		bool	restartReader	(int32_t);
 virtual		void	stopReader	(void);

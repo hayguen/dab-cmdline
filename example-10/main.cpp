@@ -618,6 +618,63 @@ void device_eof_callback (void * userData) {
 	}
 }
 
+void allocateDevice(
+	bool openDevice = false,
+	int32_t frequency = 0,
+	int16_t ppmCorrection = 0,
+	int theGain = 100,
+	bool autogain = true,
+	uint16_t deviceIndex = -1,
+	const char * deviceSerial = NULL,
+	const char * rtlOpts = NULL,
+	std::string * fileName = NULL,
+	double fileOffset = 0.0,
+	const char * hostname = NULL,
+	int32_t		basePort = 1234
+	 ) {
+
+	try {
+#ifdef	HAVE_SDRPLAY
+	   theDevice	= new sdrplayHandler (frequency,
+	                                      ppmCorrection,
+	                                      theGain,
+	                                      autogain,
+	                                      0,
+	                                      0);
+#elif	HAVE_AIRSPY
+	   theDevice	= new airspyHandler (frequency,
+	                                     ppmCorrection,
+	                                     theGain);
+#elif	defined(HAVE_RTLSDR)
+	   theDevice	= new rtlsdrHandler (openDevice,
+	                                     frequency,
+	                                     ppmCorrection,
+	                                     theGain,
+	                                     autogain,
+	                                     (uint16_t)deviceIndex,
+	                                     deviceSerial,
+	                                     rtlOpts );
+#elif	HAVE_WAVFILES
+	   theDevice	= new wavFiles (*fileName, fileOffset, device_eof_callback, nullptr );
+#elif	HAVE_RAWFILES
+	   theDevice	= new rawFiles (*fileName, fileOffset, device_eof_callback, nullptr );
+#elif	HAVE_RTL_TCP
+	   theDevice	= new rtl_tcp_client (hostname,
+	                                      basePort,
+	                                      frequency,
+	                                      theGain,
+	                                      autogain,
+	                                      ppmCorrection);
+#endif
+
+	}
+	catch (int e) {
+	   fprintf (stderr, "allocating device failed (%d), fatal\n", e);
+	}
+}
+
+
+
 int	main (int argc, char **argv) {
 
 msecs_progStart = currentMSecsSinceEpoch();  // for  long sinceStart()
@@ -838,47 +895,32 @@ bool	err;
 	int32_t frequency	= dabBand. Frequency (theBand, theChannel);
 	outFrequency = frequency;
 
-	try {
-#ifdef	HAVE_SDRPLAY
-	   theDevice	= new sdrplayHandler (frequency,
-	                                      ppmCorrection,
-	                                      theGain,
-	                                      autogain,
-	                                      0,
-	                                      0);
-#elif	HAVE_AIRSPY
-	   theDevice	= new airspyHandler (frequency,
-	                                     ppmCorrection,
-	                                     theGain);
-#elif	defined(HAVE_RTLSDR)
-	   theDevice	= new rtlsdrHandler (frequency,
-	                                     ppmCorrection,
-	                                     theGain,
-	                                     autogain,
-	                                     (uint16_t)deviceIndex,
-	                                     deviceSerial,
-	                                     rtlOpts );
-#elif	HAVE_WAVFILES
-	   theDevice	= new wavFiles (fileName, fileOffset, device_eof_callback, nullptr );
-#elif	HAVE_RAWFILES
-	   theDevice	= new rawFiles (fileName, fileOffset, device_eof_callback, nullptr );
-#elif	HAVE_RTL_TCP
-	   theDevice	= new rtl_tcp_client (hostname,
-	                                      basePort,
-	                                      frequency,
-	                                      theGain,
-	                                      autogain,
-	                                      ppmCorrection);
+	allocateDevice( true, frequency, ppmCorrection, theGain, autogain,
+#if defined(HAVE_RTLSDR)
+		deviceIndex, deviceSerial,
+#else
+		0, NULL,
 #endif
+		rtlOpts,
+#if	defined (HAVE_WAVFILES) || defined (HAVE_RAWFILES)
+		&fileName, fileOffset,
+#else
+		NULL, 0.0,
+#endif
+#ifdef	HAVE_RTL_TCP
+		hostname, basePort
+#else
+		NULL, 0
+#endif
+	);
 
-	}
-	catch (int e) {
-	   fprintf (stderr, "allocating device failed (%d), fatal\n", e);
+	if (!theDevice) {
 #if PRINT_DURATION
-	   fprintf(stderr, "\n" FMT_DURATION "exiting main()\n" SINCE_START );
+	   fprintf(stderr, "\n" FMT_DURATION "exiting main() for failed device allocation\n" SINCE_START );
 #endif
 	   exit (32);
-	}
+   }
+
 //
 //	and with a sound device we now can create a "backend"
 	theRadio	= dabInit (theDevice,
@@ -1500,6 +1542,14 @@ static	int count	= 10;
 }
 
 void    printOptions (void) {
+	if (!theDevice)
+		allocateDevice();
+	const char * devOptHelp = NULL;
+	if (theDevice)
+		devOptHelp = theDevice->get_opt_help(1);
+	if (!devOptHelp)
+		devOptHelp = "";
+
 	fprintf (stderr,
 "	dab-cmdline options are\n\
 	-W number   amount of time to look for a time sync in %s\n\
@@ -1514,11 +1564,8 @@ void    printOptions (void) {
 	-M Mode     Mode is 1, 2 or 4. Default is Mode 1\n\
 	-B Band     Band is either L_BAND or BAND_III (default)\n\
 	-P name     program to be selected in the ensemble\n\
-	-p ppmCorr  ppm correction\n\
-	-O options  set device specific option string - seperated with ':'\n\
-	            currently only options for RTLSDR available:\n\
-	            f=<freqHz>:bw=<bw_in_kHz>:agc=<tuner_gain_mode>:gain=<tenth_dB>\n\
-	            dagc=<rtl_agc>:ds=<direct_sampling_mode>:T=<bias_tee>\n"
+	-p ppmCorr  ppm correction\n"
+"%s"
 #if defined(HAVE_RTLSDR)
 "	-d index    set RTLSDR device index\n\
 	-s serial   set RTLSDR device serial\n"
@@ -1533,12 +1580,14 @@ void    printOptions (void) {
 	-G Gain     gain for device (range 1 .. 100)\n\
 	-Q          if set, set autogain for device true\n"
 #ifdef	HAVE_RTL_TCP
-"        -H hostname  hostname for rtl_tcp\n\
+"	-H hostname  hostname for rtl_tcp\n\
 	-I port      port number to rtl_tcp\n"
 #endif
 #endif
 "	-S hexnumber use hexnumber to identify program\n"
 "	-w fileName  write audio to wave file\n"
-"	-n runtime   stream/save runtime seconds of audio, then exit\n\n", T_UNITS, T_UNITS );
+"	-n runtime   stream/save runtime seconds of audio, then exit\n\n"
+, T_UNITS, T_UNITS
+, devOptHelp );
 }
 
