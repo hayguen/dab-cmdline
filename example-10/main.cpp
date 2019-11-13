@@ -216,6 +216,9 @@ tcpServer	tdcServer (8888);
 
 static std::string	programName		= "Sky";
 static int32_t		serviceIdentifier	= -1;
+static bool		haveProgramNameForSID	= false;
+static bool		gotSampleData		= false;
+static std::string	programNameForSID;
 
 static std::string	ensembleName;
 static uint32_t		ensembleIdentifier	= -1;
@@ -270,6 +273,11 @@ void	programnameHandler (std::string s, int SId, void * userdata) {
 	d -> SId = SId;
 	d -> programName = s;
 	globals. channels [SId] = d;
+
+	if ( SId == serviceIdentifier && !haveProgramNameForSID ) {
+	  programNameForSID = s;
+	  haveProgramNameForSID = true;
+	}
 }
 
 static
@@ -399,6 +407,7 @@ void	pcmHandler (int16_t *buffer, int size, int rate,
 	   fprintf(stderr, "Open %s for write with samplerate %d in %s\n", outWaveFilename, rate, (isStereo ? "stereo" : "mono"));
 	   waveWriteHeader(rate, outFrequency, 16, (isStereo ? 2:1), audioSink);
 	   outWaveFilename = nullptr;
+	   gotSampleData = true;
 	}
 	if ( recDuration > 0 ) {
 	   recDurationSmp = recDuration * rate;
@@ -1118,43 +1127,63 @@ static	int count	= 10;
 	   audiodata ad;
 	   packetdata pd;
 	   run. store (true);
-	   std::cerr << "we try to start service " <<
-	                                         programName << "\n";
-	   if (is_audioService (theRadio, programName. c_str ())) {
-	      dataforAudioService (theRadio, programName. c_str (), &ad, 0);
+	   const std::string * pPlayProgName = &programName;
+	   if ( serviceIdentifier != -1 ) {
+	      if ( haveProgramNameForSID )
+	         pPlayProgName = &programNameForSID;
+	      else {
+	         std::cerr << "sorry  we could not find program for given SID " << serviceIdentifier << "\n";
+	         run. store (false);
+	      }
+	   }
+
+	   std::cerr << "we try to start service '" <<
+	                                         *pPlayProgName << "'\n";
+	   if (is_audioService (theRadio, pPlayProgName-> c_str ())) {
+	      dataforAudioService (theRadio, pPlayProgName-> c_str (), &ad, 0);
 	      if (!ad. defined) {
-	         std::cerr << "sorry  we cannot handle service " <<
-	         programName << "\n";
+	         std::cerr << "sorry  we cannot handle service '" <<
+	         *pPlayProgName << "'\n";
 	         run. store (false);
 	      }
 	   }
 	   else
-	   if (is_dataService (theRadio, programName. c_str ())) {
-	      dataforDataService (theRadio, programName. c_str (), &pd, 0);
+	   if (is_dataService (theRadio, pPlayProgName-> c_str ())) {
+	      dataforDataService (theRadio, pPlayProgName-> c_str (), &pd, 0);
 	      if (!pd. defined) {
-	         std::cerr << "sorry  we cannot handle service " <<
-	         programName << "\n";
+	         std::cerr << "sorry  we cannot handle service '" <<
+	         *pPlayProgName << "'\n";
 	         run. store (false);
 	      }
 	   }
 	   else {
-	      std::cerr << "sorry, we cannot handle service " << 
-		         programName << "\n";
+	      std::cerr << "sorry, we cannot handle service '" << 
+	         *pPlayProgName << "'\n";
 	      run. store (false);
 	   }
 	
 	   if (run. load ()) {
 	      dabReset_msc (theRadio);
-	      if (is_audioService (theRadio, programName. c_str ()))
+	      if (is_audioService (theRadio, pPlayProgName-> c_str ()))
 	         set_audioChannel (theRadio, &ad);
 	      else
 	         set_dataChannel  (theRadio, &pd);
+
+	      int countGran = 0;
 	      while (run. load ()) {
 	         timeOut += T_GRANULARITY;
 	         sleepMillis (T_GRANULARITY);
 	         printCollectedCallbackStat("E: loading ..");
+                 // TODO: check for audio samples after some timeout!
+	         if ( countGran < 3000 ) {
+	            countGran += T_GRANULARITY;
+	            if ( countGran >= 3000 && !gotSampleData ) {
+	               std::cerr << "abort after 3 sec without receiving sample data!\n";
+	               run. store (false);
+	            }
+	         }
 	      }
-	      
+	
 #if LOG_EX_TII_SPECTRUM
 	      if (useExTii)
 	         writeTiiExBuffer();
