@@ -220,6 +220,14 @@ static bool		haveProgramNameForSID	= false;
 static bool		gotSampleData		= false;
 static std::string	programNameForSID;
 
+static uint64_t		msecs_smp_start;
+static uint64_t		msecs_smp_curr;
+static uint64_t		num_samples_since_start;
+static uint64_t		num_samples_per_check;
+static uint64_t		num_samples_next_check;
+static int			print_mismatch_counter;
+static int			mismatchRecTolerance = -1;
+
 static std::string	ensembleName;
 static uint32_t		ensembleIdentifier	= -1;
 
@@ -408,10 +416,34 @@ void	pcmHandler (int16_t *buffer, int size, int rate,
 	   waveWriteHeader(rate, outFrequency, 16, (isStereo ? 2:1), audioSink);
 	   outWaveFilename = nullptr;
 	   gotSampleData = true;
+
+	   msecs_smp_start = currentMSecsSinceEpoch();
+	   num_samples_since_start = 0;
+	   num_samples_next_check = num_samples_per_check = rate / 2;	// every 0.5 sec
+	   print_mismatch_counter = 0;
 	}
 	if ( recDuration > 0 ) {
 	   recDurationSmp = recDuration * rate;
 	   recDuration = -1.0;
+	}
+
+	num_samples_since_start += ( size / (isStereo ? 2 : 1) );
+	if ( num_samples_since_start >= num_samples_next_check ) {
+		msecs_smp_curr = currentMSecsSinceEpoch();
+		uint64_t msecs_delta = msecs_smp_curr - msecs_smp_start;
+		uint64_t msecs_num_smp = (num_samples_since_start * uint64_t(1000)) / uint64_t(rate);
+		long msecs_mismatch = (long)( msecs_num_smp - msecs_delta );
+		++print_mismatch_counter;
+		if ( print_mismatch_counter >= 20 || msecs_mismatch >= 100 || msecs_mismatch <= -100 ) {
+			// print once in 10 secs (== 20 iterations with 500 msec) .. or if |mismatch| >= 100 ms
+			fprintf(stderr, "mismatch from system time to #samples @ rate == %ld ms\n", msecs_mismatch);
+			print_mismatch_counter = 0;
+		}
+		if ( mismatchRecTolerance > 0 && msecs_mismatch >= mismatchRecTolerance || msecs_mismatch <= -mismatchRecTolerance ) {
+			fprintf (stderr, "abort recording, because mismatch is too big. terminating!\n");
+			run. store (false);
+		}
+		num_samples_next_check += num_samples_per_check;
 	}
 
 	// output rate, isStereo once
@@ -759,7 +791,7 @@ bool	err;
 	#endif
 #endif
 
-	while ((opt = getopt (argc, argv, "W:A:M:B:P:p:S:E:ct:a:r:xO:w:n:" FILE_OPTS NON_FILE_OPTS RTLSDR_OPTS RTL_TCP_OPTS )) != -1) {
+	while ((opt = getopt (argc, argv, "W:A:M:B:P:p:T:S:E:ct:a:r:xO:w:n:" FILE_OPTS NON_FILE_OPTS RTLSDR_OPTS RTL_TCP_OPTS )) != -1) {
 	   fprintf (stderr, "opt = %c\n", opt);
 	   switch (opt) {
 
@@ -823,6 +855,10 @@ bool	err;
 
 	      case 'p':
 	         ppmCorrection	= atoi (optarg);
+	         break;
+
+	      case 'T':
+	         mismatchRecTolerance	= atoi (optarg);
 	         break;
 
 	      case 'O':
@@ -1593,7 +1629,9 @@ void    printOptions (void) {
 	-M Mode     Mode is 1, 2 or 4. Default is Mode 1\n\
 	-B Band     Band is either L_BAND or BAND_III (default)\n\
 	-P name     program to be selected in the ensemble\n\
-	-p ppmCorr  ppm correction\n"
+	-p ppmCorr  ppm correction\n\
+	-T tol      tolerate mismatch of up to tol ms from system time before recording is aborted\n\
+	              default = -1. negative values deactivate abortion\n"
 "%s"
 #if defined(HAVE_RTLSDR)
 "	-d index    set RTLSDR device index\n\
