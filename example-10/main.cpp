@@ -427,7 +427,6 @@ void	pcmHandler (int16_t *buffer, int size, int rate,
 	   recDuration = -1.0;
 	}
 
-	num_samples_since_start += ( size / (isStereo ? 2 : 1) );
 	if ( num_samples_since_start >= num_samples_next_check ) {
 		msecs_smp_curr = currentMSecsSinceEpoch();
 		uint64_t msecs_delta = msecs_smp_curr - msecs_smp_start;
@@ -439,12 +438,13 @@ void	pcmHandler (int16_t *buffer, int size, int rate,
 			fprintf(stderr, "mismatch from system time to #samples @ rate == %ld ms\n", msecs_mismatch);
 			print_mismatch_counter = 0;
 		}
-		if ( mismatchRecTolerance > 0 && msecs_mismatch >= mismatchRecTolerance || msecs_mismatch <= -mismatchRecTolerance ) {
+		if ( mismatchRecTolerance > 0 && (msecs_mismatch >= mismatchRecTolerance || msecs_mismatch <= -mismatchRecTolerance) ) {
 			fprintf (stderr, "abort recording, because mismatch is too big. terminating!\n");
 			run. store (false);
 		}
 		num_samples_next_check += num_samples_per_check;
 	}
+	num_samples_since_start += ( size / (isStereo ? 2 : 1) );
 
 	// output rate, isStereo once
 	fwrite ((void *)buffer, size, 2, audioSink);
