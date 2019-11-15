@@ -47,13 +47,15 @@ private:
 	int32_t			baudRate;
 	void			*userData;
 	audioOut_t		soundOut;
+	uint32_t		numAACDecErrs;
+
 	void			output (int16_t *buffer,
 	                                int	size,
 	                                bool	isStereo,
 	                                int	rate) {
 	   if (soundOut == NULL)
 	      return;
-	   (soundOut)(buffer, size, rate, isStereo, userData);
+	   (soundOut)(buffer, size, rate, isStereo, userData, numAACDecErrs);
 	}
 //
 public:
@@ -63,6 +65,7 @@ public:
 	aacConf		= NeAACDecGetCurrentConfiguration (aacHandle);
 	aacInitialized	= false;
 	baudRate	= 48000;
+	numAACDecErrs	= 0;
 	this	-> soundOut = soundOut;
 	this	-> userData	= userData;
 }
@@ -160,6 +163,7 @@ NeAACDecFrameInfo	hInfo;
 //	fprintf (stderr, "header = %d\n", hInfo. header_type);
 	channels	= hInfo. channels;
 	if (hInfo. error != 0) {
+	   ++numAACDecErrs;
 	   fprintf (stderr, "Warning: %s\n",
 	               faacDecGetErrorMessage (hInfo. error));
 	   return 0;
@@ -179,7 +183,10 @@ NeAACDecFrameInfo	hInfo;
 	   output (buffer, 2 * samples, sp -> aacChannelMode, sample_rate);
 	}
 	else
+	{
+	   ++numAACDecErrs;
 	   fprintf (stderr, "Cannot handle these channels\n");
+   }
 
 	return samples / 2;
 }

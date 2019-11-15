@@ -255,6 +255,7 @@ int16_t *nPtr = &N [0][0];
 	MP2bitCount	= 0;
 	numberofFrames	= 0;
 	errorFrames	= 0;
+	numAACDecErrs = 0;
 }
 
 	mp2Processor::~mp2Processor (void) {
@@ -400,12 +401,14 @@ int32_t table_idx;
 
 	// read the rest of the header
 	bit_rate_index_minus1 = get_bits(4) - 1;
-	if (bit_rate_index_minus1 > 13)
+	if (bit_rate_index_minus1 > 13) {
 	   return 0;  // invalid bit rate or 'free format'
+	}
 
 	sampling_frequency = get_bits(2);
-	if (sampling_frequency == 3)
+	if (sampling_frequency == 3) {
 	   return 0;
+	}
 
 	if ((frame[1] & 0x08) == 0) {  // MPEG-2
 	   sampling_frequency += 4;
@@ -612,6 +615,8 @@ int16_t vLength = 24 * bitRate / 8;
 	                    2 * (int32_t)KJMP2_SAMPLES_PER_FRAME,
 	                    baudRate, stereo);
 	         }
+	         else
+	            ++numAACDecErrs;
 #endif
 
 	         MP2Header_OK = 0;
@@ -657,6 +662,6 @@ uint8_t	newbyte = (01 << bitnr);
 
 void	mp2Processor::output (int16_t *buffer, int size, int rate, bool stereo) {
 	if (soundOut != nullptr)
-	   soundOut (buffer, size, rate, stereo, ctx);
+	   soundOut (buffer, size, rate, stereo, ctx, numAACDecErrs);
 }
 

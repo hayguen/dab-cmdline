@@ -216,8 +216,12 @@ tcpServer	tdcServer (8888);
 
 static std::string	programName		= "Sky";
 static int32_t		serviceIdentifier	= -1;
+static int		recRate = 0;
+static bool		recStereo = false;
 static bool		haveProgramNameForSID	= false;
 static bool		gotSampleData		= false;
+
+
 static std::string	programNameForSID;
 
 static uint64_t		msecs_smp_start;
@@ -402,9 +406,13 @@ int16_t i;
 //
 static
 void	pcmHandler (int16_t *buffer, int size, int rate,
-	                              bool isStereo, void *ctx) {
+		bool isStereo, void *ctx,
+		uint32_t		numAACDecErrs
+	) {
 	if (scanOnly)
 	   return;
+
+	const int smpFrames = size / 2;
 
 	if (outWaveFilename) {
 	   audioSink = fopen(outWaveFilename, "wb");
@@ -413,9 +421,12 @@ void	pcmHandler (int16_t *buffer, int size, int rate,
 	      exit(1);
 	   }
 	   fprintf(stderr, "Open %s for write with samplerate %d in %s\n", outWaveFilename, rate, (isStereo ? "stereo" : "mono"));
-	   waveWriteHeader(rate, outFrequency, 16, (isStereo ? 2:1), audioSink);
+	   // the data buffer[] is always delivered as stereo signal; mono with right == left channel
+	   waveWriteHeader(rate, outFrequency, 16, 2 /*(isStereo ? 2:1)*/, audioSink);
 	   outWaveFilename = nullptr;
 	   gotSampleData = true;
+	   recStereo = isStereo;
+	   recRate = rate;
 
 	   msecs_smp_start = currentMSecsSinceEpoch();
 	   num_samples_since_start = 0;
@@ -425,6 +436,24 @@ void	pcmHandler (int16_t *buffer, int size, int rate,
 	if ( recDuration > 0 ) {
 	   recDurationSmp = recDuration * rate;
 	   recDuration = -1.0;
+	}
+
+	if ( recRate != rate ) {
+			fprintf (stderr, "abort recording, because samplerate changed from %d to %d. terminating!\n", recRate, rate);
+			run. store (false);
+			return;
+	}
+	else if ( recStereo != isStereo ) {
+			fprintf (stderr, "abort recording, because stereo flag changed from %s to %s. terminating!\n"
+				, recStereo ? "true" : "false", isStereo ? "true" : "false" );
+			run. store (false);
+			return;
+	}
+
+	static uint32_t		prevNumAACDecErrs = 1234;
+	if ( prevNumAACDecErrs != numAACDecErrs ) {
+		fprintf(stderr, "number of aac decoder errors changed from %u to %u\n", prevNumAACDecErrs, numAACDecErrs);
+		prevNumAACDecErrs = numAACDecErrs;
 	}
 
 	if ( num_samples_since_start >= num_samples_next_check ) {
@@ -444,16 +473,16 @@ void	pcmHandler (int16_t *buffer, int size, int rate,
 		}
 		num_samples_next_check += num_samples_per_check;
 	}
-	num_samples_since_start += ( size / (isStereo ? 2 : 1) );
+	num_samples_since_start += smpFrames;	//( size / (isStereo ? 2 : 1) );
 
 	// output rate, isStereo once
 	fwrite ((void *)buffer, size, 2, audioSink);
 	waveDataSize += size * 2;
 
 	if (recDurationSmp) {
-	   int sz = isStereo ? (size /2) : size;
-	   if (recDurationSmp > sz)
-	      recDurationSmp -= sz;
+	   //int sz = isStereo ? (size /2) : size;
+	   if (recDurationSmp > smpFrames)
+	      recDurationSmp -= smpFrames;
 	   else {
 	      fprintf (stderr, "recording duration reached, terminating!\n");
 	      run. store (false);

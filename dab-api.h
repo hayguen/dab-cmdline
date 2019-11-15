@@ -113,7 +113,9 @@ typedef	struct {
 	                           int,			// size
 	                           int,			// samplerate
 	                           bool,		// stereo
-	                           void *);
+	                           void *,
+	                           uint32_t		numAACDecErrs
+	                           );
 //
 //	dynamic label data, embedded in the audio stream, is sent as string
 	typedef void (*dataOut_t)(std::string, void *);
@@ -146,6 +148,7 @@ typedef	struct {
 //	TII
 	typedef void (*tii_t)(int16_t mainId, int16_t subId, unsigned num, void *);
 	typedef void (*tii_ex_t)(int numOut, int *outTii, float *outAvgSNR, float *outMinSNR, float *outNxtSNR, unsigned numAvg, const float *Pavg, int Pavg_T_u, void *userData);
+
 
 /////////////////////////////////////////////////////////////////////////
 //

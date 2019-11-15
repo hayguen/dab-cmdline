@@ -93,6 +93,7 @@ private:
 	void		addbittoMP2	(uint8_t *, uint8_t, int16_t);
 	int16_t		numberofFrames;
 	int16_t		errorFrames;
+	uint32_t	numAACDecErrs;
 };
 #endif
 
