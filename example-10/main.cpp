@@ -456,6 +456,14 @@ void	pcmHandler (int16_t *buffer, int size, int rate,
 		prevNumAACDecErrs = numAACDecErrs;
 	}
 
+	static uint64_t		lastRecSeconds = 0;
+	uint64_t	recSeconds = num_samples_since_start / uint64_t(rate);
+	if ( recSeconds != lastRecSeconds ) {
+		double	recSecs = (double)( num_samples_since_start / uint64_t(rate) );
+		fprintf(stderr, "time: %.1f sec\n", recSecs);
+		lastRecSeconds = recSeconds;
+	}
+
 	if ( num_samples_since_start >= num_samples_next_check ) {
 		msecs_smp_curr = currentMSecsSinceEpoch();
 		uint64_t msecs_delta = msecs_smp_curr - msecs_smp_start;
