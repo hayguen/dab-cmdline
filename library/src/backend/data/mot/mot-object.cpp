@@ -24,6 +24,9 @@
  */
 #include	"mot-object.h"
 
+#include <algorithm>
+
+
 	   motObject::motObject (motdata_t	motdataHandler,
 	                         bool		dirElement,
 	                         uint16_t	transportId,
@@ -39,6 +42,7 @@ int32_t pointer = 7;
 	this	-> numofSegments	= -1;
 	this	-> segmentSize		= -1;
 	this	-> ctx			= ctx;
+	this	-> unknown_fileno	= 0;
 	headerSize     =
              ((segment [3] & 0x0F) << 9) |
 	               (segment [4] << 1) | ((segment [5] >> 7) && 0x01);
@@ -162,14 +166,24 @@ std::vector<uint8_t> result;
 	std::string realName;
 
 //	MOT slide, to show
-	if (name == "")
-	   realName = "no name";
-        else
+	if (name == "") {
+	   ++unknown_fileno;
+	   realName = "no_name" + std::to_string(unknown_fileno);
+	} else {
 	   realName = name;
+	   // produce valid filename - replace all suspect characters
+	   std::replace( realName.begin(), realName.end(), '/', '_');	// replace all '/'
+	   std::replace( realName.begin(), realName.end(), '\\', '_');
+	   std::replace( realName.begin(), realName.end(), ':', '_');
+	}
 	FILE * temp = fopen (realName. c_str (), "w");
-	fwrite (result.data (), 1, result. size (), temp);
-	if (motdataHandler != nullptr)
-	   motdataHandler (realName, contentsubType, ctx);
+	if (temp) {
+	   fwrite (result.data (), 1, result. size (), temp);
+	   if (motdataHandler != nullptr)
+	      motdataHandler (realName, contentsubType, ctx);
+	} else {
+	   fprintf(stderr, "unable to save and handle MOT slide of name '%s'\n", name.c_str() );
+	}
 }
 
 int     motObject::get_headerSize       (void) {

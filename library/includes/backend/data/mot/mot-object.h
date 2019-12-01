@@ -56,6 +56,7 @@ private:
 	int		contentType;
 	int		contentsubType;
 	std::string	name;
+	int		unknown_fileno;
         std::map<int, std::vector<uint8_t>> motMap;
 
 	void		handleComplete	(void);
