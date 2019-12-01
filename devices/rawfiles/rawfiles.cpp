@@ -55,6 +55,10 @@ struct timeval  tv;
 	   delete _I_Buffer;
 	   throw (31);
 	}
+	else
+	{
+	   fprintf (stderr, "sound file '%s' opened with/as raw device\n",  f. c_str ());
+	}
 	currPos		= 0;
 	this	-> eofHandler	= nullptr;
 	this	-> userData	= nullptr;
@@ -73,6 +77,10 @@ struct timeval  tv;
 	   perror ("file ?");
 	   delete _I_Buffer;
 	   throw (31);
+	}
+	else
+	{
+	   fprintf (stderr, "sound file '%s' opened with/as raw device\n",  f. c_str ());
 	}
 	currPos = (int64_t)(fileOffsetInSeconds * 2048000.0 * 2.0 );
 	fseek (filePointer, currPos, SEEK_SET);
@@ -130,7 +138,7 @@ int64_t	nextStop;
 bool	eofReached	= false;
 
 	running. store (true);
-	period		= (32768 * 1000) / (2 * 2048);	// full IQś read
+	period		= (32768 * 1000) / (2048);	// full IQs read
 	fprintf (stderr, "Period = %ld\n", period);
 	bi		= new std::complex<float> [bufferSize];
 	nextStop	= getMyTime ();
@@ -156,7 +164,7 @@ bool	eofReached	= false;
 	      if (eofHandler != nullptr) 
 	         eofHandler (userData);
 	   }
-	   if (nextStop - getMyTime () > 0)
+	   while (nextStop - getMyTime () > 0)
 	      usleep (nextStop - getMyTime ());
 	}
 	fprintf (stderr, "taak voor replay eindigt hier\n");
@@ -168,15 +176,14 @@ int32_t	rawFiles::readBuffer (std::complex<float> *data, int32_t length) {
 int32_t	n;
 int	i;
 uint8_t temp [2 * length];
-	n = fread (temp,  sizeof (uint8_t), 2 * length, filePointer);
-	for (i = 0; i < n / 2; i ++)
+	n = fread (temp,  2 * sizeof (uint8_t), length, filePointer);
+	for (i = 0; i < n; i ++)
 	   data [i] = std::complex <float> ((float)(temp [2 * i] - 128) / 128,
 	                                    (float)(temp [2 * i + 1] - 128) / 128);
-	currPos		+= n;
 	if (n < length) {
 	   fseek (filePointer, 0, SEEK_SET);
 //	   fprintf (stderr, "End of file, restarting\n");
 	}
-	return	n / 2;
+	return	n;
 }
 

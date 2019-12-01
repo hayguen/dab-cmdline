@@ -56,6 +56,10 @@ SF_INFO *sf_info;
 	                                f. c_str ());
 	   throw (24);
 	}
+	else
+	{
+	   fprintf (stderr, "sound file '%s' opened with/as wave device\n",  f. c_str ());
+	}
 	if ((sf_info -> samplerate != 2048000) ||
 	    (sf_info -> channels != 2)) {
 	   fprintf (stderr, "This is not a recorded DAB file, sorry\n");
@@ -85,6 +89,10 @@ SF_INFO *sf_info;
 	   fprintf (stderr, "file %s no legitimate sound file\n", 
 	                                f. c_str ());
 	   throw (24);
+	}
+	else
+	{
+	   fprintf (stderr, "sound file '%s' opened with/as wave device\n",  f. c_str ());
 	}
 	if ((sf_info -> samplerate != 2048000) ||
 	    (sf_info -> channels != 2)) {
@@ -150,7 +158,7 @@ int64_t	nextStop;
 bool	eofReached	= false;
 
 	running. store (true);
-	period		= (32768 * 1000) / 2048;	// full IQś read
+	period		= (32768 * 1000) / 2048;	// full IQs read
 	fprintf (stderr, "Period = %ld\n", period);
 	bi		= new std::complex<float> [bufferSize];
 	nextStop	= getMyTime ();
@@ -175,7 +183,7 @@ bool	eofReached	= false;
 	         eofHandler (userData);
 	      eofReached	= false;
 	   }
-	   if (nextStop - getMyTime () > 0)
+	   while (nextStop - getMyTime () > 0)
 	      usleep (nextStop - getMyTime ());
 	}
 	fprintf (stderr, "taak voor replay eindigt hier\n");
