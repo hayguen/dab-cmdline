@@ -117,7 +117,6 @@ float		coarseOffset	= 0;
 bool		correctionNeeded	= true;
 std::vector<complex<float>>	ofdmBuffer (T_null);
 int		dip_attempts		= 0;
-int		index_attempts		= 0;
 
 	isSynced	= false;
 	running. store (true);
@@ -161,14 +160,10 @@ SyncOnPhase:
 	   int startIndex = phaseSynchronizer. findIndex (ofdmBuffer. data ());
 	   if (startIndex < 0) { // no sync, try again
 	      isSynced	= false;
-	      if (++index_attempts > 5) {
-	         syncsignalHandler (false, userData);
-	         index_attempts	= 0;
-	      }
+	      syncsignalHandler (false, userData);
 	      goto notSynced;
 	   }
 
-	   index_attempts	= 0;
 	   dip_attempts		= 0;
 	   isSynced		= true;
 	   syncsignalHandler (isSynced, userData);

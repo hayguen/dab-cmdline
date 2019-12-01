@@ -39,10 +39,13 @@
 #include	"airspy-handler.h"
 #elif	defined(HAVE_RTLSDR)
 #include	"rtlsdr-handler.h"
-#elif	HAVE_WAVFILES
-#include	"wavfiles.h"
-#elif	HAVE_RAWFILES
-#include	"rawfiles.h"
+#elif	( HAVE_WAVFILES || HAVE_RAWFILES )
+	#if	HAVE_WAVFILES
+	#include	"wavfiles.h"
+	#endif
+	#if	HAVE_RAWFILES
+	#include	"rawfiles.h"
+	#endif
 #elif	HAVE_RTL_TCP
 #include	"rtl_tcp-client.h"
 #endif
@@ -89,6 +92,10 @@ static const char	* outWaveFilename = nullptr;
 static int32_t outFrequency = 0;
 static double recDuration = -1.0;
 static uint32_t recDurationSmp = 0;
+
+
+static int32_t timeOut = 0;
+static int32_t nextOut = 0;
 
 
 struct MyServiceData {
@@ -171,6 +178,10 @@ int numAllTii = 0;
 #endif
 
 
+void printCollectedCallbackStat (const char * txt,
+	                         int out = PRINT_COLLECTED_STAT_AND_TIME );
+
+
 inline void sleepMillis(unsigned ms) {
 	usleep (ms * 1000);
 }
@@ -229,6 +240,7 @@ static uint64_t		msecs_smp_curr;
 static uint64_t		num_samples_since_start;
 static uint64_t		num_samples_per_check;
 static uint64_t		num_samples_next_check;
+static int64_t		num_lost_syncs_since_start = -1;
 static int			print_mismatch_counter;
 static int			mismatchRecTolerance = -1;
 
@@ -248,6 +260,10 @@ static
 void	syncsignalHandler (bool b, void *userData) {
 	timeSynced. store (b);
 	timesyncSet. store (true);
+
+	if ( !b && num_lost_syncs_since_start >= 0 )
+		++num_lost_syncs_since_start;
+
 	(void)userData;
 }
 //
@@ -425,6 +441,7 @@ void	pcmHandler (int16_t *buffer, int size, int rate,
 	   waveWriteHeader(rate, outFrequency, 16, 2 /*(isStereo ? 2:1)*/, audioSink);
 	   outWaveFilename = nullptr;
 	   gotSampleData = true;
+	   
 	   recStereo = isStereo;
 	   recRate = rate;
 
@@ -432,6 +449,8 @@ void	pcmHandler (int16_t *buffer, int size, int rate,
 	   num_samples_since_start = 0;
 	   num_samples_next_check = num_samples_per_check = rate / 2;	// every 0.5 sec
 	   print_mismatch_counter = 0;
+	   
+	   num_lost_syncs_since_start = 0;		// start counting lost syncs!
 	}
 	if ( recDuration > 0 ) {
 	   recDurationSmp = recDuration * rate;
@@ -456,12 +475,18 @@ void	pcmHandler (int16_t *buffer, int size, int rate,
 		prevNumAACDecErrs = numAACDecErrs;
 	}
 
+	static int64_t		last_num_lost_syncs = 0;
 	static uint64_t		lastRecSeconds = 0;
 	uint64_t	recSeconds = num_samples_since_start / uint64_t(rate);
 	if ( recSeconds != lastRecSeconds ) {
 		double	recSecs = (double)( num_samples_since_start / uint64_t(rate) );
 		fprintf(stderr, "time: %.1f sec\n", recSecs);
 		lastRecSeconds = recSeconds;
+
+		if ( last_num_lost_syncs != num_lost_syncs_since_start ) {
+			fprintf(stderr, "%ld lost OFDM frames through lost time sync from start of recording!\n", (long)num_lost_syncs_since_start );
+			last_num_lost_syncs = num_lost_syncs_since_start;
+		}
 	}
 
 	if ( num_samples_since_start >= num_samples_next_check ) {
@@ -492,7 +517,10 @@ void	pcmHandler (int16_t *buffer, int size, int rate,
 	   if (recDurationSmp > smpFrames)
 	      recDurationSmp -= smpFrames;
 	   else {
-	      fprintf (stderr, "recording duration reached, terminating!\n");
+	      fprintf(stderr, "recording duration reached, terminating!\n");
+	      fprintf(stderr, "%ld lost OFDM frames through lost time sync from start of recording!\n", (long)num_lost_syncs_since_start );
+	      nextOut = timeOut;
+	      printCollectedCallbackStat ("recording duration reached", 1);
 	      run. store (false);
 	   }
 	}
@@ -503,6 +531,7 @@ static bool stat_gotSysData = false, stat_gotFic = false, stat_gotMsc = false;
 static bool stat_everSynced = false;
 static long numSnr = 0, sumSnr = 0, avgSnr = -32768;
 static long numFic = 0, sumFic = 0, avgFic = 0;
+static long numMsc = 0, numFeErr = 0, numRsErr = 0, numAacErr = 0;
 static int16_t stat_minSnr = 0, stat_maxSnr = 0;
 static int16_t stat_minFic = 0, stat_maxFic = 0;
 static int16_t stat_minFe = 0, stat_maxFe = 0;
@@ -635,6 +664,11 @@ void	fibQuality	(int16_t q, void *ctx) {
 
 static
 void	mscQuality	(int16_t fe, int16_t rsE, int16_t aacE, void *ctx) {
+	++numMsc;
+	if ( fe < 100 )		++numFeErr;
+	if ( rsE < 100 )	++numRsErr;
+	if ( aacE < 100 )	++numAacErr;
+
 	if (stat_gotMsc) {
 	   stat_minFe = fe < stat_minFe ? fe : stat_minFe;
 	   stat_maxFe = fe > stat_maxFe ? fe : stat_maxFe;
@@ -647,16 +681,21 @@ void	mscQuality	(int16_t fe, int16_t rsE, int16_t aacE, void *ctx) {
 	   stat_minRsE = stat_maxRsE = rsE;
 	   stat_minAacE = stat_maxAacE = aacE;
 	   stat_gotMsc = true;
- 	}
-//	fprintf (stderr, "msc quality = %d %d %d\n", fe, rsE, aacE);
-}
+	}
 
-static int32_t timeOut = 0;
-static int32_t nextOut = 0;
+	static long lastNumFeErr = 0, lastNumRsErr = 0, lastNumAacErr = 0;
+	if ( lastNumFeErr != numFeErr || lastNumRsErr != numRsErr || lastNumAacErr != numAacErr ) {
+	    fprintf (infoStrm, "mscQuality(): # %ld, #errors fe %ld  rsE %ld  aacE %ld\n"
+	                 , numMsc, numFeErr, numRsErr, numAacErr );
+	    lastNumFeErr = numFeErr;
+	    lastNumRsErr = numRsErr;
+	    lastNumAacErr = numAacErr;
+	}
+}
 
 
 void printCollectedCallbackStat (const char * txt,
-	                         int out = PRINT_COLLECTED_STAT_AND_TIME ) {
+	                         int out ) {
 	if (!out)
 	   return;
 
@@ -680,7 +719,12 @@ void printCollectedCallbackStat (const char * txt,
 	                 , int(stat_minRsE), int(stat_maxRsE)
 	                 , int(stat_minAacE), int(stat_maxAacE) );
 
+	   fprintf (infoStrm, "  mscQuality(): # %ld, #errors fe %ld  rsE %ld  aacE %ld\n"
+	                 , numMsc, numFeErr, numRsErr, numAacErr );
+
 	   fprintf (infoStrm, "\n");
+
+	   
 	}
 }
 
@@ -691,10 +735,16 @@ void device_eof_callback (void * userData) {
 	(void)userData;
 	if (!repeater ) {
 	   fprintf (stderr, "\nEnd-of-File reached, triggering termination!\n");
+	   if ( gotSampleData ) {
+	       fprintf(stderr, "%ld lost OFDM frames through lost time sync from start of recording!\n", (long)num_lost_syncs_since_start );
+	       nextOut = timeOut;
+	       printCollectedCallbackStat ("End-of-File reached", 1);
+	   }
 	   run. store (false);
 	   exit (30);
 	}
 }
+
 
 void allocateDevice(
 	bool openDevice = false,
@@ -732,10 +782,26 @@ void allocateDevice(
 	                                     (uint16_t)deviceIndex,
 	                                     deviceSerial,
 	                                     rtlOpts );
-#elif	HAVE_WAVFILES
-	   theDevice	= new wavFiles (*fileName, fileOffset, device_eof_callback, nullptr );
-#elif	HAVE_RAWFILES
-	   theDevice	= new rawFiles (*fileName, fileOffset, device_eof_callback, nullptr );
+#elif ( HAVE_WAVFILES || HAVE_RAWFILES )
+	#if HAVE_WAVFILES
+	   if ( fileName )
+	   {
+	       try {
+	          theDevice	= new wavFiles (*fileName, fileOffset, device_eof_callback, nullptr );
+	       }
+	       catch (int e) {
+	         // allow retry as RAW file (HAVE_RAWFILES)
+	         fprintf (stderr, "allocating wave device failed (%d), fatal\n", e);
+	         theDevice	= NULL;
+	       }
+	   }
+	#endif
+	#if	HAVE_RAWFILES
+	   
+	   if ( !theDevice && fileName ) {
+	       theDevice	= new rawFiles (*fileName, fileOffset, device_eof_callback, nullptr );
+	   }
+	#endif
 #elif	HAVE_RTL_TCP
 	   theDevice	= new rtl_tcp_client (hostname,
 	                                      basePort,
@@ -1662,6 +1728,7 @@ void    printOptions (void) {
 	-a alfa     update tii spectral power with factor alfa in 0 to 1. default: 0.9\n\
 	-r number   reset tii spectral power every number frames. default: 10\n\
 	            tii statistics is output in scan mode\n\
+	-x          switch tii algorithm to extended one\n\
 	-c          activates CSV output mode\n\
 	-M Mode     Mode is 1, 2 or 4. Default is Mode 1\n\
 	-B Band     Band is either L_BAND or BAND_III (default)\n\
