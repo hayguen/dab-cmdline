@@ -47,7 +47,6 @@ private:
 	int32_t			baudRate;
 	void			*userData;
 	audioOut_t		soundOut;
-	uint32_t		numAACDecErrs;
 
 	void			output (int16_t *buffer,
 	                                int	size,
@@ -55,7 +54,7 @@ private:
 	                                int	rate) {
 	   if (soundOut == NULL)
 	      return;
-	   (soundOut)(buffer, size, rate, isStereo, userData, numAACDecErrs);
+	   (soundOut)(buffer, size, rate, isStereo, userData);
 	}
 //
 public:
@@ -65,7 +64,6 @@ public:
 	aacConf		= NeAACDecGetCurrentConfiguration (aacHandle);
 	aacInitialized	= false;
 	baudRate	= 48000;
-	numAACDecErrs	= 0;
 	this	-> soundOut = soundOut;
 	this	-> userData	= userData;
 }
@@ -90,7 +88,7 @@ int get_aac_channel_configuration (int16_t m_mpeg_surround_config,
 }
 
 int16_t	MP42PCM (stream_parms *sp,
-	         uint8_t buffer [], int16_t bufferLength) {
+	         uint8_t buffer [], int16_t bufferLength, decodeErrorReport_t errorReportHandler ) {
 int16_t	samples;
 uint8_t	channels;
 long unsigned int	sample_rate;
@@ -122,7 +120,7 @@ NeAACDecFrameInfo	hInfo;
 	            get_aac_channel_configuration (sp -> mpegSurround,
 	                                           sp -> aacChannelMode);
 	   if (core_ch_config == -1) {
-	      printf ("Unrecognized mpeg surround config (ignored): %d\n",
+	      fprintf (stderr, "Unrecognized mpeg surround config (ignored): %d\n",
 	                                       sp -> mpegSurround);
 	      return false;
 	   }
@@ -137,7 +135,7 @@ NeAACDecFrameInfo	hInfo;
 	                                         &channels);
 	   if (init_result != 0) {
 //	If some error initializing occurred, skip the file */
-	      printf ("Error initializing decoder library: %s\n",
+	      fprintf (stderr, "Error initializing decoder library: %s\n",
 	                            NeAACDecGetErrorMessage (-init_result));
 	      NeAACDecClose (aacHandle);
 	      return false;
@@ -163,7 +161,8 @@ NeAACDecFrameInfo	hInfo;
 //	fprintf (stderr, "header = %d\n", hInfo. header_type);
 	channels	= hInfo. channels;
 	if (hInfo. error != 0) {
-	   ++numAACDecErrs;
+	   if ( errorReportHandler )
+	       errorReportHandler( 3, 1, userData );
 	   fprintf (stderr, "Warning: %s\n",
 	               faacDecGetErrorMessage (hInfo. error));
 	   return 0;
@@ -184,7 +183,8 @@ NeAACDecFrameInfo	hInfo;
 	}
 	else
 	{
-	   ++numAACDecErrs;
+	   if ( errorReportHandler )
+	       errorReportHandler( 3, 1, userData );
 	   fprintf (stderr, "Cannot handle these channels\n");
    }
 

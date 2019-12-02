@@ -246,6 +246,7 @@ int16_t *nPtr = &N [0][0];
 	this	-> soundOut	= soundOut;
 	this	-> dataOut	= dataOut;
 	this	-> mscQuality	= mscQuality;
+	this	-> errorReportHandler	= nullptr;
 	Voffs		= 0;
 	baudRate	= 48000;	// default for DAB
 	MP2framesize	= 24 * bitRate;	// may be changed
@@ -255,13 +256,16 @@ int16_t *nPtr = &N [0][0];
 	MP2bitCount	= 0;
 	numberofFrames	= 0;
 	errorFrames	= 0;
-	numAACDecErrs = 0;
 }
 
 	mp2Processor::~mp2Processor (void) {
 	delete[] MP2frame;
 }
 //
+
+void	mp2Processor::setError_handler(decodeErrorReport_t err_Handler) {
+	errorReportHandler = err_Handler;
+}
 
 #define	valid(x)	((x == 48000) || (x == 24000))
 void	mp2Processor::setSamplerate (int32_t rate) {
@@ -390,7 +394,6 @@ int32_t table_idx;
 	if (( frame[0]         != 0xFF)   // no valid syncword?
 	   ||  ((frame[1] & 0xF6) != 0xF4)   // no MPEG-1/2 Audio Layer II?
 	   ||  ((frame[2] - 0x10) >= 0xE0))  { // invalid bitrate?
-	   errorFrames ++;
 	   return 0;
 	}
 
@@ -615,8 +618,11 @@ int16_t vLength = 24 * bitRate / 8;
 	                    2 * (int32_t)KJMP2_SAMPLES_PER_FRAME,
 	                    baudRate, stereo);
 	         }
-	         else
-	            ++numAACDecErrs;
+	         else {
+	            ++errorFrames;
+	            if ( errorReportHandler )
+	                errorReportHandler( 1, 1, ctx );
+	         }
 #endif
 
 	         MP2Header_OK = 0;
@@ -662,6 +668,6 @@ uint8_t	newbyte = (01 << bitnr);
 
 void	mp2Processor::output (int16_t *buffer, int size, int rate, bool stereo) {
 	if (soundOut != nullptr)
-	   soundOut (buffer, size, rate, stereo, ctx, numAACDecErrs);
+	   soundOut (buffer, size, rate, stereo, ctx);
 }
 

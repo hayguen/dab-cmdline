@@ -47,7 +47,6 @@ public:
 	void	process_ficBlock	(std::vector<int16_t>, int16_t);
 	void	clearEnsemble		(void);
 	bool	syncReached		(void);
-	int16_t	get_ficRatio		(void);
 	std::string nameFor		(int32_t);
 	int32_t	SIdFor			(std::string &);
 	uint8_t	kindofService		(std::string &);
@@ -68,10 +67,12 @@ public:
 	uint8_t getInterTabId		(bool *);
 
 	void	setEId_handler(ensembleid_t EId_Handler);
+	void	setError_handler(decodeErrorReport_t err_Handler);
 
 private:
 	dabParams	params;
 	fib_quality_t	fib_qualityHandler;
+	decodeErrorReport_t		errorReportHandler;
 	void		*userData;
 	void		process_ficInput	(int16_t);
 	uint8_t		bitBuffer_out	[768];
@@ -81,10 +82,6 @@ private:
 	int16_t		index;
 	int16_t		BitsperBlock;
 	int16_t		ficno;
-	int16_t		ficBlocks;
-	int16_t		ficMissed;
-	int16_t		ficRatio;
-	uint16_t	convState;
 	mutable mutex		fibProtector;
 	fib_processor	fibProcessor;
 	uint8_t		PRBS [768];

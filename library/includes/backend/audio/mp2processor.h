@@ -56,12 +56,14 @@ public:
 	                                 motdata_t,
 	                                 void	*);
 			~mp2Processor	(void);
+	virtual void	setError_handler(decodeErrorReport_t err_Handler);
 	void		addtoFrame	(uint8_t *);
 	
 private:
 	audioOut_t	soundOut;
 	dataOut_t	dataOut;
 	programQuality_t	mscQuality;
+	decodeErrorReport_t		errorReportHandler;
 	void		*ctx;
 	int16_t		bitRate;
 	padHandler	my_padHandler;
@@ -93,7 +95,6 @@ private:
 	void		addbittoMP2	(uint8_t *, uint8_t, int16_t);
 	int16_t		numberofFrames;
 	int16_t		errorFrames;
-	uint32_t	numAACDecErrs;
 };
 #endif
 

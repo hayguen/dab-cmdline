@@ -33,6 +33,10 @@
         virtualBackend::~virtualBackend (void) {
 }
 
+void	virtualBackend::setError_handler(decodeErrorReport_t err_Handler) {
+	(void)err_Handler;
+}
+
 int32_t virtualBackend::process (int16_t *v, int16_t c) {
         (void)v;
         (void)c;

@@ -113,9 +113,7 @@ typedef	struct {
 	                           int,			// size
 	                           int,			// samplerate
 	                           bool,		// stereo
-	                           void *,
-	                           uint32_t		numAACDecErrs
-	                           );
+	                           void * );
 //
 //	dynamic label data, embedded in the audio stream, is sent as string
 	typedef void (*dataOut_t)(std::string, void *);
@@ -133,6 +131,17 @@ typedef	struct {
 //	percentage of packages passing the Reed Solomon correction,
 //	and the third number gives the percentage of valid AAC frames
 	typedef void (*programQuality_t)(int16_t, int16_t, int16_t, void *);
+
+//	immediate report of program errors - to allow early abortion
+//	1st number is error type:
+//		1: DAB _frame error
+//		2: Reed Solom correction failed
+//		3: AAC frame error
+//		4: OFDM time/phase sync error
+//		5: FIC CRC error
+//		6: MP4/DAB+ CRC error
+	typedef void (*decodeErrorReport_t)(int16_t, int16_t, void *);
+
 //
 //	After selecting a service, parameters of the selected program
 //	are sent back.
@@ -240,6 +249,9 @@ void	dab_setTII_handler(void *, tii_t tii_Handler, tii_ex_t tii_ExHandler, int t
 
 //	set/activate reporting of ensembleId EId - extra function for compatibility
 void	dab_setEId_handler(void *, ensembleid_t EId_Handler);
+
+//	set/activate reporting of errors
+void	dab_setError_handler(void *, decodeErrorReport_t err_Handler);
 
 }
 

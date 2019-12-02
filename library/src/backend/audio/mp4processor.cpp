@@ -56,6 +56,7 @@
 	this	-> bitRate	= bitRate;	// input rate
 	this	-> soundOut	= soundOut;
 	this	-> mscQuality	= mscQuality;	//
+	this	-> errorReportHandler = nullptr;
 	this	-> ctx		= ctx;
 	superFramesize		= 110 * (bitRate / 8);
 	RSDims			= bitRate / 8;
@@ -66,12 +67,12 @@
 
 	blockFillIndex	= 0;
 	blocksInBuffer	= 0;
-	frameCount      = 0;
-        frameErrors     = 0;
-        aacErrors       = 0;
-        aacFrames       = 0;
-        successFrames   = 0;
-        rsErrors        = 0;
+	frameCount		= 0;
+	frameErrors		= 0;
+	aacErrors		= -1;	// ignore initial 1st error
+	aacFrames		= 0;
+	successFrames	= 0;
+	rsErrors		= 0;
 
 	frame_quality	= 0;
 	rs_quality	= 0;
@@ -80,6 +81,12 @@
 
 	mp4Processor::~mp4Processor (void) {
 }
+
+
+void	mp4Processor::setError_handler(decodeErrorReport_t err_Handler) {
+	errorReportHandler = err_Handler;
+}
+
 //
 //	we add vector for vector to the superframe. Once we have
 //	5 lengths of "old" frames, we check
@@ -126,6 +133,8 @@ int16_t	nbits	= 24 * bitRate;
 	   else {	// virtual shift to left in block sizes
 	      blocksInBuffer  = 4;
 	      frameErrors ++;
+	      if ( errorReportHandler )
+	          errorReportHandler( 1, 1, ctx );
 	   }
 	}
 }
@@ -148,8 +157,12 @@ stream_parms	streamParameters;
 	      rsIn [k] = frameBytes [(base + j + k * RSDims) % (RSDims * 120)];
 //
 	   ler = my_rsDecoder. dec (rsIn, rsOut, 135);
-	   if (ler < 0)
+	   if (ler < 0) {
+	       ++rsErrors;
+	      if ( errorReportHandler )
+	          errorReportHandler( 2, 1, ctx );
 	      return false;
+	   }
 	   for (k = 0; k < 110; k ++) 
 	      outVector [j + k * RSDims] = rsOut [k];
 	}
@@ -252,19 +265,21 @@ stream_parms	streamParameters;
 	                       &outVector [au_start [i]], aac_frame_length);
 	      memset (&theAudioUnit [aac_frame_length], 0, 10);
 
-	      int tmp = aacDecoder. MP42PCM (&streamParameters,
-	                                     theAudioUnit,
-	                                     aac_frame_length);
-	      err = tmp == 0;
+	      int tmp = aacDecoder. MP42PCM (&streamParameters, theAudioUnit,
+	                                     aac_frame_length, errorReportHandler);
+	      err = (tmp == 0);
 //	      handle_aacFrame (&outVector [au_start [i]],
 //	                       aac_frame_length,
 //	                       &streamParameters,
 //	                       &err);
 	      isStereo (streamParameters. aacChannelMode);
-	      if (err) 
-	         aacErrors ++;
+	      if (err) {
+	         ++aacErrors;
+	         if ( aacErrors && errorReportHandler )
+	             errorReportHandler( 3, 1, ctx );
+	      }
 	      if (++aacFrames > 25) {
-	         aac_quality	= 4 * (25 - aacErrors);
+	         aac_quality	= 4 * (25 - ( (aacErrors < 0) ? 0 : aacErrors) );
 	         aacErrors	= 0;
 	         aacFrames	= 0;
 	      }
@@ -272,11 +287,14 @@ stream_parms	streamParameters;
 	   }
 	   else {
 	      fprintf (stderr, "CRC failure with dab+ frame should not happen\n");
+	      if ( errorReportHandler )
+	          errorReportHandler( 6, 1, ctx );
 	   }
 	}
 	return true;
 }
 
+#if 0
 void	mp4Processor::handle_aacFrame (uint8_t *v,
 	                               int16_t frame_length,
 	                               stream_parms *sp,
@@ -295,11 +313,11 @@ uint8_t theAudioUnit [2 * 960 + 10];	// sure, large enough
 //           my_padHandler. processPAD (buffer, count - 3, L1, L0);
 //        }
 
-	int tmp = aacDecoder. MP42PCM (sp,
-	                               theAudioUnit,
-	                               frame_length);
-	*error	= tmp == 0;
+	int tmp = aacDecoder. MP42PCM (sp, theAudioUnit, frame_length,
+	                               errorReportHandler );
+	*error	= (tmp == 0);
 }
+#endif
 
 void	mp4Processor::show_frameErrors	(int s) {
 	(void)s;

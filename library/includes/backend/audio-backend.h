@@ -47,6 +47,7 @@ public:
 	                 motdata_t,
 	                 void	*);
 	~audioBackend	(void);
+virtual void	setError_handler(decodeErrorReport_t err_Handler);
 int32_t	process		(int16_t *, int16_t);
 void	stopRunning	(void);
 void	start		(void);

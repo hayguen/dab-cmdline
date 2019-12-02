@@ -76,6 +76,7 @@
                                                             userData) {
 	this	-> inputDevice		= inputDevice;
 	this	-> syncsignalHandler	= syncsignalHandler;
+	this	-> errorReportHandler	= nullptr;
 	this	-> systemdataHandler	= systemdataHandler;
 	this	-> userData		= userData;
 	this	-> T_null		= params. get_T_null ();
@@ -117,6 +118,7 @@ float		coarseOffset	= 0;
 bool		correctionNeeded	= true;
 std::vector<complex<float>>	ofdmBuffer (T_null);
 int		dip_attempts		= 0;
+int		index_attempts		= 0;
 
 	isSynced	= false;
 	running. store (true);
@@ -160,10 +162,16 @@ SyncOnPhase:
 	   int startIndex = phaseSynchronizer. findIndex (ofdmBuffer. data ());
 	   if (startIndex < 0) { // no sync, try again
 	      isSynced	= false;
-	      syncsignalHandler (false, userData);
+	      if (++index_attempts > 5) {
+	         syncsignalHandler (false, userData);
+	         index_attempts = 0;
+	      }
+	      if ( errorReportHandler )  // additional immediate error report?
+	          errorReportHandler( 4, 1, userData );
 	      goto notSynced;
 	   }
 
+	   index_attempts	= 0;
 	   dip_attempts		= 0;
 	   isSynced		= true;
 	   syncsignalHandler (isSynced, userData);
@@ -374,6 +382,12 @@ void    dabProcessor::setTII_handler(tii_t tii_Handler, tii_ex_t tii_ExHandler, 
 
 void    dabProcessor::setEId_handler(ensembleid_t EId_Handler) {
 	my_ficHandler.setEId_handler(EId_Handler);
+}
+
+void    dabProcessor::setError_handler(decodeErrorReport_t err_Handler) {
+	errorReportHandler	= err_Handler;
+	my_ficHandler.setError_handler(err_Handler);
+	my_mscHandler.setError_handler(err_Handler);
 }
 
 std::complex<float>

@@ -26,6 +26,8 @@
 #include	<stdint.h>
 #include	<stdio.h>
 
+#include	"dab-api.h"
+
 
 #define	CUSize	(4 * 16)
 
@@ -33,6 +35,7 @@ class	virtualBackend {
 public:
 		virtualBackend	(int16_t, int16_t);
 virtual		~virtualBackend	(void);
+virtual void	setError_handler(decodeErrorReport_t err_Handler);
 virtual int32_t	process		(int16_t *, int16_t);
 virtual void	stopRunning	(void);
 virtual	void	stop		(void);

@@ -55,6 +55,7 @@ static int blocksperCIF [] = {18, 72, 0, 36};
 	this	-> dataOut		= dataOut;
 	this	-> bytesOut		= bytesOut;
 	this	-> programQuality	= mscQuality;
+	this	-> errorReportHandler	= nullptr;
 	this	-> motdata_Handler	= motdata_Handler;
 	this	-> userData		= userData;
 	theData				= new std::complex<float> *[params. get_L ()];
@@ -78,6 +79,13 @@ static int blocksperCIF [] = {18, 72, 0, 36};
 	for (int i = 0; i < params. get_L (); i ++)
 	   delete [] theData [i];
 	delete [] theData;
+}
+
+void	mscHandler::setError_handler(decodeErrorReport_t err_Handler) {
+	errorReportHandler	= err_Handler;
+	for (auto &b : theBackends) {
+	   b -> setError_handler(err_Handler);
+	}
 }
 
 void	mscHandler::stop (void) {
@@ -175,26 +183,33 @@ std::vector<int16_t> ibits;
 //	thread executing process_mscBlock
 void	mscHandler::set_audioChannel (audiodata *d) {
 	mutexer. lock ();
-//
-//	we could assert here that theBackend == nullptr
-	theBackends. push_back (new audioBackend (d,
+	audioBackend * nbe = new audioBackend (d,
 	                                    soundOut,
 	                                    dataOut,
 	                                    programQuality,
 	                                    motdata_Handler,
-	                                    userData));
-	work_to_do. store (true);
+	                                    userData);
+	// we could assert here that theBackend == nullptr
+	if (nbe) {
+	    nbe->setError_handler(errorReportHandler);
+	    theBackends. push_back ( nbe );
+	    work_to_do. store (true);
+	}
 	mutexer. unlock ();
 }
 
 
 void	mscHandler::set_dataChannel (packetdata *d) {
 	mutexer. lock ();
-	theBackends. push_back (new dataBackend (d,
+	dataBackend * nbe = new dataBackend (d,
 	                                   bytesOut,
 	                                   motdata_Handler,
-	                                   userData));
-	work_to_do. store (true);
+	                                   userData);
+	if (nbe) {
+	    nbe->setError_handler(errorReportHandler);
+	    theBackends. push_back ( nbe );
+	    work_to_do. store (true);
+	}
 	mutexer. unlock ();
 }
 

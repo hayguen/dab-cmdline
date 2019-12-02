@@ -86,7 +86,7 @@ public:
 
 	void		setTII_handler		(tii_t tii_Handler, tii_ex_t tii_ExHandler, int tii_framedelay, float alfa, int resetFrameCount);
 	void		setEId_handler		(ensembleid_t EId_Handler);
-
+	void		setError_handler	(decodeErrorReport_t err_Handler);
 
 	std::complex<float>
 			 get_coordinates (int16_t, int16_t, bool *);
@@ -116,6 +116,7 @@ private:
 	ficHandler	my_ficHandler;
 	mscHandler	my_mscHandler;
 	syncsignal_t	syncsignalHandler;
+	decodeErrorReport_t		errorReportHandler;
 	systemdata_t	systemdataHandler;
 	void		call_systemData (bool, int16_t, int32_t);
 	std::thread	threadHandle;

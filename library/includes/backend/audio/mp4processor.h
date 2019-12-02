@@ -47,18 +47,20 @@ public:
 	                                 motdata_t,
 	                                 void	*);
 			~mp4Processor	(void);
+	virtual void	setError_handler(decodeErrorReport_t err_Handler);
 	void		addtoFrame	(uint8_t *);
 private:
 	bool		processSuperframe (uint8_t [], int16_t);
 	audioOut_t	soundOut;
 	dataOut_t	dataOut;
 	programQuality_t	mscQuality;
+	decodeErrorReport_t		errorReportHandler;
 	void		*ctx;
 	padHandler	my_padHandler;
-	void            handle_aacFrame (uint8_t *,
-	                                 int16_t frame_length,
-	                                 stream_parms *sp,
-	                                 bool*);
+	//void            handle_aacFrame (uint8_t *,
+	//                                 int16_t frame_length,
+	//                                 stream_parms *sp,
+	//                                 bool*);
 	void		buildHeader (int16_t framelen,
                                      stream_parms *sp,
                                      uint8_t *header);

@@ -53,14 +53,16 @@ public:
 	                                 motdata_t,
 	                                 void		*);
 		~mscHandler		(void);
+	void	setError_handler	(decodeErrorReport_t err_Handler);
 	void	process_mscBlock	(std::complex<float> *, int16_t);
 	void	set_audioChannel	(audiodata	*);
 	void	set_dataChannel		(packetdata     *);
 	void	reset			(void);
 	void	stop			(void);
 	void	start			(void);
+
 private:
-virtual	void		run		(void);
+	virtual	void	run		(void);
 	void		process_mscBlock (std::vector<int16_t>, int16_t);
 	dabParams	params;
 	fft_handler	my_fftHandler;
@@ -70,6 +72,7 @@ virtual	void		run		(void);
 	dataOut_t	dataOut;
 	bytesOut_t	bytesOut;
 	programQuality_t programQuality;
+	decodeErrorReport_t		errorReportHandler;
 	motdata_t	motdata_Handler;
 	void		*userData;
 	Semaphore       freeSlots;

@@ -126,6 +126,10 @@ int16_t	i;
 
 }
 
+void	audioBackend::setError_handler(decodeErrorReport_t err_Handler) {
+	our_backendBase->setError_handler(err_Handler);
+}
+
 void	audioBackend::start		(void) {
 	running. store (true);
 	threadHandle = std::thread (&audioBackend::run, this);

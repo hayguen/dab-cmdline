@@ -98,6 +98,11 @@ void	dab_setEId_handler(void *Handle, ensembleid_t EId_Handler) {
 	return ((dabProcessor *)Handle) -> setEId_handler (EId_Handler);
 }
 
+void	dab_setError_handler(void *Handle, decodeErrorReport_t err_Handler) {
+	return ((dabProcessor *)Handle) -> setError_handler (err_Handler);
+}
+
+
 
 //	functions contributed by Hayati Ayguen
 //	mainId < 0 (-1) => don't check mainId

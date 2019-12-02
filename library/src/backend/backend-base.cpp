@@ -28,6 +28,10 @@
 	backendBase::~backendBase	(void) {
 }
 
+void	backendBase::setError_handler(decodeErrorReport_t err_Handler) {
+	(void)err_Handler;
+}
+
 void	backendBase::addtoFrame	(uint8_t *v) {
 	(void)v;
 }

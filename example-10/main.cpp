@@ -181,6 +181,8 @@ int numAllTii = 0;
 void printCollectedCallbackStat (const char * txt,
 	                         int out = PRINT_COLLECTED_STAT_AND_TIME );
 
+void printCollectedErrorStat( const char * txt );
+
 
 inline void sleepMillis(unsigned ms) {
 	usleep (ms * 1000);
@@ -240,7 +242,6 @@ static uint64_t		msecs_smp_curr;
 static uint64_t		num_samples_since_start;
 static uint64_t		num_samples_per_check;
 static uint64_t		num_samples_next_check;
-static int64_t		num_lost_syncs_since_start = -1;
 static int			print_mismatch_counter;
 static int			mismatchRecTolerance = -1;
 
@@ -261,11 +262,49 @@ void	syncsignalHandler (bool b, void *userData) {
 	timeSynced. store (b);
 	timesyncSet. store (true);
 
-	if ( !b && num_lost_syncs_since_start >= 0 )
-		++num_lost_syncs_since_start;
-
 	(void)userData;
 }
+
+static long numSyncErr = 0, numFeErr = 0, numRsErr = 0, numAacErr = 0;
+static long numFicSyncErr = 0, numMp4CrcErr = 0;
+
+static
+void	decodeErrorReportHandler( int16_t errorType, int16_t numErr, void *userData) {
+
+	if (!gotSampleData)
+	   return;		// ignore error until getting initial sample data
+
+	//	1: DAB _frame error
+	//	2: Reed Solom correction failed
+	//	3: AAC frame error
+	//	4: OFDM time/phase sync error
+	//	5: FIC CRC error
+	//	6: MP4/DAB+ CRC error
+	switch (errorType)
+	{
+	case 1:		numFeErr += numErr;		break;
+	case 2:		numRsErr += numErr;		break;
+	case 3:		numAacErr += numErr;	break;
+	case 4:		numSyncErr += numErr;	break;
+	case 5:		numFicSyncErr += numErr;	break;
+	case 6:		numMp4CrcErr += numErr;		break;
+	default: ;
+	}
+}
+
+void printCollectedErrorStat( const char * txt ) {
+	fprintf (infoStrm, "  decodeErrors:\n");
+	fprintf (infoStrm, "      OFDM frame sync errors:    %ld\n", numSyncErr);
+	fprintf (infoStrm, "      DAB frame errors (Fe):     %ld\n", numFeErr);
+	fprintf (infoStrm, "      Reed Solomon errors (Rs):  %ld\n", numRsErr);
+	fprintf (infoStrm, "      AAC decode errors (Aac):   %ld\n", numAacErr);
+	fprintf (infoStrm, "      FIC CRC errors:            %ld\n", numFicSyncErr);
+	fprintf (infoStrm, "      MP4/DAB+ CRC errors:       %ld\n", numMp4CrcErr);
+	fprintf (infoStrm, "\n");
+}
+
+
+
 //
 //	This function is called whenever the dab engine has taken
 //	some time to gather information from the FIC bloks
@@ -422,8 +461,7 @@ int16_t i;
 //
 static
 void	pcmHandler (int16_t *buffer, int size, int rate,
-		bool isStereo, void *ctx,
-		uint32_t		numAACDecErrs
+		bool isStereo, void *ctx
 	) {
 	if (scanOnly)
 	   return;
@@ -449,8 +487,6 @@ void	pcmHandler (int16_t *buffer, int size, int rate,
 	   num_samples_since_start = 0;
 	   num_samples_next_check = num_samples_per_check = rate / 2;	// every 0.5 sec
 	   print_mismatch_counter = 0;
-	   
-	   num_lost_syncs_since_start = 0;		// start counting lost syncs!
 	}
 	if ( recDuration > 0 ) {
 	   recDurationSmp = recDuration * rate;
@@ -469,26 +505,15 @@ void	pcmHandler (int16_t *buffer, int size, int rate,
 			return;
 	}
 
-	static uint32_t		prevNumAACDecErrs = 1234;
-	if ( prevNumAACDecErrs != numAACDecErrs ) {
-		fprintf(stderr, "number of aac decoder errors changed from %u to %u\n", prevNumAACDecErrs, numAACDecErrs);
-		prevNumAACDecErrs = numAACDecErrs;
-	}
-
-	static int64_t		last_num_lost_syncs = 0;
 	static uint64_t		lastRecSeconds = 0;
 	uint64_t	recSeconds = num_samples_since_start / uint64_t(rate);
 	if ( recSeconds != lastRecSeconds ) {
 		double	recSecs = (double)( num_samples_since_start / uint64_t(rate) );
 		fprintf(stderr, "time: %.1f sec\n", recSecs);
 		lastRecSeconds = recSeconds;
-
-		if ( last_num_lost_syncs != num_lost_syncs_since_start ) {
-			fprintf(stderr, "%ld lost OFDM frames through lost time sync from start of recording!\n", (long)num_lost_syncs_since_start );
-			last_num_lost_syncs = num_lost_syncs_since_start;
-		}
 	}
 
+	static long lastSumDecErrs = 0;
 	if ( num_samples_since_start >= num_samples_next_check ) {
 		msecs_smp_curr = currentMSecsSinceEpoch();
 		uint64_t msecs_delta = msecs_smp_curr - msecs_smp_start;
@@ -505,6 +530,14 @@ void	pcmHandler (int16_t *buffer, int size, int rate,
 			run. store (false);
 		}
 		num_samples_next_check += num_samples_per_check;
+
+		long sumDecErrs = numSyncErr  +numFeErr +numRsErr +numAacErr  +numFicSyncErr +numMp4CrcErr;
+		if ( lastSumDecErrs != sumDecErrs ) {
+			fprintf (infoStrm, "decodeErrors:\tSync %ld\tFe %ld\tRs %ld\tAac %ld\tFicCRC %ld\tMp4CRC %ld\n"
+				, numSyncErr, numFeErr, numRsErr, numAacErr
+				, numFicSyncErr, numMp4CrcErr );
+			lastSumDecErrs = sumDecErrs;
+		}
 	}
 	num_samples_since_start += smpFrames;	//( size / (isStereo ? 2 : 1) );
 
@@ -518,9 +551,9 @@ void	pcmHandler (int16_t *buffer, int size, int rate,
 	      recDurationSmp -= smpFrames;
 	   else {
 	      fprintf(stderr, "recording duration reached, terminating!\n");
-	      fprintf(stderr, "%ld lost OFDM frames through lost time sync from start of recording!\n", (long)num_lost_syncs_since_start );
 	      nextOut = timeOut;
 	      printCollectedCallbackStat ("recording duration reached", 1);
+	      printCollectedErrorStat( "recording duration reached" );
 	      run. store (false);
 	   }
 	}
@@ -531,7 +564,7 @@ static bool stat_gotSysData = false, stat_gotFic = false, stat_gotMsc = false;
 static bool stat_everSynced = false;
 static long numSnr = 0, sumSnr = 0, avgSnr = -32768;
 static long numFic = 0, sumFic = 0, avgFic = 0;
-static long numMsc = 0, numFeErr = 0, numRsErr = 0, numAacErr = 0;
+static long numMsc = 0;
 static int16_t stat_minSnr = 0, stat_maxSnr = 0;
 static int16_t stat_minFic = 0, stat_maxFic = 0;
 static int16_t stat_minFe = 0, stat_maxFe = 0;
@@ -665,10 +698,6 @@ void	fibQuality	(int16_t q, void *ctx) {
 static
 void	mscQuality	(int16_t fe, int16_t rsE, int16_t aacE, void *ctx) {
 	++numMsc;
-	if ( fe < 100 )		++numFeErr;
-	if ( rsE < 100 )	++numRsErr;
-	if ( aacE < 100 )	++numAacErr;
-
 	if (stat_gotMsc) {
 	   stat_minFe = fe < stat_minFe ? fe : stat_minFe;
 	   stat_maxFe = fe > stat_maxFe ? fe : stat_maxFe;
@@ -681,15 +710,6 @@ void	mscQuality	(int16_t fe, int16_t rsE, int16_t aacE, void *ctx) {
 	   stat_minRsE = stat_maxRsE = rsE;
 	   stat_minAacE = stat_maxAacE = aacE;
 	   stat_gotMsc = true;
-	}
-
-	static long lastNumFeErr = 0, lastNumRsErr = 0, lastNumAacErr = 0;
-	if ( lastNumFeErr != numFeErr || lastNumRsErr != numRsErr || lastNumAacErr != numAacErr ) {
-	    fprintf (infoStrm, "mscQuality(): # %ld, #errors fe %ld  rsE %ld  aacE %ld\n"
-	                 , numMsc, numFeErr, numRsErr, numAacErr );
-	    lastNumFeErr = numFeErr;
-	    lastNumRsErr = numRsErr;
-	    lastNumAacErr = numAacErr;
 	}
 }
 
@@ -723,8 +743,6 @@ void printCollectedCallbackStat (const char * txt,
 	                 , numMsc, numFeErr, numRsErr, numAacErr );
 
 	   fprintf (infoStrm, "\n");
-
-	   
 	}
 }
 
@@ -736,9 +754,9 @@ void device_eof_callback (void * userData) {
 	if (!repeater ) {
 	   fprintf (stderr, "\nEnd-of-File reached, triggering termination!\n");
 	   if ( gotSampleData ) {
-	       fprintf(stderr, "%ld lost OFDM frames through lost time sync from start of recording!\n", (long)num_lost_syncs_since_start );
 	       nextOut = timeOut;
 	       printCollectedCallbackStat ("End-of-File reached", 1);
+	       printCollectedErrorStat("End-of-File reached");
 	   }
 	   run. store (false);
 	   exit (30);
@@ -1104,6 +1122,7 @@ bool	err;
 	   dab_setTII_handler(theRadio, tii, nullptr, tii_framedelay, tii_alfa, tii_resetFrames );
 
 	dab_setEId_handler(theRadio, ensembleIdHandler );
+	dab_setError_handler(theRadio, decodeErrorReportHandler );
 
 	theDevice	-> setGain (theGain);
 	if (autogain)
@@ -1271,7 +1290,8 @@ static	int count	= 10;
 	      if ( haveProgramNameForSID )
 	         pPlayProgName = &programNameForSID;
 	      else {
-	         std::cerr << "sorry  we could not find program for given SID " << serviceIdentifier << "\n";
+	         std::cerr << "sorry  we could not find program for given SID "
+	                   << std::hex << serviceIdentifier << "\n";
 	         run. store (false);
 	      }
 	   }

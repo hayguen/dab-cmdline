@@ -52,13 +52,11 @@ int16_t	local	= 0;
 
 	(void)dabMode;
 	this	-> fib_qualityHandler	= fib_qualityHandler;
+	this	-> errorReportHandler	= nullptr;
 	this	-> userData		= userData;
 	index		= 0;
 	BitsperBlock	= 2 * params. get_carriers ();
 	ficno		= 0;
-	ficBlocks	= 0;
-	ficMissed	= 0;
-	ficRatio	= 0;
 	memset (shiftRegister, 1, 9);
 
 	for (i = 0; i < 768; i ++) {
@@ -195,6 +193,10 @@ int16_t	inputCount	= 0;
 	   uint8_t *p = &bitBuffer_out [(i % 3) * 256];
 	   if (!check_CRC_bits (p, 256)) {
 	      show_ficCRC (false);
+	      if (errorReportHandler) {
+	          errorReportHandler( 5, 1, userData );
+	          //fprintf(stderr, "fic CRC at ficNo %d for FIB block broken\n", (int)ficno);
+	      }
 	      continue;
 	   }
 	   show_ficCRC (true);
@@ -290,9 +292,8 @@ void	ficHandler::setEId_handler(ensembleid_t EId_Handler) {
 	fibProcessor.setEId_handler(EId_Handler);
 }
 
-
-int16_t	ficHandler::get_ficRatio (void) {
-	return ficRatio;
+void	ficHandler::setError_handler(decodeErrorReport_t err_Handler) {
+	errorReportHandler = err_Handler;
 }
 
 bool	ficHandler::syncReached	(void) {
