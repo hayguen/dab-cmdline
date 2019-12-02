@@ -140,7 +140,10 @@ typedef	struct {
 //		4: OFDM time/phase sync error
 //		5: FIC CRC error
 //		6: MP4/DAB+ CRC error
-	typedef void (*decodeErrorReport_t)(int16_t, int16_t, void *);
+//	2nd number (int16_t) is amount of errors, usually 1
+//	3nd number (int32_t) is, total amount of DAB frames - for type = 1
+//		0 for unknown
+	typedef void (*decodeErrorReport_t)(int16_t, int16_t, int32_t, void *);
 
 //
 //	After selecting a service, parameters of the selected program

@@ -80,6 +80,7 @@ private:
 //	and for the aac decoder
 	faadDecoder	aacDecoder;
 
+	int32_t		totalFrameCount;
 	int16_t		frameCount;
 	int16_t		successFrames;
 	int16_t		frameErrors;

@@ -254,6 +254,7 @@ int16_t *nPtr = &N [0][0];
 	MP2Header_OK	= 0;
 	MP2headerCount	= 0;
 	MP2bitCount	= 0;
+	totalFrameCount	= 0;
 	numberofFrames	= 0;
 	errorFrames	= 0;
 }
@@ -609,6 +610,9 @@ int16_t vLength = 24 * bitRate / 8;
 	      if (MP2bitCount >= lf) {
 	         bool stereo;
 	         int16_t sample_buf [KJMP2_SAMPLES_PER_FRAME * 2];
+	         ++totalFrameCount;
+	         if ( totalFrameCount < 0 )
+	             totalFrameCount = 1;			// keep positive - even at overflow
 #ifdef	AAC_OUT
 	         soundOut ((int16_t *)(&MP2frame [0]), MP2bitCount,
 	                               0, false, nullptr);
@@ -621,7 +625,7 @@ int16_t vLength = 24 * bitRate / 8;
 	         else {
 	            ++errorFrames;
 	            if ( errorReportHandler )
-	                errorReportHandler( 1, 1, ctx );
+	                errorReportHandler( 1, 1, totalFrameCount, ctx );
 	         }
 #endif
 
@@ -649,6 +653,9 @@ int16_t vLength = 24 * bitRate / 8;
 	      if (MP2bitCount == 24) {
 	         setSamplerate (mp2sampleRate (MP2frame));
 	         MP2Header_OK = 2;
+	         ++totalFrameCount;
+	         if ( totalFrameCount < 0 )
+	            totalFrameCount = 1;			// keep positive - even at overflow
 	      }
 	   }
 	}

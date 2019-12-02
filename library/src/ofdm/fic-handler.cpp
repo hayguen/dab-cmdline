@@ -194,7 +194,7 @@ int16_t	inputCount	= 0;
 	   if (!check_CRC_bits (p, 256)) {
 	      show_ficCRC (false);
 	      if (errorReportHandler) {
-	          errorReportHandler( 5, 1, userData );
+	          errorReportHandler( 5, 1, 0, userData );
 	          //fprintf(stderr, "fic CRC at ficNo %d for FIB block broken\n", (int)ficno);
 	      }
 	      continue;

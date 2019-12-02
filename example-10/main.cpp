@@ -243,7 +243,7 @@ static uint64_t		num_samples_since_start;
 static uint64_t		num_samples_per_check;
 static uint64_t		num_samples_next_check;
 static int			print_mismatch_counter;
-static int			mismatchRecTolerance = -1;
+static int			recTolerance = -1;
 
 static std::string	ensembleName;
 static uint32_t		ensembleIdentifier	= -1;
@@ -267,9 +267,10 @@ void	syncsignalHandler (bool b, void *userData) {
 
 static long numSyncErr = 0, numFeErr = 0, numRsErr = 0, numAacErr = 0;
 static long numFicSyncErr = 0, numMp4CrcErr = 0;
+static int32_t totalDABframeCount = 0;
 
 static
-void	decodeErrorReportHandler( int16_t errorType, int16_t numErr, void *userData) {
+void	decodeErrorReportHandler( int16_t errorType, int16_t numErr, int32_t totalFrameCount, void *userData) {
 
 	if (!gotSampleData)
 	   return;		// ignore error until getting initial sample data
@@ -282,7 +283,9 @@ void	decodeErrorReportHandler( int16_t errorType, int16_t numErr, void *userData
 	//	6: MP4/DAB+ CRC error
 	switch (errorType)
 	{
-	case 1:		numFeErr += numErr;		break;
+	case 1:		numFeErr += numErr;
+				totalDABframeCount = totalFrameCount;
+				break;
 	case 2:		numRsErr += numErr;		break;
 	case 3:		numAacErr += numErr;	break;
 	case 4:		numSyncErr += numErr;	break;
@@ -295,7 +298,8 @@ void	decodeErrorReportHandler( int16_t errorType, int16_t numErr, void *userData
 void printCollectedErrorStat( const char * txt ) {
 	fprintf (infoStrm, "  decodeErrors:\n");
 	fprintf (infoStrm, "      OFDM frame sync errors:    %ld\n", numSyncErr);
-	fprintf (infoStrm, "      DAB frame errors (Fe):     %ld\n", numFeErr);
+	fprintf (infoStrm, "      DAB frame errors (Fe):     %ld @ %ld (total)\n"
+		, numFeErr, (long)totalDABframeCount );
 	fprintf (infoStrm, "      Reed Solomon errors (Rs):  %ld\n", numRsErr);
 	fprintf (infoStrm, "      AAC decode errors (Aac):   %ld\n", numAacErr);
 	fprintf (infoStrm, "      FIC CRC errors:            %ld\n", numFicSyncErr);
@@ -525,18 +529,35 @@ void	pcmHandler (int16_t *buffer, int size, int rate,
 			fprintf(stderr, "mismatch from system time to #samples @ rate == %ld ms\n", msecs_mismatch);
 			print_mismatch_counter = 0;
 		}
-		if ( mismatchRecTolerance > 0 && (msecs_mismatch >= mismatchRecTolerance || msecs_mismatch <= -mismatchRecTolerance) ) {
-			fprintf (stderr, "abort recording, because mismatch is too big. terminating!\n");
-			run. store (false);
-		}
+		//if ( recTolerance > 0 && (msecs_mismatch >= recTolerance || msecs_mismatch <= -recTolerance) ) {
+		//	fprintf (stderr, "abort recording, because mismatch is too big. terminating!\n");
+		//	run. store (false);
+		//}
 		num_samples_next_check += num_samples_per_check;
 
 		long sumDecErrs = numSyncErr  +numFeErr +numRsErr +numAacErr  +numFicSyncErr +numMp4CrcErr;
 		if ( lastSumDecErrs != sumDecErrs ) {
-			fprintf (infoStrm, "decodeErrors:\tSync %ld\tFe %ld\tRs %ld\tAac %ld\tFicCRC %ld\tMp4CRC %ld\n"
-				, numSyncErr, numFeErr, numRsErr, numAacErr
+			fprintf (infoStrm, "decodeErrors:\tSync %ld\tFe %ld @ %ld\tRs %ld\tAac %ld\tFicCRC %ld\tMp4CRC %ld\n"
+				, numSyncErr, numFeErr, (long)totalDABframeCount, numRsErr, numAacErr
 				, numFicSyncErr, numMp4CrcErr );
 			lastSumDecErrs = sumDecErrs;
+
+			if ( recTolerance > 0 ) {
+				if (numSyncErr) {
+					fprintf (stderr, "abort recording, because of OFDM frame sync error. terminating!\n");
+					nextOut = timeOut;
+					printCollectedCallbackStat ("OFDM frame sync error", 1);
+					printCollectedErrorStat( "OFDM frame sync error" );
+					run. store (false);
+				}
+				else if ( numFeErr && (long)numFeErr * 100L >= (long)totalDABframeCount ) {
+					fprintf (stderr, "abort recording, because DAB frame error count >= 1%%. terminating!\n");
+					nextOut = timeOut;
+					printCollectedCallbackStat ("DAB frame error count >= 1%", 1);
+					printCollectedErrorStat( "DAB frame error count >= 1%" );
+					run. store (false);
+				}
+			}
 		}
 	}
 	num_samples_since_start += smpFrames;	//( size / (isStereo ? 2 : 1) );
@@ -979,7 +1000,7 @@ bool	err;
 	         break;
 
 	      case 'T':
-	         mismatchRecTolerance	= atoi (optarg);
+	         recTolerance	= atoi (optarg);
 	         break;
 
 	      case 'O':

@@ -162,7 +162,7 @@ NeAACDecFrameInfo	hInfo;
 	channels	= hInfo. channels;
 	if (hInfo. error != 0) {
 	   if ( errorReportHandler )
-	       errorReportHandler( 3, 1, userData );
+	       errorReportHandler( 3, 1, 0, userData );
 	   fprintf (stderr, "Warning: %s\n",
 	               faacDecGetErrorMessage (hInfo. error));
 	   return 0;
@@ -184,7 +184,7 @@ NeAACDecFrameInfo	hInfo;
 	else
 	{
 	   if ( errorReportHandler )
-	       errorReportHandler( 3, 1, userData );
+	       errorReportHandler( 3, 1, 0, userData );
 	   fprintf (stderr, "Cannot handle these channels\n");
    }
 

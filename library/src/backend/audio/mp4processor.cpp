@@ -67,6 +67,7 @@
 
 	blockFillIndex	= 0;
 	blocksInBuffer	= 0;
+	totalFrameCount	= 0;
 	frameCount		= 0;
 	frameErrors		= 0;
 	aacErrors		= -1;	// ignore initial 1st error
@@ -106,6 +107,10 @@ int16_t	nbits	= 24 * bitRate;
 //
 	blocksInBuffer ++;
 	blockFillIndex = (blockFillIndex + 1) % 5;
+
+	++totalFrameCount;
+	if ( totalFrameCount < 0 )
+	   totalFrameCount = 1;			// keep positive - even at overflow
 //
 //	we take the last five blocks to look at
 	if (blocksInBuffer >= 5) {
@@ -134,7 +139,7 @@ int16_t	nbits	= 24 * bitRate;
 	      blocksInBuffer  = 4;
 	      frameErrors ++;
 	      if ( errorReportHandler )
-	          errorReportHandler( 1, 1, ctx );
+	          errorReportHandler( 1, 1, totalFrameCount, ctx );
 	   }
 	}
 }
@@ -160,7 +165,7 @@ stream_parms	streamParameters;
 	   if (ler < 0) {
 	       ++rsErrors;
 	      if ( errorReportHandler )
-	          errorReportHandler( 2, 1, ctx );
+	          errorReportHandler( 2, 1, 0, ctx );
 	      return false;
 	   }
 	   for (k = 0; k < 110; k ++) 
@@ -276,7 +281,7 @@ stream_parms	streamParameters;
 	      if (err) {
 	         ++aacErrors;
 	         if ( aacErrors && errorReportHandler )
-	             errorReportHandler( 3, 1, ctx );
+	             errorReportHandler( 3, 1, 0, ctx );
 	      }
 	      if (++aacFrames > 25) {
 	         aac_quality	= 4 * (25 - ( (aacErrors < 0) ? 0 : aacErrors) );
@@ -288,7 +293,7 @@ stream_parms	streamParameters;
 	   else {
 	      fprintf (stderr, "CRC failure with dab+ frame should not happen\n");
 	      if ( errorReportHandler )
-	          errorReportHandler( 6, 1, ctx );
+	          errorReportHandler( 6, 1, 0, ctx );
 	   }
 	}
 	return true;

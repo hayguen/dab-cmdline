@@ -167,7 +167,7 @@ SyncOnPhase:
 	         index_attempts = 0;
 	      }
 	      if ( errorReportHandler )  // additional immediate error report?
-	          errorReportHandler( 4, 1, userData );
+	          errorReportHandler( 4, 1, 0, userData );
 	      goto notSynced;
 	   }
 

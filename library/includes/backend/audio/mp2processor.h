@@ -93,6 +93,7 @@ private:
 	int16_t		MP2headerCount;
 	int16_t		MP2bitCount;
 	void		addbittoMP2	(uint8_t *, uint8_t, int16_t);
+	int32_t		totalFrameCount;
 	int16_t		numberofFrames;
 	int16_t		errorFrames;
 };
