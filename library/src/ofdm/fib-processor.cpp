@@ -996,13 +996,17 @@ char		label [17];
 	         }
 //	         fprintf (stderr, "Ensemblename: %16s\n", label);
 	         {
-	            std::string name = toStringUsingCharset (
+	            if ( UnicodeUcs2 == (CharacterSet) charSet )
+	               fprintf(stderr, "warning: ignoring ensemble name cause of unimplemented Ucs2 conversion\n");
+	            else {
+	               std::string name = toStringUsingCharset (
 	                                      (const char *) label,
 	                                      (CharacterSet) charSet);
-	            // without idofEnsemble: just report one name
-	            if (ensembleidHandler != nullptr || firstTimeEName)
-	               nameofEnsemble (SId, name);
-	            firstTimeEName	= false;
+	               // without idofEnsemble: just report one name
+	               if (ensembleidHandler != nullptr || firstTimeEName)
+	                  nameofEnsemble (SId, name);
+	               firstTimeEName	= false;
+	            }
 	            isSynced	= true;
 	         }
 	      }
@@ -1019,12 +1023,16 @@ char		label [17];
 	            label [i] = getBits_8 (d, offset + 8 * i);
 	         }
 
-	         myIndex -> serviceLabel. label. append (
+	         if ( UnicodeUcs2 == (CharacterSet) charSet )
+	            fprintf(stderr, "warning: ignoring service label cause of unimplemented Ucs2 conversion\n");
+	         else {
+	            myIndex -> serviceLabel. label. append (
 	                       toStringUsingCharset (
 	                                (const char *) label,
 	                                (CharacterSet) charSet));
 //	         fprintf (stderr, "FIG1/1: SId = %4x\t%s\n", SId, label);
-	         myIndex -> serviceLabel. hasName = true;
+	            myIndex -> serviceLabel. hasName = true;
+	         }
 	      }
 	      break;
 
@@ -1067,16 +1075,20 @@ char		label [17];
                  for (i = 0; i < 16; i ++) {
                     label [i] = getBits_8 (d, offset + 8 * i);
                  }
-                 myIndex -> serviceLabel. label. append (
+	             if ( UnicodeUcs2 == (CharacterSet) charSet )
+	                fprintf(stderr, "warning: ignoring service name/label cause of unimplemented Ucs2 conversion\n");
+	             else {
+                    myIndex -> serviceLabel. label. append (
                                toStringUsingCharset (
                                          (const char *) label,
                                          (CharacterSet) charSet));
-	         myIndex -> serviceLabel. label. append (
+	                myIndex -> serviceLabel. label. append (
                                toStringUsingCharset (
 	                                 " (data)",
                                          (CharacterSet) charSet));
-                 myIndex -> serviceLabel. hasName = true;
-	         addtoEnsemble (myIndex -> serviceLabel. label, SId);
+                    myIndex -> serviceLabel. hasName = true;
+	                addtoEnsemble (myIndex -> serviceLabel. label, SId);
+	             }
               }
 	      break;
 

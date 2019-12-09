@@ -124,12 +124,16 @@ int16_t	i;
 
                  if ((still_to_go <= 0) && (shortpadData. size () > 1)) {
                     shortpadData. push_back (0);
-	            std::string segmentText =
+	                if ( UnicodeUcs2 == (CharacterSet)charSet )
+	                   fprintf(stderr, "warning: ignoring pad text for dynamicLabel cause of unimplemented Ucs2 conversion\n");
+	                else {
+	                   std::string segmentText =
 	                          toStringUsingCharset (
 	                                (const char *)(shortpadData. data ()),
 	                                (CharacterSet) charSet,
 	                                shortpadData. size ());
-	            dynamicLabelText. append (segmentText);
+	                   dynamicLabelText. append (segmentText);
+	                }
                     shortpadData. resize (0);
                  }
                  break;
@@ -144,12 +148,16 @@ int16_t	i;
 //	(but only if there is something to show) and clear the message
 	   if ((still_to_go <= 0) && (shortpadData. size () > 0)) {
 	      shortpadData. push_back (0);
-	      std::string segmentText =
+	      if ( UnicodeUcs2 == (CharacterSet) charSet )
+	         fprintf(stderr, "warning: ignoring pad text for dynamicLabel cause of unimplemented Ucs2 conversion\n");
+	      else {
+	         std::string segmentText =
 	                          toStringUsingCharset (
 	                                (const char *)(shortpadData. data ()),
-                                        (CharacterSet) charSet,
-                                        shortpadData. size ());
-                    dynamicLabelText. append (segmentText);
+	                                    (CharacterSet) charSet,
+	                                    shortpadData. size ());
+	         dynamicLabelText. append (segmentText);
+	      }
 	      shortpadData. resize (0);
               if (dynamicLabelText. length () > 0)
                  dataOut (dynamicLabelText, ctx);
@@ -293,12 +301,15 @@ int16_t  dataLength	= 0;
 	      }
 
 //	convert dynamic label
-	      std::string segmentText = toStringUsingCharset (
+	      if ( UnicodeUcs2 == (CharacterSet) charSet )
+	         fprintf(stderr, "warning: ignoring pad text for dynamicLabel cause of unimplemented Ucs2 conversion\n");
+	      else {
+	         std::string segmentText = toStringUsingCharset (
 	                                 (const char *)&data [2],
 	                                 (CharacterSet) charSet,
 	                                 dataLength);
-
-	      dynamicLabelText. append (segmentText);
+	         dynamicLabelText. append (segmentText);
+	      }
 
 //	if at the end, show the label
 	      if (last) {
@@ -326,11 +337,15 @@ int16_t  dataLength	= 0;
 	      moreXPad   = false;
 	   }
 	   
-	   std::string segmentText = toStringUsingCharset (
+	   if ( UnicodeUcs2 == (CharacterSet) charSet )
+	      fprintf(stderr, "warning: ignoring pad text for dynamicLabel cause of unimplemented Ucs2 conversion\n");
+	   else {
+	      std::string segmentText = toStringUsingCharset (
 	                                     (const char *) data,
 	                                     (CharacterSet) charSet,
 	                                     dataLength);
-	   dynamicLabelText. append(segmentText);
+	      dynamicLabelText. append(segmentText);
+	   }
 	   if (!moreXPad && isLastSegment) {
 	      dataOut (dynamicLabelText, ctx);
 	   }
