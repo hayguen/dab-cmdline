@@ -366,38 +366,6 @@ auto	p = globals.channels.find (serviceIdentifier);
 	}
 }
 
-static
-void programPacketHandler (packetdata *d, int subidx /* 1 .. 4*/, void * ctx) {
-(void)ctx;
-auto p = globals.channels.find(serviceIdentifier);
-
-	if (p != globals.channels.end () && d ) {
-	   p -> second -> audiopacket    [subidx - 1] = *d;
-	   p -> second -> gotAudioPacket [subidx - 1] = true;
-	   fprintf (stderr,
-	            "programPacketHandler(%d) for SID %X called. stored packetdata\n",
-	             subidx, serviceIdentifier );
-	}
-	else {
-	   fprintf (stderr, "programPacketHandler(%d) for SID %X called. cannot save packetdata\n", subidx, serviceIdentifier );
-	}
-}
-
-static
-void	packetdataHandler (packetdata *d, void * ctx) {
-auto	p = globals.channels. find(serviceIdentifier);
-	(void)ctx;
-
-	if (p != globals. channels.end () && d) {
-	   p -> second -> packet = *d;
-	   p -> second -> gotPacket = true;
-	   fprintf (stderr, "packetdataHandler for SID %X called. stored packetdata\n", serviceIdentifier  );
-	}
-	else {
-	   fprintf (stderr, "packetdataHandler for SID %X called. cannot save packetdata\n", serviceIdentifier  );
-	}
-}
-
 //
 //	The function is called from within the library with
 //	a string, the so-called dynamic label
@@ -568,7 +536,7 @@ void	pcmHandler (int16_t *buffer, int size, int rate,
 
 	if (recDurationSmp) {
 	   //int sz = isStereo ? (size /2) : size;
-	   if (recDurationSmp > smpFrames)
+       if (recDurationSmp > (uint32_t)smpFrames)
 	      recDurationSmp -= smpFrames;
 	   else {
 	      fprintf(stderr, "recording duration reached, terminating!\n");
@@ -894,8 +862,6 @@ int32_t		basePort = 1234;		// default
 int		deviceIndex = 0;
 const char	* deviceSerial = nullptr;
 #endif
-
-bool	err;
 
 	fprintf (stderr, "dab_cmdline example-10 V 1.0alfa,\n \
 	                  Copyright 2018 Hayati Ayguen/Jan van Katwijk\n");

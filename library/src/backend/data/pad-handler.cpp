@@ -357,7 +357,7 @@ int16_t  dataLength	= 0;
 //	the msc_length was given by the preceding appType "1"
 void	padHandler::new_MSC_element (std::vector<uint8_t> data) {
 
-	if (data. size () >= dataGroupLength) { // msc element is single item
+	if ((int)data. size () >= dataGroupLength) { // msc element is single item
 	   build_MSC_segment (data);
 	   mscGroupElement = false;
 //	   show_motHandling (true);
@@ -383,7 +383,7 @@ int32_t currentLength = msc_dataGroupBuffer. size ();
 
 	msc_dataGroupBuffer. insert (std::end (msc_dataGroupBuffer),
 	                             std::begin (data), std::end (data));
-	if (msc_dataGroupBuffer. size () >= dataGroupLength) {
+	if ((int)msc_dataGroupBuffer. size () >= dataGroupLength) {
 	   build_MSC_segment (msc_dataGroupBuffer);
 	   msc_dataGroupBuffer. clear ();
 	   mscGroupElement      = false;
@@ -395,8 +395,8 @@ void	padHandler::build_MSC_segment (std::vector<uint8_t> data) {
 //	we have a MOT segment, let us look what is in it
 //	according to DAB 300 401 (page 37) the header (MSC data group)
 //	is
-int32_t size    = data. size () < dataGroupLength ? data. size () :
-                                                    dataGroupLength;
+int32_t size    = (int)data. size () < dataGroupLength
+            ? data. size () : dataGroupLength;
 
 	uint8_t		groupType	=  data [0] & 0xF;
 	uint8_t		continuityIndex = (data [1] & 0xF) >> 4;

@@ -136,7 +136,7 @@ int32_t	amount;
 	if (!running. load ())
 	   return 0;
 
-	while (_I_Buffer -> GetRingBufferReadAvailable () < (uint32_t)size)
+    while (_I_Buffer -> GetRingBufferReadAvailable () < (int32_t)size)
 	   usleep (100);
 
 	amount = _I_Buffer	-> getDataFromBuffer (V, size);

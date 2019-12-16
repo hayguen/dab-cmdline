@@ -97,7 +97,7 @@ int16_t i;
 int32_t tdc_dataHandler::handleFrame_type_0 (uint8_t *data,
                                             int32_t offset, int32_t length) {
 int16_t i;
-int16_t noS     = getBits (data, offset, 8);
+//int16_t noS     = getBits (data, offset, 8);
 uint8_t	buffer [length];
 
 	for (i = 0; i < length; i ++)
@@ -135,17 +135,16 @@ uint8_t testVector [18];
 int16_t i;
 int16_t length  = getBits (data, offset + 8, 16);
 int16_t size    = length < 13 ? length : 13;
-uint16_t        crc;
         if (length < 0)
            return false;                // assumed garbage
-        crc     = getBits (data, offset + 24, 16);      // the crc
+        //uint16_t crc = getBits (data, offset + 24, 16);      // the crc
         testVector [0]  = getBits (data, offset + 0,  8);
         testVector [1]  = getBits (data, offset + 8,  8);
         testVector [2]  = getBits (data, offset + 16, 8);
         for (i = 0; i < size; i ++)
            testVector [3 + i] = getBits (data, offset + 40 + i * 8, 8);
-	testVector [3 + size    ] = getBits (data, offset + 24, 8);
-	testVector [3 + size + 1] = getBits (data, offset + 32, 8);
+        testVector [3 + size    ] = getBits (data, offset + 24, 8);
+        testVector [3 + size + 1] = getBits (data, offset + 32, 8);
         return check_crc_bytes (testVector, 5 + size) == 0;
 }
 

@@ -36,6 +36,9 @@
 	                         void		*ctx) {
 int32_t pointer = 7;
 
+	(void)segmentSize;
+	(void)lastFlag;
+
 	this	-> motdataHandler	= motdataHandler;
 	this	-> dirElement		= dirElement;
 	this	-> transportId		= transportId;
@@ -45,7 +48,7 @@ int32_t pointer = 7;
 	this	-> unknown_fileno	= 0;
 	headerSize     =
              ((segment [3] & 0x0F) << 9) |
-	               (segment [4] << 1) | ((segment [5] >> 7) && 0x01);
+	               (segment [4] << 1) | ((segment [5] >> 7) & 0x01);
 	bodySize       =
               (segment [0] << 20) | (segment [1] << 12) |
                             (segment [2] << 4 ) | ((segment [3] & 0xF0) >> 4);
@@ -53,7 +56,7 @@ int32_t pointer = 7;
 	contentsubType	= ((segment [5] & 0x01) << 8) | segment [6];
 
 //	we are actually only interested in the name, if any
-        while (pointer < headerSize) {
+        while (pointer < (int32_t)headerSize) {
            uint8_t PLI	= (segment [pointer] & 0300) >> 6;
            uint8_t paramId = (segment [pointer] & 077);
            uint16_t     length;
@@ -117,7 +120,7 @@ int32_t i;
 
 
 //      Note that the last segment may have a different size
-        if (!lastFlag && (this -> segmentSize == -1))
+        if (!lastFlag && ((int32_t)this -> segmentSize == -1))
            this -> segmentSize = segmentSize;
 
 	std::vector<uint8_t> segment;
@@ -145,7 +148,6 @@ int32_t i;
 
 
 void	motObject::handleComplete (void) {
-int	i;
 std::vector<uint8_t> result;
 
         for (const auto &it : motMap)

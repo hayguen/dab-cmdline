@@ -284,7 +284,7 @@ SyncOnPhase:
 	         }
 	         if (tii_counter >= tii_framedelay)
 	            tii_counter = 0;
-	         if (my_TII_Detector.getNumBuffers() >= tii_resetFrameCount && tii_resetFrameCount > 0) {
+             if ((int)my_TII_Detector.getNumBuffers() >= tii_resetFrameCount && tii_resetFrameCount > 0) {
 	            my_TII_Detector. reset();
 	         }
 	      }

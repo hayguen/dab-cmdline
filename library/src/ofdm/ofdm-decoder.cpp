@@ -85,7 +85,6 @@ int16_t	i;
                                        T_u * sizeof (std::complex<float>));
 std::complex<float> conjVector [T_u];
 
-fftlabel:
 /**
   *	first step: do the FFT
   */
@@ -95,7 +94,7 @@ fftlabel:
   *	positive/negative frequencies to their right positions.
   *	The de-interleaving understands this
   */
-toBitsLabel:
+
 /**
   *	Note that from here on, we are only interested in the
   *	"carriers" useful carriers of the FFT output
