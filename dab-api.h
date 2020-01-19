@@ -161,6 +161,10 @@ typedef	struct {
 	typedef void (*tii_t)(int16_t mainId, int16_t subId, unsigned num, void *);
 	typedef void (*tii_ex_t)(int numOut, int *outTii, float *outAvgSNR, float *outMinSNR, float *outNxtSNR, unsigned numAvg, const float *Pavg, int Pavg_T_u, void *userData);
 
+//	FIB data handler - always binary data of 32 bytes
+//	allows processing of FIB FIG/extensions, which are not parsed
+	typedef void (*fibdata_t)(const uint8_t *fib, int crc_ok, void *);
+
 
 /////////////////////////////////////////////////////////////////////////
 //
@@ -257,7 +261,8 @@ void	dab_setEId_handler(void *, ensembleid_t EId_Handler);
 void	dab_setError_handler(void *, decodeErrorReport_t err_Handler);
 
 // save binary FIC data (all FIBs) to following file, saveFile is closed at end of DAB decoding
-void	dab_saveFIC(void *Handle, FILE * saveFile);
+void	dab_setFIB_handler(void *Handle, fibdata_t fib_Handler);
+
 
 }
 

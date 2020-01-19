@@ -113,15 +113,11 @@
 
 	for (int k = 0; k < 32; ++k)
 		FIG0processingOutput[k] = false;
-	FICfile = NULL;
 
 	reset	();
 }
 
 	fib_processor::~fib_processor (void) {
-	if (FICfile)
-		fclose(FICfile);
-	FICfile = NULL;
 }
 
 void	fib_processor::newFrame (void) {
@@ -180,19 +176,6 @@ uint16_t hdr;
 	fibLocker. unlock ();
 }
 
-void	fib_processor::save_FIC (const uint8_t *p) {
-    if (FICfile)
-    {
-        fibLocker. lock ();
-
-        int byteOff = 0;
-        for ( byteOff = 0; byteOff < 32; ++byteOff )
-            FIBrawCompressed[byteOff] = getBits_8 (p, byteOff * 8);
-        fwrite(FIBrawCompressed, byteOff, 1, FICfile);
-
-        fibLocker. unlock ();
-    }
-}
 
 //
 //	Handle ensemble is all through FIG0
@@ -317,7 +300,8 @@ bool p = false;  // processed
 	      break;
 	}
 	if ( !FIG0processingOutput[extension] ) {
-       //fprintf (stderr, "FIG0/%d %s\n", extension, p ? "processed":"skipped");
+	   //fprintf (stderr, "FIG0/%d %s\n", extension, p ? "processed":"skipped");
+	   (void)p;
 	   FIG0processingOutput[extension] = true;
 	}
 }

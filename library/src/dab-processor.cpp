@@ -390,8 +390,8 @@ void    dabProcessor::setError_handler(decodeErrorReport_t err_Handler) {
 	my_mscHandler.setError_handler(err_Handler);
 }
 
-void	dabProcessor::saveFIC(FILE *saveFile) {
-	my_ficHandler.saveFIC(saveFile);
+void	dabProcessor::setFIB_handler(fibdata_t fib_Handler) {
+	my_ficHandler.setFIB_handler(fib_Handler);
 }
 
 std::complex<float>

@@ -68,12 +68,13 @@ public:
 
 	void	setEId_handler(ensembleid_t EId_Handler);
 	void	setError_handler(decodeErrorReport_t err_Handler);
-	void	saveFIC(FILE * saveFile);
+	void	setFIB_handler(fibdata_t fib_Handler);
 
 private:
 	dabParams	params;
 	fib_quality_t	fib_qualityHandler;
 	decodeErrorReport_t		errorReportHandler;
+	fibdata_t	fib_dataHandler;
 	void		*userData;
 	void		process_ficInput	(int16_t);
 	uint8_t		bitBuffer_out	[768];

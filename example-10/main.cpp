@@ -753,6 +753,18 @@ void device_eof_callback (void * userData) {
 }
 
 
+static FILE * ficFile = NULL;
+
+static
+void fib_dataHandler(const uint8_t * fib, int crc_ok, void *)
+{
+(void)crc_ok;
+	if (ficFile)
+	   fwrite(fib, 32, 1, ficFile);
+}
+
+
+
 void allocateDevice(
 	bool openDevice = false,
 	int32_t frequency = 0,
@@ -847,7 +859,6 @@ float		tii_alfa	= 0.9F;
 int		tii_resetFrames	= 10;
 bool		useExTii	= false;
 const char	* rtlOpts	= NULL;
-FILE		* ficFile = NULL;
 
 int	opt;
 struct sigaction sigact;
@@ -1115,7 +1126,7 @@ const char	* deviceSerial = nullptr;
 
 	dab_setEId_handler(theRadio, ensembleIdHandler );
 	dab_setError_handler(theRadio, decodeErrorReportHandler );
-	dab_saveFIC(theRadio, ficFile);
+	dab_setFIB_handler(theRadio, fib_dataHandler );
 
 	theDevice	-> setGain (theGain);
 	if (autogain)

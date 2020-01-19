@@ -95,9 +95,8 @@ public:
 	                                 programname_t,
 	                                 void	*);
 		~fib_processor		(void);
-		void	process_FIB		(const uint8_t *, uint16_t);
-		void	save_FIC		(const uint8_t *);
 
+	void	process_FIB		(const uint8_t *, uint16_t);
 	void	setupforNewFrame	(void);
 	void	clearEnsemble		(void);
 	bool	syncReached		(void);
@@ -126,9 +125,6 @@ public:
         uint8_t getInterTabId           (bool *);
 
 	void	setEId_handler(ensembleid_t EId_Handler);
-	void	saveFIC(FILE * f) {
-		FICfile = f;
-	}
 
 private:
 	ensembleid_t	ensembleidHandler;
@@ -190,7 +186,6 @@ private:
 		int16_t		HandleFIG0Extension22	(const uint8_t *, int16_t);
 		bool		FIG0processingOutput[32];
 		uint8_t		FIBrawCompressed[32];
-		FILE		* FICfile;
 
 	int32_t		dateTime	[8];
 	channelMap	subChannels [64];

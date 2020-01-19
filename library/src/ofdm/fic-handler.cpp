@@ -52,6 +52,7 @@ int16_t	local	= 0;
 	(void)dabMode;
 	this	-> fib_qualityHandler	= fib_qualityHandler;
 	this	-> errorReportHandler	= nullptr;
+	this	-> fib_dataHandler	= nullptr;
 	this	-> userData		= userData;
 	index		= 0;
 	BitsperBlock	= 2 * params. get_carriers ();
@@ -108,7 +109,7 @@ int16_t	local	= 0;
 
 		ficHandler::~ficHandler (void) {
 }
-	
+
 /**
   *	\brief process_ficBlock
   *	The number of bits to be processed per incoming block
@@ -162,6 +163,7 @@ void	ficHandler::process_ficInput (int16_t ficno) {
 int16_t	i;
 int16_t	viterbiBlock [3072 + 24];
 int16_t	inputCount	= 0;
+uint8_t fibBinData[32+2];
 
 	memset (viterbiBlock, 0, (3072 + 24) * sizeof (int16_t));
 
@@ -190,17 +192,27 @@ int16_t	inputCount	= 0;
   */
 	for (i = ficno * 3; i < ficno * 3 + 3; i ++) {
 	   uint8_t *p = &bitBuffer_out [(i % 3) * 256];
-	   fibProcessor. save_FIC (p);
+
+	   if (fib_dataHandler) {
+	      for ( int byteOff = 0; byteOff < 32; ++byteOff )
+	         fibBinData[byteOff] = getBits_8 (p, byteOff * 8);
+	      fibBinData[32] = 0;
+	      fibBinData[33] = 0;
+	   }
 	   if (!check_CRC_bits (p, 256)) {
 	      show_ficCRC (false);
 	      if (errorReportHandler) {
 	          errorReportHandler( 5, 1, 0, userData );
 	          //fprintf(stderr, "fic CRC at ficNo %d for FIB block broken\n", (int)ficno);
 	      }
+	      if (fib_dataHandler)
+	         fib_dataHandler(fibBinData, 0 /* wrong CRC */, userData);
 	      continue;
 	   }
 	   show_ficCRC (true);
 	   fibProtector. lock ();
+	   if (fib_dataHandler)
+	      fib_dataHandler(fibBinData, 1 /* good CRC */, userData);
 	   fibProcessor. process_FIB (p, ficno);
 	   fibProtector. unlock ();
 	}
@@ -296,8 +308,8 @@ void	ficHandler::setError_handler(decodeErrorReport_t err_Handler) {
 	errorReportHandler = err_Handler;
 }
 
-void	ficHandler::saveFIC(FILE * saveFile) {
-	fibProcessor.saveFIC(saveFile);
+void	ficHandler::setFIB_handler(fibdata_t fib_Handler) {
+	fib_dataHandler = fib_Handler;
 }
 
 bool	ficHandler::syncReached	(void) {
