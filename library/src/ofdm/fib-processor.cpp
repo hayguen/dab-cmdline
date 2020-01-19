@@ -317,7 +317,7 @@ bool p = false;  // processed
 	      break;
 	}
 	if ( !FIG0processingOutput[extension] ) {
-	   fprintf (stderr, "FIG0/%d %s\n", extension, p ? "processed":"skipped");
+       //fprintf (stderr, "FIG0/%d %s\n", extension, p ? "processed":"skipped");
 	   FIG0processingOutput[extension] = true;
 	}
 }
