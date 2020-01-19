@@ -390,6 +390,10 @@ void    dabProcessor::setError_handler(decodeErrorReport_t err_Handler) {
 	my_mscHandler.setError_handler(err_Handler);
 }
 
+void	dabProcessor::saveFIC(FILE *saveFile) {
+	my_ficHandler.saveFIC(saveFile);
+}
+
 std::complex<float>
 	dabProcessor::get_coordinates	(int16_t mainId, int16_t subId,
 	                                 bool *success) {

@@ -847,6 +847,7 @@ float		tii_alfa	= 0.9F;
 int		tii_resetFrames	= 10;
 bool		useExTii	= false;
 const char	* rtlOpts	= NULL;
+FILE		* ficFile = NULL;
 
 int	opt;
 struct sigaction sigact;
@@ -899,7 +900,7 @@ const char	* deviceSerial = nullptr;
 	#endif
 #endif
 
-	while ((opt = getopt (argc, argv, "W:A:M:B:P:p:T:S:E:ct:a:r:xO:w:n:" FILE_OPTS NON_FILE_OPTS RTLSDR_OPTS RTL_TCP_OPTS )) != -1) {
+	while ((opt = getopt (argc, argv, "W:A:M:B:P:p:T:S:E:cft:a:r:xO:w:n:" FILE_OPTS NON_FILE_OPTS RTLSDR_OPTS RTL_TCP_OPTS )) != -1) {
 	   fprintf (stderr, "opt = %c\n", opt);
 	   switch (opt) {
 
@@ -922,6 +923,10 @@ const char	* deviceSerial = nullptr;
 
 	      case 'c':
 	         printAsCSV	= true;
+	         break;
+
+	      case 'f':
+	         ficFile = fopen("ficdata.fic", "wb");
 	         break;
 
 	      case 't':
@@ -1110,6 +1115,7 @@ const char	* deviceSerial = nullptr;
 
 	dab_setEId_handler(theRadio, ensembleIdHandler );
 	dab_setError_handler(theRadio, decodeErrorReportHandler );
+	dab_saveFIC(theRadio, ficFile);
 
 	theDevice	-> setGain (theGain);
 	if (autogain)

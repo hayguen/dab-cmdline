@@ -256,6 +256,9 @@ void	dab_setEId_handler(void *, ensembleid_t EId_Handler);
 //	set/activate reporting of errors
 void	dab_setError_handler(void *, decodeErrorReport_t err_Handler);
 
+// save binary FIC data (all FIBs) to following file, saveFile is closed at end of DAB decoding
+void	dab_saveFIC(void *Handle, FILE * saveFile);
+
 }
 
 //

@@ -68,6 +68,7 @@ public:
 
 	void	setEId_handler(ensembleid_t EId_Handler);
 	void	setError_handler(decodeErrorReport_t err_Handler);
+	void	saveFIC(FILE * saveFile);
 
 private:
 	dabParams	params;

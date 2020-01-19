@@ -102,6 +102,9 @@ void	dab_setError_handler(void *Handle, decodeErrorReport_t err_Handler) {
 	return ((dabProcessor *)Handle) -> setError_handler (err_Handler);
 }
 
+void	dab_saveFIC(void *Handle, FILE * saveFile) {
+	return ((dabProcessor *)Handle) ->saveFIC(saveFile);
+}
 
 
 //	functions contributed by Hayati Ayguen

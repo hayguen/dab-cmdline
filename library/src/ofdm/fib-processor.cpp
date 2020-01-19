@@ -111,10 +111,17 @@
 	this	-> userData		= userData;
 	memset (dateTime, 0, 8 * sizeof (uint8_t));
 
+	for (int k = 0; k < 32; ++k)
+		FIG0processingOutput[k] = false;
+	FICfile = NULL;
+
 	reset	();
 }
 
 	fib_processor::~fib_processor (void) {
+	if (FICfile)
+		fclose(FICfile);
+	FICfile = NULL;
 }
 
 void	fib_processor::newFrame (void) {
@@ -128,21 +135,31 @@ void	fib_processor::newFrame (void) {
 //	FIB's are segments of 256 bits. When here, they already
 //	passed the crc and we start unpacking into FIGs
 //	This is merely a dispatcher
-void	fib_processor::process_FIB (uint8_t *p, uint16_t fib) {
+void	fib_processor::process_FIB (const uint8_t *p, uint16_t fib) {
 uint8_t	FIGtype;
 int8_t	processedBytes	= 0;
-uint8_t	*d		= p;
+const uint8_t	*d		= p;
+uint16_t hdr;
+//uint8_t	extension;
 
 	fibLocker. lock ();
 	(void)fib;
 	while (processedBytes  < 30) {
+
+	   hdr = getBits_8(d, 0);
+	   if ( hdr == 0xFF )  // == end marker?
+	      break;
 	   FIGtype 		= getBits_3 (d, 0);
+	   //extension = 0xFF;
+
 	   switch (FIGtype) {
 	      case 0:
-	         process_FIG0 (d);	
+	         //extension	= getBits_5 (d, 8 + 3);  // FIG0
+	         process_FIG0 (d);
 	         break;
 
 	      case 1:
+                 //extension	= getBits_3 (d, 8 + 5);  // FIG1
 	         process_FIG1 (d);
 	         break;
 
@@ -162,125 +179,146 @@ uint8_t	*d		= p;
 	}
 	fibLocker. unlock ();
 }
+
+void	fib_processor::save_FIC (const uint8_t *p) {
+    if (FICfile)
+    {
+        fibLocker. lock ();
+
+        int byteOff = 0;
+        for ( byteOff = 0; byteOff < 32; ++byteOff )
+            FIBrawCompressed[byteOff] = getBits_8 (p, byteOff * 8);
+        fwrite(FIBrawCompressed, byteOff, 1, FICfile);
+
+        fibLocker. unlock ();
+    }
+}
+
 //
 //	Handle ensemble is all through FIG0
 //
-void	fib_processor::process_FIG0 (uint8_t *d) {
+void	fib_processor::process_FIG0 (const uint8_t *d) {
 uint8_t	extension	= getBits_5 (d, 8 + 3);
+bool p = false;  // processed
 //uint8_t	CN	= getBits_1 (d, 8 + 0);
 
 	switch (extension) {
 	   case 0:
-	      FIG0Extension0 (d);
+	      p = FIG0Extension0 (d);
 	      break;
 
 	   case 1:
-	      FIG0Extension1 (d);
+	      p = FIG0Extension1 (d);
 	      break;
 
 	   case 2:
-	      FIG0Extension2 (d);
+	      p = FIG0Extension2 (d);
 	      break;
 
 	   case 3:
-	      FIG0Extension3 (d);
+	      p = FIG0Extension3 (d);
 	      break;
 
 	   case 4:
-	      FIG0Extension4 (d);
+	      p = FIG0Extension4 (d);
 	      break;
 
 	   case 5:
-	      FIG0Extension5 (d);
+	      p = FIG0Extension5 (d);
 	      break;
 
 	   case 6:
-	      FIG0Extension6 (d);
+	      p = FIG0Extension6 (d);
 	      break;
 
 	   case 7:
-	      FIG0Extension7 (d);
+	      p = FIG0Extension7 (d);
 	      break;
 
 	   case 8:
-	      FIG0Extension8 (d);
+	      p = FIG0Extension8 (d);
 	      break;
 
 	   case 9:
-	      FIG0Extension9 (d);
+	      p = FIG0Extension9 (d);
 	      break;
 
 	   case 10:
-	      FIG0Extension10 (d);
+	      p = FIG0Extension10 (d);
 	      break;
 
 	   case 11:
-	      FIG0Extension11 (d);
+	      p = FIG0Extension11 (d);
 	      break;
 
 	   case 12:
-	      FIG0Extension12 (d);
+	      p = FIG0Extension12 (d);
 	      break;
 
 	   case 13:
-	      FIG0Extension13 (d);
+	      p = FIG0Extension13 (d);
 	      break;
 
 	   case 14:
-	      FIG0Extension14 (d);
+	      p = FIG0Extension14 (d);
 	      break;
 
 	   case 15:
-	      FIG0Extension14 (d);
+	      p = FIG0Extension14 (d);
 	      break;
 
 	   case 16:
-	      FIG0Extension16 (d);
+	      p = FIG0Extension16 (d);
 	      break;
 
 	   case 17:
-	      FIG0Extension17 (d);
+	      p = FIG0Extension17 (d);
 	      break;
 
 	   case 18:
-	      FIG0Extension18 (d);
+	      p = FIG0Extension18 (d);
 	      break;
 
 	   case 19:
-	      FIG0Extension19 (d);
+	      p = FIG0Extension19 (d);
 	      break;
 
 	   case 20:
-	      FIG0Extension20 (d);
+	      p = FIG0Extension20 (d);
 	      break;
 
 	   case 21:
-	      FIG0Extension21 (d);
+	      p = FIG0Extension21 (d);
 	      break;
 
 	   case 22:
-	      FIG0Extension22 (d);
+	      p = FIG0Extension22 (d);
 	      break;
 
 	   case 23:
-	      FIG0Extension23 (d);
+	      p = FIG0Extension23 (d);
 	      break;
 
 	   case 24:
-	      FIG0Extension24 (d);
+	      p = FIG0Extension24 (d);
 	      break;
 
 	   case 25:
-	      FIG0Extension25 (d);
+	      p = FIG0Extension25 (d);
 	      break;
 
 	   case 26:
-	      FIG0Extension26 (d);
+	      p = FIG0Extension26 (d);
 	      break;
 
 	   default:
-//	      fprintf (stderr, "FIG0/%d passed by\n", extension);
+	      p = false;
+	      //fprintf (stderr, "FIG0/%d skipped\n", extension);
 	      break;
+	}
+	if ( !FIG0processingOutput[extension] ) {
+	   fprintf (stderr, "FIG0/%d %s\n", extension, p ? "processed":"skipped");
+	   FIG0processingOutput[extension] = true;
 	}
 }
 
@@ -288,7 +326,7 @@ uint8_t	extension	= getBits_5 (d, 8 + 3);
 //	FIG0/0 indicated a change in channel organization
 //	we are not equipped for that, so we just return
 //	control to the init
-void	fib_processor::FIG0Extension0 (uint8_t *d) {
+bool	fib_processor::FIG0Extension0 (const uint8_t *d) {
 uint16_t	EId;
 uint8_t		changeflag;
 uint16_t	highpart, lowpart;
@@ -315,7 +353,7 @@ fprintf(stderr, "FIG0Extension0: CIFcount %d\n", CIFcount);
 
 	if (changeflag == 0) {
 //fprintf(stderr, "FIG0Extension0: change return\n");
-	   return;
+	   return true;
 	}
 
 	occurrenceChange	= getBits_8 (d, 16 + 32);
@@ -323,10 +361,10 @@ fprintf(stderr, "FIG0Extension0: CIFcount %d\n", CIFcount);
 
 	if (getBits (d, 34, 1)) {         // only alarm, just ignore
 //fprintf(stderr, "FIG0Extension0: alarm return\n");
-	   return;
+	   return true;
 	}
 
-	return;
+return true;
 
 //	if (changeflag == 1) {
 //	   fprintf (stderr, "Changes in sub channel organization\n");
@@ -347,7 +385,7 @@ fprintf(stderr, "FIG0Extension0: CIFcount %d\n", CIFcount);
 //	FIG0 extension 1 creates a mapping between the
 //	sub channel identifications and the positions in the
 //	relevant CIF.
-void	fib_processor::FIG0Extension1 (uint8_t *d) {
+bool	fib_processor::FIG0Extension1 (const uint8_t *d) {
 int16_t	used	= 2;		// offset in bytes
 int16_t	Length	= getBits_5 (d, 3);
 uint8_t	PD_bit	= getBits_1 (d, 8 + 2);
@@ -355,10 +393,11 @@ uint8_t	PD_bit	= getBits_1 (d, 8 + 2);
 
 	while (used < Length - 1)
 	   used = HandleFIG0Extension1 (d, used, PD_bit);
+return true;
 }
 //
 //	defining the channels 
-int16_t	fib_processor::HandleFIG0Extension1 (uint8_t *d,
+int16_t	fib_processor::HandleFIG0Extension1 (const uint8_t *d,
 	                                     int16_t offset,
 	                                     uint8_t pd) {
 int16_t	bitOffset	= offset * 8;
@@ -421,7 +460,7 @@ int16_t	option, protLevel, subChanSize;
 //
 //	Service organization, 6.3.1
 //	bind channels to serviceIds
-void	fib_processor::FIG0Extension2 (uint8_t *d) {
+bool	fib_processor::FIG0Extension2 (const uint8_t *d) {
 int16_t	used	= 2;		// offset in bytes
 int16_t	Length	= getBits_5 (d, 3);
 uint8_t	PD_bit	= getBits_1 (d, 8 + 2);
@@ -430,10 +469,12 @@ uint8_t	CN	= getBits_1 (d, 8 + 0);
 	while (used < Length) {
 	   used = HandleFIG0Extension2 (d, used, CN, PD_bit);
 	}
+
+return true;
 }
 //
 //	Note Offset is in bytes
-int16_t	fib_processor::HandleFIG0Extension2 (uint8_t *d,
+int16_t	fib_processor::HandleFIG0Extension2 (const uint8_t *d,
 	                                     int16_t offset,
 	                                     uint8_t cn,
 	                                     uint8_t pd) {
@@ -443,6 +484,7 @@ uint8_t		ecc;
 uint8_t		cId;
 uint32_t	SId;
 int16_t		numberofComponents;
+(void)cn;
 
 	if (pd == 1) {		// long Sid
 	   ecc	= getBits_8 (d, lOffset);	(void)ecc;
@@ -487,17 +529,19 @@ int16_t		numberofComponents;
 //      additional information about the service component
 //      description in packet mode.
 //      manual: page 55
-void	fib_processor::FIG0Extension3 (uint8_t *d) {
+bool	fib_processor::FIG0Extension3 (const uint8_t *d) {
 int16_t	used	= 2;
 int16_t	Length	= getBits_5 (d, 3);
 
 	while (used < Length)
 	   used = HandleFIG0Extension3 (d, used);
+
+return true;
 }
 
 //
 //      DSCTy   DataService Component Type
-int16_t fib_processor::HandleFIG0Extension3 (uint8_t *d, int16_t used) {
+int16_t fib_processor::HandleFIG0Extension3 (const uint8_t *d, int16_t used) {
 int16_t	SCId            = getBits (d, used * 8, 12);
 int16_t CAOrgflag       = getBits_1 (d, used * 8 + 15);
 int16_t DGflag          = getBits_1 (d, used * 8 + 16);
@@ -550,7 +594,7 @@ serviceId	 *service;
 }
 //
 //      Service component with CA in stream mode 6.3.3
-void    fib_processor::FIG0Extension4 (uint8_t *d) {
+bool    fib_processor::FIG0Extension4 (const uint8_t *d) {
 int16_t used    = 3;            // offset in bytes
 int16_t Rfa     = getBits_1 (d, 0);
 int16_t Rfu     = getBits_1 (d, 0 + 1);
@@ -559,19 +603,23 @@ int32_t CAOrg = getBits (d, 2 + 6, 16);
 
 //      fprintf(stderr,"FIG0/4: Rfa=\t%D, Rfu=\t%d, SudChId=\t%02X, CAOrg=\t%04X\n", Rfa, Rfu, SubChId, CAOrg);
 	(void)used; (void)Rfa; (void)Rfu; (void)SubChId; (void)CAOrg;
+
+return false; // npthing happens with extracted bits
 }
 //
 //	Service component language
-void	fib_processor::FIG0Extension5 (uint8_t *d) {
+bool	fib_processor::FIG0Extension5 (const uint8_t *d) {
 int16_t	used	= 2;		// offset in bytes
 int16_t	Length	= getBits_5 (d, 3);
 
 	while (used < Length) {
 	   used = HandleFIG0Extension5 (d, used);
 	}
+
+return true;
 }
 
-int16_t	fib_processor::HandleFIG0Extension5 (uint8_t* d, int16_t offset) {
+int16_t	fib_processor::HandleFIG0Extension5 (const uint8_t* d, int16_t offset) {
 int16_t	loffset	= offset * 8;
 uint8_t	lsFlag	= getBits_1 (d, loffset);
 int16_t	subChId, serviceComp, language;
@@ -594,14 +642,18 @@ int16_t	subChId, serviceComp, language;
 }
 
 // FIG0/6: Service linking information 8.1.15, not implemented
-void    fib_processor::FIG0Extension6 (uint8_t *d) {
+bool    fib_processor::FIG0Extension6 (const uint8_t *d) {
+(void)d;
+return false;
 }
 
 // FIG0/7: Configuration linking information 6.4.2, not implemented
-void    fib_processor::FIG0Extension7 (uint8_t *d) {
+bool    fib_processor::FIG0Extension7 (const uint8_t *d) {
+(void)d;
+return false;
 }
 
-void	fib_processor::FIG0Extension8 (uint8_t *d) {
+bool	fib_processor::FIG0Extension8 (const uint8_t *d) {
 int16_t	used	= 2;		// offset in bytes
 int16_t	Length	= getBits_5 (d, 3);
 uint8_t	PD_bit	= getBits_1 (d, 8 + 2);
@@ -609,9 +661,11 @@ uint8_t	PD_bit	= getBits_1 (d, 8 + 2);
 	while (used < Length) {
 	   used = HandleFIG0Extension8 (d, used, PD_bit);
 	}
+
+return true;
 }
 
-int16_t	fib_processor::HandleFIG0Extension8 (uint8_t *d, int16_t used,
+int16_t	fib_processor::HandleFIG0Extension8 (const uint8_t *d, int16_t used,
 	                                     uint8_t pdBit) {
 int16_t	lOffset	= used * 8;
 uint32_t	SId	= getLBits (d, lOffset, pdBit == 1 ? 32 : 16);
@@ -653,7 +707,7 @@ uint8_t		extensionFlag;
 //	Country, LTO & international table 8.1.3.2
 //	FIG0/9 and FIG0/10 are copied from the work of
 //	Michael Hoehn
-void fib_processor::FIG0Extension9 (uint8_t *d) {
+bool fib_processor::FIG0Extension9 (const uint8_t *d) {
 int16_t	offset	= 16;
 
 	dateTime [6] = (getBits_1 (d, offset + 2) == 1)?
@@ -670,10 +724,12 @@ int16_t	offset	= 16;
                 ecc_byte = ecc & 0xFF;
                 ecc_Present = true;
         }
+
+return true;
 }
 
 //
-void fib_processor::FIG0Extension10 (uint8_t *fig) {
+bool fib_processor::FIG0Extension10 (const uint8_t *fig) {
 int16_t		offset = 16;
 int32_t		mjd	= getLBits (fig, offset + 1, 17);
 // Modified Julian Date umrechnen (Nach wikipedia)
@@ -706,29 +762,35 @@ int32_t D	= d + 1;
 	   dateTime [5] = getBits_6 (fig, offset + 32);	// Sekunden
 	dateFlag	= true;
 //	emit newDateTime (dateTime);
+
+return true;
 }
 //
 //
-void    fib_processor::FIG0Extension11 (uint8_t *d) {
-        (void)d;
+bool    fib_processor::FIG0Extension11 (const uint8_t *d) {
+(void)d;
+return false;
 }
 //
 //
-void    fib_processor::FIG0Extension12 (uint8_t *d) {
-        (void)d;
+bool    fib_processor::FIG0Extension12 (const uint8_t *d) {
+(void)d;
+return false;
 }
 //
 //
-void	fib_processor::FIG0Extension13 (uint8_t *d) {
+bool	fib_processor::FIG0Extension13 (const uint8_t *d) {
 int16_t	used	= 2;		// offset in bytes
 int16_t	Length	= getBits_5 (d, 3);
 uint8_t	PD_bit	= getBits_1 (d, 8 + 2);
 
 	while (used < Length) 
 	   used = HandleFIG0Extension13 (d, used, PD_bit);
+
+return true;
 }
 
-int16_t	fib_processor::HandleFIG0Extension13 (uint8_t *d,
+int16_t	fib_processor::HandleFIG0Extension13 (const uint8_t *d,
 	                                     int16_t used,
 	                                     uint8_t pdBit) {
 int16_t	lOffset		= used * 8;
@@ -757,7 +819,7 @@ int16_t		appType;
 }
 //
 //      FEC sub-channel organization 6.2.2
-void	fib_processor::FIG0Extension14 (uint8_t *d) {
+bool	fib_processor::FIG0Extension14 (const uint8_t *d) {
 int16_t	Length	= getBits_5 (d, 3);	// in Bytes
 int16_t	used	= 2;			// in Bytes
 int16_t	i;
@@ -772,14 +834,17 @@ int16_t	i;
               }
            }
 	}
+
+return true;
 }
 
-void    fib_processor::FIG0Extension15 (uint8_t *d) {
-        (void)d;
+bool    fib_processor::FIG0Extension15 (const uint8_t *d) {
+(void)d;
+return false;
 }
 //
 //      Obsolete in ETSI EN 300 401 V2.1.1 (2017-01)
-void	fib_processor::FIG0Extension16 (uint8_t *d) {
+bool	fib_processor::FIG0Extension16 (const uint8_t *d) {
 int16_t	length 	= getBits_5 (d, 3);	// in bytes
 int16_t	offset	= 16;			// in bits
 serviceId	*s;
@@ -796,10 +861,12 @@ serviceId	*s;
 	   }
 	   offset += 72;
 	}
+
+return true;
 }
 //
 //      Programme Type (PTy) 8.1.5
-void	fib_processor::FIG0Extension17 (uint8_t *d) {
+bool	fib_processor::FIG0Extension17 (const uint8_t *d) {
 int16_t	length	= getBits_5 (d, 3);
 int16_t	offset	= 16;
 serviceId	*s;
@@ -825,10 +892,12 @@ serviceId	*s;
 	   else
 	      offset += 32;
 	}
+
+return true;
 }
 //
 //      Announcement support 8.1.6.1
-void	fib_processor::FIG0Extension18 (uint8_t *d) {
+bool	fib_processor::FIG0Extension18 (const uint8_t *d) {
 int16_t	offset	= 16;		// bits
 uint16_t	SId, AsuFlags;
 int16_t		Length	= getBits_5 (d, 3);
@@ -843,10 +912,12 @@ int16_t		Length	= getBits_5 (d, 3);
 	}
 	(void)SId;
 	(void)AsuFlags;
+
+return true;
 }
 //
 //      Announcement switching 8.1.6.2
-void	fib_processor::FIG0Extension19 (uint8_t *d) {
+bool	fib_processor::FIG0Extension19 (const uint8_t *d) {
 int16_t		offset	= 16;		// bits
 uint16_t	AswFlags;
 int16_t		Length	= getBits_5 (d, 3);
@@ -879,21 +950,25 @@ uint8_t		region_Id_Lower;
 	}
 	(void)AswFlags;
 	(void)region_Id_Lower;
+
+return true;
 }
 //
 //      Service component information 8.1.4
-void    fib_processor::FIG0Extension20 (uint8_t *d) {
-        (void)d;
+bool    fib_processor::FIG0Extension20 (const uint8_t *d) {
+(void)d;
+return false;
 }
 //
 //	Frequency information (FI) 8.1.8
-void	fib_processor::FIG0Extension21 (uint8_t *d) {
+bool	fib_processor::FIG0Extension21 (const uint8_t *d) {
 //	fprintf (stderr, "Frequency information\n");
-	(void)d;
+(void)d;
+return false;
 }
 //
 //      Obsolete in ETSI EN 300 401 V2.1.1 (2017-01)
-void	fib_processor::FIG0Extension22 (uint8_t *d) {
+bool	fib_processor::FIG0Extension22 (const uint8_t *d) {
 int16_t	Length	= getBits_5 (d, 3);
 int16_t	offset	= 16;		// on bits
 int16_t	used	= 2;
@@ -901,9 +976,11 @@ int16_t	used	= 2;
 	while (used < Length) 
 	   used = HandleFIG0Extension22 (d, used);
 	(void)offset;
+
+return true;
 }
 
-int16_t	fib_processor::HandleFIG0Extension22 (uint8_t *d, int16_t used) {
+int16_t	fib_processor::HandleFIG0Extension22 (const uint8_t *d, int16_t used) {
 uint8_t MS;
 int16_t	mainId;
 int16_t	noSubfields;
@@ -940,28 +1017,32 @@ int	i;
 }
 //
 //
-void    fib_processor::FIG0Extension23 (uint8_t *d) {
-        (void)d;
+bool    fib_processor::FIG0Extension23 (const uint8_t *d) {
+(void)d;
+return false;
 }
 //
 //      OE Services
-void    fib_processor::FIG0Extension24 (uint8_t *d) {
-        (void)d;
+bool    fib_processor::FIG0Extension24 (const uint8_t *d) {
+(void)d;
+return false;
 }
 //
 //      OE Announcement support
-void    fib_processor::FIG0Extension25 (uint8_t *d) {
-        (void)d;
+bool    fib_processor::FIG0Extension25 (const uint8_t *d) {
+(void)d;
+return false;
 }
 //
 //      OE Announcement Switching
-void    fib_processor::FIG0Extension26 (uint8_t *d) {
-        (void)d;
+bool    fib_processor::FIG0Extension26 (const uint8_t *d) {
+(void)d;
+return false;
 }
 
 //      FIG 1 - Cover the different possible labels, section 5.2
 //
-void	fib_processor::process_FIG1 (uint8_t *d) {
+void	fib_processor::process_FIG1 (const uint8_t *d) {
 uint8_t		charSet, extension;
 uint32_t	SId	= 0;
 uint8_t		Rfu;
@@ -1215,6 +1296,7 @@ int16_t i;
 serviceComponent *fib_processor::find_serviceComponent (int32_t SId,
 	                                                int16_t SCIdS) {
 int16_t i;
+(void)SCIdS;
 
 	for (i = 0; i < 64; i ++) {
 	   if (!ServiceComps [i]. inUse)

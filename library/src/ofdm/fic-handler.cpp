@@ -190,6 +190,7 @@ int16_t	inputCount	= 0;
   */
 	for (i = ficno * 3; i < ficno * 3 + 3; i ++) {
 	   uint8_t *p = &bitBuffer_out [(i % 3) * 256];
+	   fibProcessor. save_FIC (p);
 	   if (!check_CRC_bits (p, 256)) {
 	      show_ficCRC (false);
 	      if (errorReportHandler) {
@@ -293,6 +294,10 @@ void	ficHandler::setEId_handler(ensembleid_t EId_Handler) {
 
 void	ficHandler::setError_handler(decodeErrorReport_t err_Handler) {
 	errorReportHandler = err_Handler;
+}
+
+void	ficHandler::saveFIC(FILE * saveFile) {
+	fibProcessor.saveFIC(saveFile);
 }
 
 bool	ficHandler::syncReached	(void) {
