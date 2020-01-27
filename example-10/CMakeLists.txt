@@ -300,9 +300,11 @@ endif ()
 
 	set (${objectName}_HDRS
 	     ${${objectName}_HDRS}
+	     ./fibbits.h
+	     ./proc_fig0ext6.h
 	     ./ringbuffer.h
 	     ./band-handler.h
-             ./dab_tables.h
+	     ./dab_tables.h
 	     ./server-thread/tcp-server.h
 	     ../dab-api.h
 	     ../convenience.h
@@ -349,6 +351,8 @@ endif ()
 	set (${objectName}_SRCS
 	     ${${objectName}_SRCS}
 	     ./main.cpp
+#	     ./fibbits.cpp
+	     ./proc_fig0ext6.cpp
 	     ./band-handler.cpp
 	     ./dab_tables.cpp
 	     ./server-thread/tcp-server.cpp
@@ -415,6 +419,14 @@ endif ()
 	)
 
 	INSTALL (TARGETS ${objectName} DESTINATION .)
+
+#####################################################################
+
+	add_executable ( decodefic
+	                decodefic.cpp fibbits.cpp fibbits.h proc_fig0ext6.cpp proc_fig0ext6.h
+	)
+
+	INSTALL (TARGETS decodefic DESTINATION .)
 
 ########################################################################
 # Create uninstall target

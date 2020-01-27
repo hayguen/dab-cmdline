@@ -31,6 +31,8 @@
 #include	<getopt.h>
 #include        <cstdio>
 #include        <iostream>
+#include        <sstream>
+#include        <utility>
 #include	"dab-api.h"
 #include	"band-handler.h"
 #ifdef	HAVE_SDRPLAY
@@ -64,14 +66,22 @@ using std::endl;
 #include <sys/time.h>
 #include <stdint.h>
 #include <unistd.h>
+#include <assert.h>
 
 #include <unordered_map>
 #include <map>
 #include <vector>
 #include <algorithm>
 
-#define LOG_EX_TII_SPECTRUM		0
+#include "fibbits.h"
+#include "proc_fig0ext6.h"
+
+
+#define LOG_EX_TII_SPECTRUM			0
 #define MAX_EX_TII_BUFFER_SIZE		16
+#define FIB_PROCESSING_IN_MAIN		0
+
+
 
 std::string prepCsvStr( const std::string & s ) {
 	std::string r = "\"";
@@ -231,6 +241,7 @@ static std::string	programName		= "Sky";
 static int32_t		serviceIdentifier	= -1;
 static int		recRate = 0;
 static bool		recStereo = false;
+static bool     haveStereo = false;
 static bool		haveProgramNameForSID	= false;
 static bool		gotSampleData		= false;
 
@@ -453,6 +464,7 @@ void	pcmHandler (int16_t *buffer, int size, int rate,
 	   gotSampleData = true;
 	   
 	   recStereo = isStereo;
+       haveStereo = true;
 	   recRate = rate;
 
 	   msecs_smp_start = currentMSecsSinceEpoch();
@@ -465,12 +477,12 @@ void	pcmHandler (int16_t *buffer, int size, int rate,
 	   recDuration = -1.0;
 	}
 
-	if ( recRate != rate ) {
+    if ( recRate != rate && outWaveFilename ) {
 			fprintf (stderr, "abort recording, because samplerate changed from %d to %d. terminating!\n", recRate, rate);
 			run. store (false);
 			return;
 	}
-	else if ( recStereo != isStereo ) {
+    else if ( recStereo != isStereo && outWaveFilename ) {
 			fprintf (stderr, "abort recording, because stereo flag changed from %s to %s. terminating!\n"
 				, recStereo ? "true" : "false", isStereo ? "true" : "false" );
 			run. store (false);
@@ -486,7 +498,7 @@ void	pcmHandler (int16_t *buffer, int size, int rate,
 	}
 
 	static long lastSumDecErrs = 0;
-	if ( num_samples_since_start >= num_samples_next_check ) {
+    if ( num_samples_since_start >= num_samples_next_check && outWaveFilename ) {
 		msecs_smp_curr = currentMSecsSinceEpoch();
 		uint64_t msecs_delta = msecs_smp_curr - msecs_smp_start;
 		uint64_t msecs_num_smp = (num_samples_since_start * uint64_t(1000)) / uint64_t(rate);
@@ -735,6 +747,14 @@ void printCollectedCallbackStat (const char * txt,
 	}
 }
 
+void flush_fig_processings()
+{
+#if FIB_PROCESSING_IN_MAIN
+	flush_fig0_ext6();
+#endif
+}
+
+
 static
 bool	repeater		= false;
 
@@ -747,6 +767,8 @@ void device_eof_callback (void * userData) {
 	       printCollectedCallbackStat ("End-of-File reached", 1);
 	       printCollectedErrorStat("End-of-File reached");
 	   }
+
+	   flush_fig_processings();
 	   run. store (false);
 	   exit (30);
 	}
@@ -754,13 +776,42 @@ void device_eof_callback (void * userData) {
 
 
 static FILE * ficFile = NULL;
+static unsigned fibCallbackNo = 0;
+
 
 static
-void fib_dataHandler(const uint8_t * fib, int crc_ok, void *)
+void fib_dataHandler(const uint8_t * fib, int crc_ok, void *ud)
 {
 (void)crc_ok;
 	if (ficFile)
 	   fwrite(fib, 32, 1, ficFile);
+    ++fibCallbackNo;
+
+#if FIB_PROCESSING_IN_MAIN
+    if (!crc_ok)
+        return;
+    const uint8_t	*d	= fib;
+    int processed = 0;
+    while (processed < 30) {
+        if ( d[0] == 0xFF ) // end marker?
+            break;
+        const int FIGtype = getMax8Bits( 3, 0, d );   // getBits_3 (d, 0);
+        const int FIGlen = getMax8Bits(5, 3, d) +1;  // getBits_5 (d, 3) + 1;
+        switch (FIGtype) {
+        case 0: {
+            int extension = getMax8Bits(5, 8 + 3, d);   //getBits_5 (d, 8 + 3);  // FIG0
+            if (extension == 6)
+                proc_fig0_ext6(d+1, FIGlen -1, fibCallbackNo);
+            break;
+        }
+        case 1:
+        default:
+            break;
+        }
+        processed += FIGlen;
+        d = fib + processed;
+    }
+#endif
 }
 
 
@@ -909,6 +960,14 @@ const char	* deviceSerial = nullptr;
 	#else
 		#define RTL_TCP_OPTS
 	#endif
+#endif
+
+#if 0
+    {
+        bool ok = testGetBits();
+        if (!ok)
+            return 1;
+    }
 #endif
 
 	while ((opt = getopt (argc, argv, "W:A:M:B:P:p:T:S:E:cft:a:r:xO:w:n:" FILE_OPTS NON_FILE_OPTS RTLSDR_OPTS RTL_TCP_OPTS )) != -1) {
@@ -1340,7 +1399,7 @@ static	int count	= 10;
                  // TODO: check for audio samples after some timeout!
 	         if ( countGran < 3000 ) {
 	            countGran += T_GRANULARITY;
-	            if ( countGran >= 3000 && !gotSampleData ) {
+                if ( countGran >= 3000 && !gotSampleData && outWaveFilename ) {
 	               std::cerr << "abort after 3 sec without receiving sample data!\n";
 	               run. store (false);
 	            }
@@ -1353,6 +1412,7 @@ static	int count	= 10;
 #endif
 
 	   }
+	   flush_fig_processings();
 	}
 	else {	// scan only
 	   uint64_t secsEpoch = msecs_progStart / 1000;
@@ -1727,6 +1787,8 @@ static	int count	= 10;
 	theDevice	-> stopReader ();
 	dabExit (theRadio);
 	delete theDevice;
+
+	flush_fig_processings();
 
 #if PRINT_DURATION
 	fprintf(stderr, "\n" FMT_DURATION "end of main()\n" SINCE_START );
