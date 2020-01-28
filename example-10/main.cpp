@@ -242,6 +242,7 @@ static int32_t		serviceIdentifier	= -1;
 static int		recRate = 0;
 static bool		recStereo = false;
 static bool     haveStereo = false;
+static bool		useFirstProgramName	= true;
 static bool		haveProgramNameForSID	= false;
 static bool		gotSampleData		= false;
 
@@ -356,9 +357,11 @@ void	programnameHandler (std::string s, int SId, void * userdata) {
 	d -> programName = s;
 	globals. channels [SId] = d;
 
-	if ( SId == serviceIdentifier && !haveProgramNameForSID ) {
+	if ( (SId == serviceIdentifier || useFirstProgramName) && !haveProgramNameForSID ) {
 	  programNameForSID = s;
 	  haveProgramNameForSID = true;
+	  serviceIdentifier = SId;
+	  useFirstProgramName = false;
 	}
 }
 
@@ -856,6 +859,7 @@ void allocateDevice(
 	#if HAVE_WAVFILES
 	   if ( fileName )
 	   {
+	       fprintf(stderr, "try to open '%s' as wavFile ..\n", fileName->c_str());
 	       try {
 	          theDevice	= new wavFiles (*fileName, fileOffset, device_eof_callback, nullptr );
 	       }
@@ -869,6 +873,7 @@ void allocateDevice(
 	#if	HAVE_RAWFILES
 	   
 	   if ( !theDevice && fileName ) {
+	       fprintf(stderr, "try to open '%s' as rawFile ..\n", fileName->c_str());
 	       theDevice	= new rawFiles (*fileName, fileOffset, device_eof_callback, nullptr );
 	   }
 	#endif
@@ -1033,6 +1038,7 @@ const char	* deviceSerial = nullptr;
 	      case 'P':
 	         programName	= optarg;
 	         serviceIdentifier = -1;
+	         useFirstProgramName = false;
 	         fprintf(stderr, "read option -P : tune to program '%s'\n", optarg );
 	         break;
 
@@ -1095,6 +1101,7 @@ const char	* deviceSerial = nullptr;
 	         ss >> serviceIdentifier;
 	         if ( ss )
 	           programName.clear();
+	         useFirstProgramName = false;
 	         fprintf(stderr, "read option -S : tune to program SId '%X'\n", serviceIdentifier );
 	         break;
 	      }
@@ -1843,6 +1850,7 @@ void    printOptions (void) {
 #endif
 "	-S hexnumber use hexnumber to identify program\n"
 "	-w fileName  write audio to wave file\n"
+"	-f           write binary FIC data to ficdata.fic\n"
 "	-n runtime   stream/save runtime seconds of audio, then exit\n\n"
 , T_UNITS, T_UNITS
 , devOptHelp );
