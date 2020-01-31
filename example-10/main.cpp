@@ -1672,6 +1672,8 @@ static	int count	= 10;
 	                   outLine += comma + prepCsvStr( getLanguage (ad. language) );
 	                   outLine += comma + std::to_string( int (ad. programType) );
 	                   outLine += comma + prepCsvStr( getProgramType(gotInterTabId, interTabId, ad. programType) );
+	                   outLine += comma + std::to_string( int (ad. length) );
+	                   outLine += comma + std::to_string( int (ad. subchId) );
 
 	                   fprintf(infoStrm, "%s\n", outLine.c_str() );
 	               }
@@ -1766,6 +1768,8 @@ static	int count	= 10;
 	                   }
 	                   outLine += comma + std::to_string( int (pd. appType) );
 	                   outLine += comma + prepCsvStr( getUserApplicationType (pd. appType) );
+	                   outLine += comma + std::to_string( int (pd. length) );
+	                   outLine += comma + std::to_string( int (pd. subchId) );
 
 	                   fprintf(infoStrm, "%s\n", outLine.c_str() );
 	                  }

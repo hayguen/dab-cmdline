@@ -145,9 +145,9 @@ int	main (int argc, char **argv) {
 	FILE * ficf = NULL;
 	struct sigaction sigact;
 	int		opt, verbosity = 0;
-	const unsigned default_nFIBsToFlush = 200U * 36U;	// mode I has 36 FIBs per DAB/OFDM frame of size 96 ms
-	unsigned	nFIBsToFlush = default_nFIBsToFlush;	// == 200 frames == 19.2 sec with 7200 FIBs of 32 Bytes each
-														// ==> 230400 Bytes ~= 230 kB in 19.2 sec
+	const unsigned default_nFIBsToFlush = 200U * 36U;       // mode I has 36 FIBs per DAB/OFDM frame of size 96 ms
+	unsigned	nFIBsToFlush = default_nFIBsToFlush;    // == 200 frames == 19.2 sec with 7200 FIBs of 32 Bytes each
+	                                                        // ==> 230400 Bytes ~= 230 kB in 19.2 sec
 
 	msecs_progStart = currentMSecsSinceEpoch();  // for  long sinceStart()
 

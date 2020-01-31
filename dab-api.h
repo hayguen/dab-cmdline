@@ -68,7 +68,7 @@ typedef	struct {
 	int16_t	startAddr;
 	bool	shortForm;
 	int16_t	protLevel;
-	int16_t	length;
+	int16_t	length;   /* CUs */
 	int16_t	bitRate;
 	int16_t	ASCTy;
 	int16_t	language;
