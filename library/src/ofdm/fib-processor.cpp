@@ -67,7 +67,7 @@ fib_processor::fib_processor(ensemblename_t ensemblenameHandler,
   if (programnameHandler == nullptr) fprintf(stderr, "NULL detected\n");
   this->programnameHandler = programnameHandler;
   this->userData = userData;
-  memset(dateTime, 0, 8 * sizeof(uint8_t));
+  memset(dateTime, 0, sizeof(dateTime));
 
   for (int k = 0; k < 32; ++k) FIG0processingOutput[k] = false;
 

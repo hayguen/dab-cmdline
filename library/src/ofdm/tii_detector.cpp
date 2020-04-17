@@ -24,6 +24,7 @@
 
 #include <numeric>
 #include <utility>
+#include <algorithm>
 
 #include <inttypes.h>
 #include <stdio.h>
@@ -108,13 +109,14 @@ TII_Detector::TII_Detector(uint8_t dabMode)
 #endif
 
   refTable.resize(T_u);
-
-  memset(refTable.data(), 0, sizeof(std::complex<float>) * T_u);
+  const std::complex<float> cplxZero(0.0F, 0.0F);
+  std::fill( refTable.begin(), refTable.end(), cplxZero );
+  
   for (i = 1; i <= params.get_carriers() / 2; i++) {
     Phi_k = get_Phi(i);
-    refTable[T_u / 2 + i] = std::complex<float>(cos(Phi_k), sin(Phi_k));
+    refTable[T_u / 2 + i] = std::complex<float>(cosf(Phi_k), sinf(Phi_k));
     Phi_k = get_Phi(-i);
-    refTable[T_u / 2 - i] = std::complex<float>(cos(Phi_k), sin(Phi_k));
+    refTable[T_u / 2 - i] = std::complex<float>(cosf(Phi_k), sinf(Phi_k));
   }
 
   createPattern(dabMode);
@@ -299,8 +301,9 @@ void TII_Detector::addBuffer(std::vector<std::complex<float>> v, float alfa,
 
   // apply reset()
   if (isFirstAdd) {
-    memset(theBuffer.data(), 0, T_u * sizeof(std::complex<float>));
-    memset(&P_allAvg[0], 0, 2048 * sizeof(float));
+    const std::complex<float> cplxZero(0.0F, 0.0F);
+    std::fill( theBuffer.begin(), theBuffer.end(), cplxZero );
+    std::fill( &P_allAvg[0], &P_allAvg[2048], 0.0F );
   }
 
 #if OUT_STAT

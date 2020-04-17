@@ -23,6 +23,7 @@
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <inttypes.h>
 #include <sys/time.h>
 #include <time.h>
 #include <unistd.h>
@@ -143,8 +144,8 @@ void wavFiles::run(void) {
   bool eofReached = false;
 
   running.store(true);
-  period = (32768 * 1000) / 2048;  // full IQs read
-  fprintf(stderr, "Period = %lld\n", period);
+  period = ((int64_t)32768 * 1000) / 2048;  // full IQs read
+  fprintf(stderr, "Period = %" PRId64 "\n", period);
   bi = new std::complex<float>[bufferSize];
   nextStop = getMyTime();
   while (running.load()) {
