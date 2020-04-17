@@ -21,62 +21,63 @@
  *    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef	__TII_DETECTOR__
-#define	__TII_DETECTOR__
+#ifndef __TII_DETECTOR__
+#define __TII_DETECTOR__
 
-#include	<stdint.h>
-#include	"dab-params.h"
-#include	"fft_handler.h"
-#include	"phasetable.h"
-#include	<vector>
+#include <stdint.h>
+#include <vector>
+#include "dab-params.h"
+#include "fft_handler.h"
+#include "phasetable.h"
 
-class	TII_Detector : public phaseTable {
-public:
-		TII_Detector	(uint8_t dabMode);
-		~TII_Detector();
-	void	reset();
-	void	addBuffer	(std::vector<std::complex<float>>, float alfa = -1.0F, int32_t cifCounter =-1);
-	inline unsigned	getNumBuffers() const { return numUsedBuffers; }
-	int16_t	find_C		(int16_t);
-	void	processNULL	(int16_t *, int16_t *);
-	void	processNULL_ex (int *pNumOut, int *outTii, float *outAvgSNR, float *outMinSNR, float *outNxtSNR);
+class TII_Detector : public phaseTable {
+ public:
+  TII_Detector(uint8_t dabMode);
+  ~TII_Detector();
+  void reset();
+  void addBuffer(std::vector<std::complex<float>>, float alfa = -1.0F,
+                 int32_t cifCounter = -1);
+  inline unsigned getNumBuffers() const { return numUsedBuffers; }
+  int16_t find_C(int16_t);
+  void processNULL(int16_t *, int16_t *);
+  void processNULL_ex(int *pNumOut, int *outTii, float *outAvgSNR,
+                      float *outMinSNR, float *outNxtSNR);
 
-private:
-	dabParams		params;
-	fft_handler		my_fftHandler;
-	unsigned		numUsedBuffers;
-	int16_t			T_u;
-	int16_t			carriers;
-	bool			ind;
-	std::complex<float>	*fft_buffer;
-	std::vector<complex<float> >	theBuffer;
-	std::vector<float>	window;
-	std::vector<complex<float> >	refTable;
-public:
-	float		P_allAvg[2048];
-private:
-	float		P_tmpNorm[2048];
-	float		P_avg[384];		// 8 groups per 24*2 carriers = 384 carriers
+ private:
+  dabParams params;
+  fft_handler my_fftHandler;
+  unsigned numUsedBuffers;
+  int16_t T_u;
+  int16_t carriers;
+  bool ind;
+  std::complex<float> *fft_buffer;
+  std::vector<complex<float>> theBuffer;
+  std::vector<float> window;
+  std::vector<complex<float>> refTable;
 
-	bool		isFirstAdd;
-	int16_t		fillCount;
-	int16_t		A		(uint8_t, uint8_t c,
-	                                            uint8_t p, int16_t k);
-	int16_t		A_mode_1	(uint8_t c, uint8_t p, int16_t k);
-	int16_t		A_mode_2	(uint8_t c, uint8_t p, int16_t k);
-	int16_t		A_mode_4	(uint8_t c, uint8_t p, int16_t k);
-	float		correlate	(std::vector<complex<float> >,
-	                                 int16_t, uint64_t);
+ public:
+  float P_allAvg[2048];
 
-	void		createPattern	(uint8_t);
-	void		createPattern_1	(void);
-	void		createPattern_2	(void);
-	void		createPattern_4	(void);
-	struct nullTable {
-	   int16_t	carrier;
-	   uint64_t	pattern;
-	} theTable [70];
+ private:
+  float P_tmpNorm[2048];
+  float P_avg[384];  // 8 groups per 24*2 carriers = 384 carriers
+
+  bool isFirstAdd;
+  int16_t fillCount;
+  int16_t A(uint8_t, uint8_t c, uint8_t p, int16_t k);
+  int16_t A_mode_1(uint8_t c, uint8_t p, int16_t k);
+  int16_t A_mode_2(uint8_t c, uint8_t p, int16_t k);
+  int16_t A_mode_4(uint8_t c, uint8_t p, int16_t k);
+  float correlate(std::vector<complex<float>>, int16_t, uint64_t);
+
+  void createPattern(uint8_t);
+  void createPattern_1(void);
+  void createPattern_2(void);
+  void createPattern_4(void);
+  struct nullTable {
+    int16_t carrier;
+    uint64_t pattern;
+  } theTable[70];
 };
 
 #endif
-

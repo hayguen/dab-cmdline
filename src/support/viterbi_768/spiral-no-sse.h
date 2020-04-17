@@ -20,7 +20,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #define K 7
 #define RATE 4
-#define POLYS { 109, 79, 83, 109 }
+#define POLYS \
+  { 109, 79, 83, 109 }
 #define NUMSTATES 64
 #define FRAMEBITS 2048
 #define DECISIONTYPE unsigned int

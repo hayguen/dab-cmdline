@@ -20,39 +20,35 @@
  *    along with Qt-DAB; if not, write to the Free Software
  *    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-#include	"dab-constants.h"
-#include	<vector>
+#include <vector>
+#include "dab-constants.h"
 
-class	tii_element {
-public:
-	int16_t	subId;
-	int16_t	TD;		// time delay in usec, (Hayati Ayguen)
-	float	latitudeOffset;
-	float	longitudeOffset;
-	tii_element (int16_t subId, int16_t TD,
-	             float latitudeOffset, float longitudeOffset);
-	~tii_element (void) {}
+class tii_element {
+ public:
+  int16_t subId;
+  int16_t TD;  // time delay in usec, (Hayati Ayguen)
+  float latitudeOffset;
+  float longitudeOffset;
+  tii_element(int16_t subId, int16_t TD, float latitudeOffset,
+              float longitudeOffset);
+  ~tii_element(void) {}
 };
 
-class	tii_table {
-public:
-		tii_table		(void);
-		~tii_table		(void);
-	void	cleanUp			(void);
-	void	add_element		(tii_element *);
-	void	add_main		(int16_t, float, float);
-	std::complex<float>		get_coordinates (int16_t,
-	                                                 int16_t, bool *);
-	std::complex<float>		get_coordinates (int16_t, int16_t,
-	                                                 bool *,
-	                                                 int16_t *pMainId,
-	                                                 int16_t *pSubId,
-	                                                 int16_t *pTD);
+class tii_table {
+ public:
+  tii_table(void);
+  ~tii_table(void);
+  void cleanUp(void);
+  void add_element(tii_element *);
+  void add_main(int16_t, float, float);
+  std::complex<float> get_coordinates(int16_t, int16_t, bool *);
+  std::complex<float> get_coordinates(int16_t, int16_t, bool *,
+                                      int16_t *pMainId, int16_t *pSubId,
+                                      int16_t *pTD);
 
-	void	print_coordinates	(void);
-	int16_t	mainId;
-	float	latitude;
-	float	longitude;
-	std::vector<tii_element> offsets;
+  void print_coordinates(void);
+  int16_t mainId;
+  float latitude;
+  float longitude;
+  std::vector<tii_element> offsets;
 };
-

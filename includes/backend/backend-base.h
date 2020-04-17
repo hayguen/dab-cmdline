@@ -21,24 +21,23 @@
  *
  */
 #
-#ifndef	__BACKEND_BASE__
-#define	__BACKEND_BASE__
+#ifndef __BACKEND_BASE__
+#define __BACKEND_BASE__
 
-#include	<stdint.h>
-#include	<stdio.h>
+#include <stdint.h>
+#include <stdio.h>
 
-#include	"dab-api.h"
+#include "dab-api.h"
 
 //
 //	virtual class, just for providing a common base
 //	for the real decoder classes
 
-class	backendBase {
-public:
-		backendBase	(void);
-virtual		~backendBase	(void);
-virtual void	setError_handler(decodeErrorReport_t err_Handler);
-virtual	void	addtoFrame	(uint8_t *);
+class backendBase {
+ public:
+  backendBase(void);
+  virtual ~backendBase(void);
+  virtual void setError_handler(decodeErrorReport_t err_Handler);
+  virtual void addtoFrame(uint8_t *);
 };
 #endif
-

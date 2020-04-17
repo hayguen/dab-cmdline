@@ -23,74 +23,67 @@
 /*
  * 	FIC data
  */
-#ifndef	__FIC_HANDLER__
-#define	__FIC_HANDLER__
+#ifndef __FIC_HANDLER__
+#define __FIC_HANDLER__
 
-#include	<stdio.h>
-#include	<stdint.h>
-#include	<vector>
-#include	"viterbi-768.h"
-#include	"fib-processor.h"
-#include	<mutex>
-#include	<string>
-#include	"dab-api.h"
-#include	"dab-params.h"
+#include <stdint.h>
+#include <stdio.h>
+#include <mutex>
+#include <string>
+#include <vector>
+#include "dab-api.h"
+#include "dab-params.h"
+#include "fib-processor.h"
+#include "viterbi-768.h"
 
-class ficHandler: public viterbi_768 {
-public:
-		ficHandler		(uint8_t,	// dabMode
-	                                 ensemblename_t,
-	                                 programname_t,
-	                                 fib_quality_t,
-	                                 void	*);
-		~ficHandler		(void);
-	void	process_ficBlock	(std::vector<int16_t>, int16_t);
-	void	clearEnsemble		(void);
-	bool	syncReached		(void);
-	std::string nameFor		(int32_t);
-	int32_t	SIdFor			(std::string &);
-	uint8_t	kindofService		(std::string &);
-	void	dataforDataService	(std::string &, packetdata *, int);
-	void	dataforAudioService	(std::string &, audiodata *, int);
+class ficHandler : public viterbi_768 {
+ public:
+  ficHandler(uint8_t,  // dabMode
+             ensemblename_t, programname_t, fib_quality_t, void *);
+  ~ficHandler(void);
+  void process_ficBlock(std::vector<int16_t>, int16_t);
+  void clearEnsemble(void);
+  bool syncReached(void);
+  std::string nameFor(int32_t);
+  int32_t SIdFor(std::string &);
+  uint8_t kindofService(std::string &);
+  void dataforDataService(std::string &, packetdata *, int);
+  void dataforAudioService(std::string &, audiodata *, int);
 
-	int32_t	get_CIFcount		(void) const;
-	bool	has_CIFcount		(void) const;
+  int32_t get_CIFcount(void) const;
+  bool has_CIFcount(void) const;
 
-	std::complex<float>
-		get_coordinates		(int16_t, int16_t, bool *);
-	std::complex<float>
-		get_coordinates		(int16_t, int16_t, bool *,
-                                         int16_t *pMainId, int16_t *,
-	                                 int16_t *pTD);
-	void	reset			(void);
-	uint8_t getECC			(bool *);
-	uint8_t getInterTabId		(bool *);
+  std::complex<float> get_coordinates(int16_t, int16_t, bool *);
+  std::complex<float> get_coordinates(int16_t, int16_t, bool *,
+                                      int16_t *pMainId, int16_t *,
+                                      int16_t *pTD);
+  void reset(void);
+  uint8_t getECC(bool *);
+  uint8_t getInterTabId(bool *);
 
-	void	setEId_handler(ensembleid_t EId_Handler);
-	void	setError_handler(decodeErrorReport_t err_Handler);
-	void	setFIB_handler(fibdata_t fib_Handler);
+  void setEId_handler(ensembleid_t EId_Handler);
+  void setError_handler(decodeErrorReport_t err_Handler);
+  void setFIB_handler(fibdata_t fib_Handler);
 
-private:
-	dabParams	params;
-	fib_quality_t	fib_qualityHandler;
-	decodeErrorReport_t		errorReportHandler;
-	fibdata_t	fib_dataHandler;
-	void		*userData;
-	void		process_ficInput	(int16_t);
-	uint8_t		bitBuffer_out	[768];
-	int16_t		ofdm_input	[2304];
-	bool		punctureTable	[4 * 768 + 24];
+ private:
+  dabParams params;
+  fib_quality_t fib_qualityHandler;
+  decodeErrorReport_t errorReportHandler;
+  fibdata_t fib_dataHandler;
+  void *userData;
+  void process_ficInput(int16_t);
+  uint8_t bitBuffer_out[768];
+  int16_t ofdm_input[2304];
+  bool punctureTable[4 * 768 + 24];
 
-	int16_t		index;
-	int16_t		BitsperBlock;
-	int16_t		ficno;
-	mutable mutex		fibProtector;
-	fib_processor	fibProcessor;
-	uint8_t		PRBS [768];
-	uint8_t		shiftRegister [9];
-	void		show_ficCRC	(bool);
+  int16_t index;
+  int16_t BitsperBlock;
+  int16_t ficno;
+  mutable mutex fibProtector;
+  fib_processor fibProcessor;
+  uint8_t PRBS[768];
+  uint8_t shiftRegister[9];
+  void show_ficCRC(bool);
 };
 
 #endif
-
-

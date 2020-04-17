@@ -32,12 +32,13 @@ extern "C" {
  * and call waveFinalizeHeader() afterwards,
  * AND count/increment the written raw size in variable 'waveDataSize'.
  * stdout/stdout can't be used, because seek to begin isn't possible.
- * 
+ *
  */
 
-extern uint32_t	waveDataSize;
-void waveWriteHeader(unsigned samplerate, unsigned freq, int bitsPerSample, int numChannels, FILE * f);
-void waveFinalizeHeader(FILE * f);
+extern uint32_t waveDataSize;
+void waveWriteHeader(unsigned samplerate, unsigned freq, int bitsPerSample,
+                     int numChannels, FILE* f);
+void waveFinalizeHeader(FILE* f);
 
 #ifdef __cplusplus
 }

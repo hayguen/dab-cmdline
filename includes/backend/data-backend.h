@@ -20,61 +20,59 @@
  *    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 #
-#ifndef	__DATA_BACKEND__
-#define	__DATA_BACKEND__
+#ifndef __DATA_BACKEND__
+#define __DATA_BACKEND__
 
-#include	<stdio.h>
-#include        <thread>
-#include        <mutex>
-#include	<atomic>
-#include	<vector>
-#include	"semaphore.h"
-#include	"dab-api.h"
-#include	"virtual-backend.h"
-#include	"ringbuffer.h"
+#include <stdio.h>
+#include <atomic>
+#include <mutex>
+#include <thread>
+#include <vector>
+#include "dab-api.h"
+#include "ringbuffer.h"
+#include "semaphore.h"
+#include "virtual-backend.h"
 
-class	backendBase;
-class	protection;
+class backendBase;
+class protection;
 
-class	dataBackend: public virtualBackend {
-public:
-		dataBackend	(packetdata	*,
-	                         bytesOut_t	bytesOut,
-	                         motdata_t	motdataHandler,
-	                         void		*userData);
-		~dataBackend	(void);
-	int32_t	process		(int16_t *, int16_t);
-	void	stopRunning	(void);
-	void	start		(void);
-private:
-	uint8_t		DSCTy;
-	int16_t		fragmentSize;
-	int16_t		bitRate;
-	bool		shortForm;
-	int16_t		protLevel;
-	uint8_t		DGflag;
-	int16_t		FEC_scheme;
-	bool		show_crcErrors;
-	int16_t		crcErrors;
-void	run		(void);
-	std::atomic<bool>	running;
-	std::thread	threadHandle;
-	int16_t		interleaverIndex;
-	int16_t		countforInterleaver;
-	std::vector<uint8_t> outV;
-	std::vector<int16_t>	tempX;
-	std::vector<uint8_t>	disperseVector;
-	int16_t		**interleaveData;
-	Semaphore	freeSlots;
-	Semaphore	usedSlots;
+class dataBackend : public virtualBackend {
+ public:
+  dataBackend(packetdata *, bytesOut_t bytesOut, motdata_t motdataHandler,
+              void *userData);
+  ~dataBackend(void);
+  int32_t process(int16_t *, int16_t);
+  void stopRunning(void);
+  void start(void);
 
-	int16_t		*theData [20];
-	int16_t		nextIn;
-	int16_t		nextOut;
+ private:
+  uint8_t DSCTy;
+  int16_t fragmentSize;
+  int16_t bitRate;
+  bool shortForm;
+  int16_t protLevel;
+  uint8_t DGflag;
+  int16_t FEC_scheme;
+  bool show_crcErrors;
+  int16_t crcErrors;
+  void run(void);
+  std::atomic<bool> running;
+  std::thread threadHandle;
+  int16_t interleaverIndex;
+  int16_t countforInterleaver;
+  std::vector<uint8_t> outV;
+  std::vector<int16_t> tempX;
+  std::vector<uint8_t> disperseVector;
+  int16_t **interleaveData;
+  Semaphore freeSlots;
+  Semaphore usedSlots;
 
-	protection	*protectionHandler;
-	backendBase	*our_backendBase;
+  int16_t *theData[20];
+  int16_t nextIn;
+  int16_t nextOut;
+
+  protection *protectionHandler;
+  backendBase *our_backendBase;
 };
 
 #endif
-

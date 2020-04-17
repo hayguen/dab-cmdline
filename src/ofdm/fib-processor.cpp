@@ -1008,7 +1008,7 @@ void fib_processor::process_FIG1(const uint8_t *d) {
       }
       //	      fprintf (stderr,
       //	               "charset %d is used for ensemblename\n",
-      //charSet);
+      // charSet);
       break;
 
     case 1:  // 16 bit Identifier field for service label 8.1.14.1
@@ -1042,7 +1042,7 @@ void fib_processor::process_FIG1(const uint8_t *d) {
       for (i = 0; i < 16; i++) label[i] = getBits_8(d, offset + 8 * i);
 
       //	      fprintf (stderr, "FIG1/3: RegionID = %2x\t%s\n",
-      //region_id, label);
+      // region_id, label);
       break;
 
     case 4:  // service component label 8.1.14.3
@@ -1103,7 +1103,7 @@ void fib_processor::process_FIG1(const uint8_t *d) {
 
       //	      fprintf (stderr, "FIG1/6: SId = %8x\tp/d = %d\t SCidS =
       //%1X\tXPAD_aid = %2u\t%s\n", 		       SId, pd_flag, SCidS,
-      //XPAD_aid, label);
+      // XPAD_aid, label);
       break;
 
     default:

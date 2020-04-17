@@ -24,39 +24,38 @@
  *	want the interface with different devices (including  filehandling)
  *	to be transparent
  */
-#ifndef	__DEVICE_HANDLER__
-#define	__DEVICE_HANDLER__
+#ifndef __DEVICE_HANDLER__
+#define __DEVICE_HANDLER__
 
-#include	<stdint.h>
-#include	<complex>
-#include	<thread>
+#include <stdint.h>
+#include <complex>
+#include <thread>
 using namespace std;
 
-class	deviceHandler {
-public:
-			deviceHandler 	(void);
-virtual			~deviceHandler 	(void);
-virtual		const char * get_opt_help(int longInfo) { return NULL; }
-virtual		int32_t	defaultFrequency	(void);
-virtual		bool	restartReader	(int32_t);
-virtual		void	stopReader	(void);
-virtual		int32_t	getSamples	(std::complex<float> *, int32_t);
-virtual		int32_t	Samples		(void);
-virtual		void	resetBuffer	(void);
-virtual		int16_t	bitDepth	(void) { return 10;}
-virtual		void	setGain		(int32_t);
-virtual		bool	has_autogain	(void);
-virtual		void	set_autogain	(bool);
-//
-//	for the sdrplay
-virtual		void	set_ifgainReduction (int);
-virtual		void	set_lnaState	(int);
-//
-protected:
-		int32_t	lastFrequency;
-	        int32_t	vfoOffset;
-	        int	theGain;
-virtual		void	run		(void);
+class deviceHandler {
+ public:
+  deviceHandler(void);
+  virtual ~deviceHandler(void);
+  virtual const char *get_opt_help(int longInfo) { return NULL; }
+  virtual int32_t defaultFrequency(void);
+  virtual bool restartReader(int32_t);
+  virtual void stopReader(void);
+  virtual int32_t getSamples(std::complex<float> *, int32_t);
+  virtual int32_t Samples(void);
+  virtual void resetBuffer(void);
+  virtual int16_t bitDepth(void) { return 10; }
+  virtual void setGain(int32_t);
+  virtual bool has_autogain(void);
+  virtual void set_autogain(bool);
+  //
+  //	for the sdrplay
+  virtual void set_ifgainReduction(int);
+  virtual void set_lnaState(int);
+  //
+ protected:
+  int32_t lastFrequency;
+  int32_t vfoOffset;
+  int theGain;
+  virtual void run(void);
 };
 #endif
-

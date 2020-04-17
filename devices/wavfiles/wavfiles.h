@@ -19,46 +19,43 @@
  *    along with Qt-DAB; if not, write to the Free Software
  *    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-#ifndef	__WAV_FILES__
-#define	__WAV_FILES__
+#ifndef __WAV_FILES__
+#define __WAV_FILES__
 
-#include	<sndfile.h>
-#include        "ringbuffer.h"
-#include        "device-handler.h"
-#include	<thread>
-#include	<atomic>
+#include <sndfile.h>
+#include <atomic>
+#include <thread>
+#include "device-handler.h"
+#include "ringbuffer.h"
 
-typedef void (*device_eof_callback_t)(void * userData);
+typedef void (*device_eof_callback_t)(void *userData);
 
-class	wavFiles: public deviceHandler {
-public:
-			wavFiles	(std::string, bool repeater = true);
-			wavFiles	(std::string,
-	                                 double fileOffset,
-	                                 device_eof_callback_t eofHandler,
-	                                 void * userData );
-	       		~wavFiles	(void);
-	int32_t		getSamples	(std::complex<float> *, int32_t);
-	int32_t		Samples		(void);
-	bool		restartReader	(int32_t);
-	void		stopReader	(void);
-	
-private:
-	std::string	fileName;
-	bool		repeater;
-	double		fileOffset;
-	device_eof_callback_t	eofHandler;
-	void		*userData;
-	
-virtual	void		run		(void);
-	int32_t		readBuffer	(std::complex<float> *, int32_t);
-	RingBuffer<std::complex<float>>	*_I_Buffer;
-	std::thread     workerHandle;
-	int32_t		bufferSize;
-	SNDFILE		*filePointer;
-	std::atomic<bool> running;
-	int64_t		currPos;
+class wavFiles : public deviceHandler {
+ public:
+  wavFiles(std::string, bool repeater = true);
+  wavFiles(std::string, double fileOffset, device_eof_callback_t eofHandler,
+           void *userData);
+  ~wavFiles(void);
+  int32_t getSamples(std::complex<float> *, int32_t);
+  int32_t Samples(void);
+  bool restartReader(int32_t);
+  void stopReader(void);
+
+ private:
+  std::string fileName;
+  bool repeater;
+  double fileOffset;
+  device_eof_callback_t eofHandler;
+  void *userData;
+
+  virtual void run(void);
+  int32_t readBuffer(std::complex<float> *, int32_t);
+  RingBuffer<std::complex<float>> *_I_Buffer;
+  std::thread workerHandle;
+  int32_t bufferSize;
+  SNDFILE *filePointer;
+  std::atomic<bool> running;
+  int64_t currPos;
 };
 
 #endif
-

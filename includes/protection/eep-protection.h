@@ -20,21 +20,19 @@
  *    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 #
-#ifndef	__EEP_PROTECTION__
-#define	__EEP_PROTECTION__
+#ifndef __EEP_PROTECTION__
+#define __EEP_PROTECTION__
 
-#include	<stdio.h>
-#include	<stdint.h>
-#include	"protection.h"
-#include	"viterbi-768.h"
+#include <stdint.h>
+#include <stdio.h>
+#include "protection.h"
+#include "viterbi-768.h"
 
-
-	class eep_protection: public protection {
-public:
-		eep_protection		(int16_t, int16_t);
-		~eep_protection		(void);
-bool		deconvolve		(int16_t *, int32_t, uint8_t *);
+class eep_protection : public protection {
+ public:
+  eep_protection(int16_t, int16_t);
+  ~eep_protection(void);
+  bool deconvolve(int16_t *, int32_t, uint8_t *);
 };
 
 #endif
-

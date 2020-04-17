@@ -19,23 +19,23 @@
  *    along with DAB-library; if not, write to the Free Software
  *    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- *	This charset handling was kindly added by Przemyslaw Wegrzyn	
+ *	This charset handling was kindly added by Przemyslaw Wegrzyn
  *	all rights acknowledged
  */
 #ifndef __CHARSETS_H__
 #define __CHARSETS_H__
 
-#include	<cstring>
-#include	<string>
+#include <cstring>
+#include <string>
 /*
  * Codes assigned to character sets, as defined
  * in ETSI TS 101 756 v1.6.1, section 5.2.
  */
 typedef enum {
-    EbuLatin	= 0x00, // Complete EBU Latin based repertoire - see annex C
-    IsoLatin	= 0x04,
-    UnicodeUcs2 = 0x06,
-    UnicodeUtf8 = 0x0F
+  EbuLatin = 0x00,  // Complete EBU Latin based repertoire - see annex C
+  IsoLatin = 0x04,
+  UnicodeUcs2 = 0x06,
+  UnicodeUtf8 = 0x0F
 } CharacterSet;
 
 /**
@@ -46,8 +46,7 @@ typedef enum {
  * @param charset   character set used in buffer
  * @return converted QString
  */
-std::string toStringUsingCharset(const char* buffer,
-	                         CharacterSet charset, int size = -1);
+std::string toStringUsingCharset(const char* buffer, CharacterSet charset,
+                                 int size = -1);
 
-#endif // CHARSETS_H
-
+#endif  // CHARSETS_H

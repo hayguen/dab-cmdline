@@ -22,30 +22,30 @@
  *	Simple streaming server, for e.g. epg data and tpg data
  */
 
-#ifndef	__TCP_SERVER__
-#define	__TCP_SERVER__
+#ifndef __TCP_SERVER__
+#define __TCP_SERVER__
 
-#include	<stdint.h>
-#include	<ringbuffer.h>
-#include	<sys/types.h>
-#include	<sys/socket.h>
-#include	<netdb.h>
-#include	<string>
-#include	<thread>
-#include	<unistd.h>
-#include	<atomic>
+#include <netdb.h>
+#include <ringbuffer.h>
+#include <stdint.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <atomic>
+#include <string>
+#include <thread>
 
-class	tcpServer {
-public:
-		tcpServer	(int);
-		~tcpServer	(void);
-	void	sendData	(uint8_t *, int32_t);
-	void	run		(int port);
-private:
-	std::thread	threadHandle;
-	RingBuffer<uint8_t> 	*buffer;
-	std::atomic<bool>	running;
-	std::atomic<bool>	connected;
+class tcpServer {
+ public:
+  tcpServer(int);
+  ~tcpServer(void);
+  void sendData(uint8_t *, int32_t);
+  void run(int port);
+
+ private:
+  std::thread threadHandle;
+  RingBuffer<uint8_t> *buffer;
+  std::atomic<bool> running;
+  std::atomic<bool> connected;
 };
 #endif
-

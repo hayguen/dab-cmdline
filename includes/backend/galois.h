@@ -21,36 +21,35 @@
  *    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef	__GALOIS
-#define	__GALOIS
+#ifndef __GALOIS
+#define __GALOIS
 
-#include	<cstdint>
-#include	<vector>
+#include <cstdint>
+#include <vector>
 
-class	galois {
-private:
-	uint16_t mm;		/* Bits per symbol */
-	uint16_t gfpoly;
-	uint16_t codeLength;	/* Symbols per block (= (1<<mm)-1) */
-	uint16_t d_q;
-	std::vector<uint16_t> alpha_to;	/* log lookup table */
-	std::vector<uint16_t> index_of;	/* Antilog lookup table */
-public:
-		galois		(uint16_t mm, uint16_t poly);
-		~galois();
-	int	modnn	(int);
- 	uint16_t add_poly	(uint16_t a, uint16_t b);
-	uint16_t add_power	(uint16_t a, uint16_t b);
-	uint16_t multiply_poly	(uint16_t a, uint16_t b);	// a*b
-	uint16_t multiply_power	(uint16_t a, uint16_t b);
-	uint16_t divide_poly	(uint16_t a, uint16_t b); 	// a/b
-	uint16_t divide_power	(uint16_t a, uint16_t b);
-	uint16_t pow_poly	(uint16_t a, uint16_t n);	// a^n
-	uint16_t pow_power	(uint16_t a, uint16_t n);
-	uint16_t power2poly	(uint16_t a);
-	uint16_t poly2power	(uint16_t a);
-	uint16_t inverse_poly	(uint16_t a);
-	uint16_t inverse_power	(uint16_t a);
+class galois {
+ private:
+  uint16_t mm; /* Bits per symbol */
+  uint16_t gfpoly;
+  uint16_t codeLength; /* Symbols per block (= (1<<mm)-1) */
+  uint16_t d_q;
+  std::vector<uint16_t> alpha_to; /* log lookup table */
+  std::vector<uint16_t> index_of; /* Antilog lookup table */
+ public:
+  galois(uint16_t mm, uint16_t poly);
+  ~galois();
+  int modnn(int);
+  uint16_t add_poly(uint16_t a, uint16_t b);
+  uint16_t add_power(uint16_t a, uint16_t b);
+  uint16_t multiply_poly(uint16_t a, uint16_t b);  // a*b
+  uint16_t multiply_power(uint16_t a, uint16_t b);
+  uint16_t divide_poly(uint16_t a, uint16_t b);  // a/b
+  uint16_t divide_power(uint16_t a, uint16_t b);
+  uint16_t pow_poly(uint16_t a, uint16_t n);  // a^n
+  uint16_t pow_power(uint16_t a, uint16_t n);
+  uint16_t power2poly(uint16_t a);
+  uint16_t poly2power(uint16_t a);
+  uint16_t inverse_poly(uint16_t a);
+  uint16_t inverse_power(uint16_t a);
 };
 #endif
-

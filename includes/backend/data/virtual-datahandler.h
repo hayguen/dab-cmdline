@@ -20,20 +20,15 @@
  *    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  */
-#ifndef	VIRTUAL_DATAHANDLER
-#define	VIRTUAL_DATAHANDLER
-#include	"dab-constants.h"
-#include	<vector>
+#ifndef VIRTUAL_DATAHANDLER
+#define VIRTUAL_DATAHANDLER
+#include <vector>
+#include "dab-constants.h"
 
-
-class	virtual_dataHandler {
-public:
-		virtual_dataHandler	(void);
-virtual		~virtual_dataHandler	(void);
-virtual
-	void	add_mscDatagroup	(std::vector<uint8_t>);
+class virtual_dataHandler {
+ public:
+  virtual_dataHandler(void);
+  virtual ~virtual_dataHandler(void);
+  virtual void add_mscDatagroup(std::vector<uint8_t>);
 };
 #endif
-
-
-

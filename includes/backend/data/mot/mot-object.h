@@ -21,47 +21,40 @@
  *    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef	__MOT_OBJECT__
-#define	__MOT_OBJECT__
-#include	"dab-constants.h"
-#include	"dab-api.h"
-#include	<vector>
-#include        <map>
-#include        <iterator>
+#ifndef __MOT_OBJECT__
+#define __MOT_OBJECT__
+#include <iterator>
+#include <map>
+#include <vector>
+#include "dab-api.h"
+#include "dab-constants.h"
 
-class	motObject {
-public:
-		motObject (motdata_t	motdataHandler,
-	                   bool		dirElement,
-	                   uint16_t	transportId,
-	                   uint8_t	*segment,
-	                   int32_t	segmentSize,
-	                   bool		lastFlag,
-	                   void		*ctx);
-		~motObject ();
-	void	addBodySegment (uint8_t	*bodySegment,
-                                int16_t	segmentNumber,
-                                int32_t	segmentSize,
-	                        bool	lastFlag);
-	uint16_t	get_transportId();
-	int		get_headerSize();
-private:
-	motdata_t	motdataHandler;
-	bool		dirElement;
-	uint16_t	transportId;
-	int16_t		numofSegments;
-	uint32_t	segmentSize;
-	void		*ctx;
-	uint32_t	headerSize;
-	uint32_t	bodySize;
-	int		contentType;
-	int		contentsubType;
-	std::string	name;
-	int		unknown_fileno;
-        std::map<int, std::vector<uint8_t>> motMap;
+class motObject {
+ public:
+  motObject(motdata_t motdataHandler, bool dirElement, uint16_t transportId,
+            uint8_t *segment, int32_t segmentSize, bool lastFlag, void *ctx);
+  ~motObject();
+  void addBodySegment(uint8_t *bodySegment, int16_t segmentNumber,
+                      int32_t segmentSize, bool lastFlag);
+  uint16_t get_transportId();
+  int get_headerSize();
 
-	void		handleComplete();
+ private:
+  motdata_t motdataHandler;
+  bool dirElement;
+  uint16_t transportId;
+  int16_t numofSegments;
+  uint32_t segmentSize;
+  void *ctx;
+  uint32_t headerSize;
+  uint32_t bodySize;
+  int contentType;
+  int contentsubType;
+  std::string name;
+  int unknown_fileno;
+  std::map<int, std::vector<uint8_t>> motMap;
+
+  void handleComplete();
 };
 
 #endif
-

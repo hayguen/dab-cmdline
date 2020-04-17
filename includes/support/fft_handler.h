@@ -22,29 +22,28 @@
  */
 
 #ifndef __FFT_HANDLER__
-#define	__FFT_HANDLER__
+#define __FFT_HANDLER__
 //
 //	Simple wrapper around fftwf
-#include	"dab-constants.h"
-#include	"dab-params.h"
-#include	<fftw3.h>
+#include <fftw3.h>
+#include "dab-constants.h"
+#include "dab-params.h"
 
+class fft_handler {
+ public:
+  enum fftDirection { fftForward, fftBackwards };
+  fft_handler(uint8_t);
+  ~fft_handler(void);
+  complex<float> *getVector(void);
+  void do_FFT(fftDirection);
+  inline void do_FFT(void) { do_FFT(fftForward); }
+  inline void do_IFFT(void) { do_FFT(fftBackwards); }
 
-class	fft_handler {
-public:
-	enum		fftDirection	{fftForward, fftBackwards};
-			fft_handler	(uint8_t);
-			~fft_handler	(void);
-	complex<float>	*getVector	(void);
-	void		do_FFT		(fftDirection);
-	inline void	do_FFT		(void) { do_FFT(fftForward); }
-	inline void	do_IFFT		(void) { do_FFT(fftBackwards); }
-private:
-	dabParams	p;
-	int32_t		fftSize;
-	complex<float>	*vector;
-	fftwf_plan	plan;
+ private:
+  dabParams p;
+  int32_t fftSize;
+  complex<float> *vector;
+  fftwf_plan plan;
 };
 
 #endif
-

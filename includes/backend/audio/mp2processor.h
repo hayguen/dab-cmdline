@@ -25,77 +25,71 @@
 //	Rewriting in the form of a class
 //	for use in the sdr-j DAB/DAB+ receiver
 //	all rights remain where they belong
-#ifndef 	__MP2PROCESSOR__
-#define		__MP2PROCESSOR__
+#ifndef __MP2PROCESSOR__
+#define __MP2PROCESSOR__
 
-#include	<stdio.h>
-#include	<stdint.h>
-#include	<math.h>
-#include	"backend-base.h"
-#include	"pad-handler.h"
-#include	<stdio.h>
-#include	"ringbuffer.h"
-#include	"dab-api.h"
+#include <math.h>
+#include <stdint.h>
+#include <stdio.h>
+#include "backend-base.h"
+#include "dab-api.h"
+#include "pad-handler.h"
+#include "ringbuffer.h"
 
-#define KJMP2_MAX_FRAME_SIZE    1440  // the maximum size of a frame
+#define KJMP2_MAX_FRAME_SIZE 1440     // the maximum size of a frame
 #define KJMP2_SAMPLES_PER_FRAME 1152  // the number of samples per frame
 
 // quantizer specification structure
 struct quantizer_spec {
-	int32_t nlevels;
-	uint8_t grouping;
-	uint8_t cw_bits;
+  int32_t nlevels;
+  uint8_t grouping;
+  uint8_t cw_bits;
 };
 
-class	mp2Processor: public backendBase {
-public:
-			mp2Processor	(int16_t,
-	                                 audioOut_t,
-	                                 dataOut_t,
-	                                 programQuality_t,
-	                                 motdata_t,
-	                                 void	*);
-			~mp2Processor();
-	virtual void	setError_handler(decodeErrorReport_t err_Handler);
-	void		addtoFrame	(uint8_t *);
+class mp2Processor : public backendBase {
+ public:
+  mp2Processor(int16_t, audioOut_t, dataOut_t, programQuality_t, motdata_t,
+               void *);
+  ~mp2Processor();
+  virtual void setError_handler(decodeErrorReport_t err_Handler);
+  void addtoFrame(uint8_t *);
 
-private:
-	audioOut_t	soundOut;
-	dataOut_t	dataOut;
-	programQuality_t	mscQuality;
-	decodeErrorReport_t		errorReportHandler;
-	void		*ctx;
-	int16_t		bitRate;
-	padHandler	my_padHandler;
-	void		output		(int16_t *, int, int, bool);
-	int32_t		mp2sampleRate	(uint8_t *);
-	int32_t		mp2decodeFrame	(uint8_t *, int16_t *, bool *);
-	int32_t		baudRate;
-	void		setSamplerate		(int32_t);
-	struct quantizer_spec *read_allocation (int, int);
-	void		read_samples	(struct quantizer_spec *, int, int *);
-	int32_t		get_bits	(int32_t);
-	int16_t		V [2][1024];
-	int16_t		Voffs;
-	int16_t		N [64][32];
-	struct quantizer_spec *allocation[2][32];
-	int32_t		scfsi[2][32];
-	int32_t		scalefactor[2][32][3];
-	int32_t		sample[2][32][3];
-	int32_t		U[512];
+ private:
+  audioOut_t soundOut;
+  dataOut_t dataOut;
+  programQuality_t mscQuality;
+  decodeErrorReport_t errorReportHandler;
+  void *ctx;
+  int16_t bitRate;
+  padHandler my_padHandler;
+  void output(int16_t *, int, int, bool);
+  int32_t mp2sampleRate(uint8_t *);
+  int32_t mp2decodeFrame(uint8_t *, int16_t *, bool *);
+  int32_t baudRate;
+  void setSamplerate(int32_t);
+  struct quantizer_spec *read_allocation(int, int);
+  void read_samples(struct quantizer_spec *, int, int *);
+  int32_t get_bits(int32_t);
+  int16_t V[2][1024];
+  int16_t Voffs;
+  int16_t N[64][32];
+  struct quantizer_spec *allocation[2][32];
+  int32_t scfsi[2][32];
+  int32_t scalefactor[2][32][3];
+  int32_t sample[2][32][3];
+  int32_t U[512];
 
-	int32_t		bit_window;
-	int32_t		bits_in_window;
-	uint8_t		*frame_pos;
-	uint8_t		*MP2frame;
-	int16_t		MP2framesize;
-	int16_t		MP2Header_OK;
-	int16_t		MP2headerCount;
-	int16_t		MP2bitCount;
-	void		addbittoMP2	(uint8_t *, uint8_t, int16_t);
-	int32_t		totalFrameCount;
-	int16_t		numberofFrames;
-	int16_t		errorFrames;
+  int32_t bit_window;
+  int32_t bits_in_window;
+  uint8_t *frame_pos;
+  uint8_t *MP2frame;
+  int16_t MP2framesize;
+  int16_t MP2Header_OK;
+  int16_t MP2headerCount;
+  int16_t MP2bitCount;
+  void addbittoMP2(uint8_t *, uint8_t, int16_t);
+  int32_t totalFrameCount;
+  int16_t numberofFrames;
+  int16_t errorFrames;
 };
 #endif
-

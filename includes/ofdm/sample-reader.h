@@ -20,48 +20,47 @@
  *    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 #
-#ifndef	__SAMPLE_READER__
-#define	__SAMPLE_READER__
+#ifndef __SAMPLE_READER__
+#define __SAMPLE_READER__
 /*
  *	Reading the samples from the input device. Since it has its own
  *	"state", we embed it into its own class
  */
-#include	"dab-constants.h"
-#include	<stdint.h>
-#include	<atomic>
-#include	<vector>
-#include	"ringbuffer.h"
+#include <stdint.h>
+#include <atomic>
+#include <vector>
+#include "dab-constants.h"
+#include "ringbuffer.h"
 //
 
-class	deviceHandler;
-class	dabProcessor;
+class deviceHandler;
+class dabProcessor;
 
-class	sampleReader {
-public:
-			sampleReader	(dabProcessor *,
-                                         deviceHandler *theRig,
-	                       RingBuffer<std::complex<float>> *spectrumBuffer);
+class sampleReader {
+ public:
+  sampleReader(dabProcessor *, deviceHandler *theRig,
+               RingBuffer<std::complex<float>> *spectrumBuffer);
 
-			~sampleReader();
-		void	setRunning	(bool b);
-		float	get_sLevel();
-		std::complex<float> getSample	(int32_t);
-	        void	getSamples	(std::complex<float> *v,
-	                                 int32_t n, int32_t phase);
-private:
-	      dabProcessor	*theParent;
-		deviceHandler	*theRig;
-		RingBuffer<std::complex<float>> *spectrumBuffer;
-		std::vector<std::complex<float>> localBuffer;
-		int32_t		localCounter;
-		int32_t		bufferSize;
-		int32_t		currentPhase;
-		std::complex<float>	*oscillatorTable;
-		std::atomic<bool>	running;
-		int32_t		bufferContent;
-		float		sLevel;
-		int32_t		sampleCount;
-	        int32_t		corrector;
+  ~sampleReader();
+  void setRunning(bool b);
+  float get_sLevel();
+  std::complex<float> getSample(int32_t);
+  void getSamples(std::complex<float> *v, int32_t n, int32_t phase);
+
+ private:
+  dabProcessor *theParent;
+  deviceHandler *theRig;
+  RingBuffer<std::complex<float>> *spectrumBuffer;
+  std::vector<std::complex<float>> localBuffer;
+  int32_t localCounter;
+  int32_t bufferSize;
+  int32_t currentPhase;
+  std::complex<float> *oscillatorTable;
+  std::atomic<bool> running;
+  int32_t bufferContent;
+  float sLevel;
+  int32_t sampleCount;
+  int32_t corrector;
 };
 
 #endif

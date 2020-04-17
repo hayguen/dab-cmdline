@@ -23,65 +23,55 @@
  */
 
 #ifndef __SDRPLAY_HANDLER__
-#define	__SDRPLAY_HANDLER__
+#define __SDRPLAY_HANDLER__
 
-#include	<dlfcn.h>
-#include	<atomic>
-#include	"ringbuffer.h"
-#include	"device-handler.h"
-#include	"mirsdrapi-rsp.h"
+#include <dlfcn.h>
+#include <atomic>
+#include "device-handler.h"
+#include "mirsdrapi-rsp.h"
+#include "ringbuffer.h"
 
-typedef void (*mir_sdr_StreamCallback_t)(int16_t	*xi,
-	                                 int16_t	*xq,
-	                                 uint32_t	firstSampleNum, 
-	                                 int32_t	grChanged,
-	                                 int32_t	rfChanged,
-	                                 int32_t	fsChanged,
-	                                 uint32_t	numSamples,
-	                                 uint32_t	reset,
-	                                 uint32_t	hwRemoved,
-	                                 void		*cbContext);
-typedef	void	(*mir_sdr_GainChangeCallback_t)(uint32_t	gRdB,
-	                                        uint32_t	lnaGRdB,
-	                                        void		*cbContext);
+typedef void (*mir_sdr_StreamCallback_t)(int16_t *xi, int16_t *xq,
+                                         uint32_t firstSampleNum,
+                                         int32_t grChanged, int32_t rfChanged,
+                                         int32_t fsChanged, uint32_t numSamples,
+                                         uint32_t reset, uint32_t hwRemoved,
+                                         void *cbContext);
+typedef void (*mir_sdr_GainChangeCallback_t)(uint32_t gRdB, uint32_t lnaGRdB,
+                                             void *cbContext);
 
 ///////////////////////////////////////////////////////////////////////////
-class	sdrplayHandler: public deviceHandler {
-public:
-		sdrplayHandler          (int32_t        frequency,
-	                                 int16_t        ppmCorrection,
-	                                 int16_t	GRdB,
-	                                 int16_t	lnaState,
-	                                 bool		autogain,
-	                                 uint16_t       deviceIndex,
-	                                 int16_t        antenna);
+class sdrplayHandler : public deviceHandler {
+ public:
+  sdrplayHandler(int32_t frequency, int16_t ppmCorrection, int16_t GRdB,
+                 int16_t lnaState, bool autogain, uint16_t deviceIndex,
+                 int16_t antenna);
 
-		~sdrplayHandler		(void);
+  ~sdrplayHandler(void);
 
-	bool	restartReader		(int32_t);
-	void	stopReader		(void);
-	int32_t	getSamples		(std::complex<float> *, int32_t);
-	int32_t	Samples			(void);
-	void	resetBuffer		(void);
-	int16_t	bitDepth		(void);
-//
-//	need to be visible, since being accessed from 
-//	within the callback
-	RingBuffer<std::complex<float>>	*_I_Buffer;
-	float		denominator;
-private:
+  bool restartReader(int32_t);
+  void stopReader(void);
+  int32_t getSamples(std::complex<float> *, int32_t);
+  int32_t Samples(void);
+  void resetBuffer(void);
+  int16_t bitDepth(void);
+  //
+  //	need to be visible, since being accessed from
+  //	within the callback
+  RingBuffer<std::complex<float>> *_I_Buffer;
+  float denominator;
 
-	int16_t		hwVersion;
-	int16_t		nrBits;
-	uint16_t	deviceIndex;
-	uint32_t	numofDevs;	// int32_t not my choice
-	int32_t		inputRate;
-	int32_t		frequency;
-	int16_t		ppmCorrection;
-	int16_t		GRdB;
-	int16_t		lnaState;
-	std::atomic<bool>	running;
-	mir_sdr_AgcControlT agcMode;
+ private:
+  int16_t hwVersion;
+  int16_t nrBits;
+  uint16_t deviceIndex;
+  uint32_t numofDevs;  // int32_t not my choice
+  int32_t inputRate;
+  int32_t frequency;
+  int16_t ppmCorrection;
+  int16_t GRdB;
+  int16_t lnaState;
+  std::atomic<bool> running;
+  mir_sdr_AgcControlT agcMode;
 };
 #endif
-

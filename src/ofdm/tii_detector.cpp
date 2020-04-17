@@ -22,9 +22,9 @@
 
 #include "tii_detector.h"
 
+#include <algorithm>
 #include <numeric>
 #include <utility>
-#include <algorithm>
 
 #include <inttypes.h>
 #include <stdio.h>
@@ -110,8 +110,8 @@ TII_Detector::TII_Detector(uint8_t dabMode)
 
   refTable.resize(T_u);
   const std::complex<float> cplxZero(0.0F, 0.0F);
-  std::fill( refTable.begin(), refTable.end(), cplxZero );
-  
+  std::fill(refTable.begin(), refTable.end(), cplxZero);
+
   for (i = 1; i <= params.get_carriers() / 2; i++) {
     Phi_k = get_Phi(i);
     refTable[T_u / 2 + i] = std::complex<float>(cosf(Phi_k), sinf(Phi_k));
@@ -302,8 +302,8 @@ void TII_Detector::addBuffer(std::vector<std::complex<float>> v, float alfa,
   // apply reset()
   if (isFirstAdd) {
     const std::complex<float> cplxZero(0.0F, 0.0F);
-    std::fill( theBuffer.begin(), theBuffer.end(), cplxZero );
-    std::fill( &P_allAvg[0], &P_allAvg[2048], 0.0F );
+    std::fill(theBuffer.begin(), theBuffer.end(), cplxZero);
+    std::fill(&P_allAvg[0], &P_allAvg[2048], 0.0F);
   }
 
 #if OUT_STAT
@@ -494,9 +494,9 @@ void TII_Detector::processNULL_ex(int *pNumOut, int *outTii, float *outAvgSNR,
                                   float *outMinSNR, float *outNxtSNR) {
   float Psub[NUM_GROUPS][NUM_SUBIDS];  // power per subID per group
   int Csub[NUM_GROUPS][NUM_SUBIDS];    // subID in 0 .. 23 per group - when
-                                     // sorting powers Psub[][]
-  float P_grpPairNoise[NUM_GROUPS];  // avg noise power per carrier-pair
-  int numSubIDsInGroup[NUM_GROUPS];  // counter for possible subIDs in group
+                                       // sorting powers Psub[][]
+  float P_grpPairNoise[NUM_GROUPS];    // avg noise power per carrier-pair
+  int numSubIDsInGroup[NUM_GROUPS];    // counter for possible subIDs in group
   int num_subIDs[NUM_SUBIDS];  // counter for possible subIDs over all groups
   int groupNo, i, j;
 

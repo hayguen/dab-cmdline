@@ -6,7 +6,7 @@
  *
  *    This file is part of the SDR-J.
  *    Many of the ideas as implemented in SDR-J are derived from
- *    other work, made available through the GNU general Public License. 
+ *    other work, made available through the GNU general Public License.
  *    All copyrights of the original authors are recognized.
  *
  *    SDR-J is free software; you can redistribute it and/or modify
@@ -25,64 +25,60 @@
  *
  */
 
-#ifndef	__RTL_TCP_CLIENT
-#define	__RTL_TCP_CLIENT
-#include	<iostream>
-#include	<sstream>
-#include	<errno.h>
-#include	<string.h>
-#include	<stdlib.h>
-#include	<unistd.h>
-#include	<sys/socket.h>
-#include	<netinet/in.h>
-#include	<netdb.h>
-#include        <thread>
-#include        <atomic>
-#include        <stdint.h>
+#ifndef __RTL_TCP_CLIENT
+#define __RTL_TCP_CLIENT
+#include <errno.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <unistd.h>
+#include <atomic>
+#include <iostream>
+#include <sstream>
+#include <thread>
 
-#include	"dab-constants.h"
-#include	"device-handler.h"
-#include	"ringbuffer.h"
+#include "dab-constants.h"
+#include "device-handler.h"
+#include "ringbuffer.h"
 
-//	commands are packed in 5 bytes, one "command byte" 
+//	commands are packed in 5 bytes, one "command byte"
 //	and an integer parameter
 struct command {
-	unsigned char cmd;
-	unsigned int param;
-}__attribute__((packed));
+  unsigned char cmd;
+  unsigned int param;
+} __attribute__((packed));
 
-class	rtl_tcp_client: public deviceHandler {
-public:
-			rtl_tcp_client (std::string	hostname,
-	                                int32_t		port,
-	                                int32_t		frequency,
-	                                int16_t		gain,
-	                                bool		autogain,
-		                        int16_t		ppm);
+class rtl_tcp_client : public deviceHandler {
+ public:
+  rtl_tcp_client(std::string hostname, int32_t port, int32_t frequency,
+                 int16_t gain, bool autogain, int16_t ppm);
 
-			~rtl_tcp_client	(void);
-	void		stopReader	(void);
-	int32_t		getSamples	(std::complex<float> *V, int32_t size);
-	int32_t		Samples		(void);
-	int16_t		bitDepth	(void);
-private:
-virtual	void		run		(void);
-	std::string	hostname;
-	int32_t		basePort;
-	int32_t		vfoFrequency;
-	int16_t		gain;
-	bool		autogain;
-	int16_t		ppm;
+  ~rtl_tcp_client(void);
+  void stopReader(void);
+  int32_t getSamples(std::complex<float> *V, int32_t size);
+  int32_t Samples(void);
+  int16_t bitDepth(void);
 
-	int32_t		theRate;
-	RingBuffer<uint8_t>	*theBuffer;
-	int		theSocket;
-        struct sockaddr_in server;
-	std::thread     threadHandle;
-        std::atomic<bool>       running;
+ private:
+  virtual void run(void);
+  std::string hostname;
+  int32_t basePort;
+  int32_t vfoFrequency;
+  int16_t gain;
+  bool autogain;
+  int16_t ppm;
 
-	void		sendCommand (uint8_t cmd, uint32_t param);
+  int32_t theRate;
+  RingBuffer<uint8_t> *theBuffer;
+  int theSocket;
+  struct sockaddr_in server;
+  std::thread threadHandle;
+  std::atomic<bool> running;
+
+  void sendCommand(uint8_t cmd, uint32_t param);
 };
 
 #endif
-

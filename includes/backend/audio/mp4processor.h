@@ -20,86 +20,78 @@
  *    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 #
-#ifndef	__MP4PROCESSOR__
-#define	__MP4PROCESSOR__
+#ifndef __MP4PROCESSOR__
+#define __MP4PROCESSOR__
 /*
  * 	Handling superframes for DAB+ and delivering
  * 	frames into the ffmpeg or faad decoding library
  */
 //
-#include	"dab-constants.h"
-#include	<stdio.h>
-#include	<stdint.h>
-#include	"backend-base.h"
-#include	"dab-api.h"
-#include	"firecode-checker.h"
-#include	"reed-solomon.h"
-#include	"faad-decoder.h"
-#include	"pad-handler.h"
+#include <stdint.h>
+#include <stdio.h>
+#include "backend-base.h"
+#include "dab-api.h"
+#include "dab-constants.h"
+#include "faad-decoder.h"
+#include "firecode-checker.h"
+#include "pad-handler.h"
+#include "reed-solomon.h"
 
+class mp4Processor : public backendBase {
+ public:
+  mp4Processor(int16_t, audioOut_t, dataOut_t, programQuality_t, motdata_t,
+               void *);
+  ~mp4Processor(void);
+  virtual void setError_handler(decodeErrorReport_t err_Handler);
+  void addtoFrame(uint8_t *);
 
-class	mp4Processor : public backendBase {
-public:
-			mp4Processor	(int16_t,
-	                                 audioOut_t,
-	                                 dataOut_t,
-	                                 programQuality_t,
-	                                 motdata_t,
-	                                 void	*);
-			~mp4Processor	(void);
-	virtual void	setError_handler(decodeErrorReport_t err_Handler);
-	void		addtoFrame	(uint8_t *);
-private:
-	bool		processSuperframe (uint8_t [], int16_t);
-	audioOut_t	soundOut;
-	dataOut_t	dataOut;
-	programQuality_t	mscQuality;
-	decodeErrorReport_t		errorReportHandler;
-	void		*ctx;
-	padHandler	my_padHandler;
-	//void            handle_aacFrame (uint8_t *,
-	//                                 int16_t frame_length,
-	//                                 stream_parms *sp,
-	//                                 bool*);
-	void		buildHeader (int16_t framelen,
-                                     stream_parms *sp,
-                                     uint8_t *header);
-	int16_t		superFramesize;
-	int16_t		blockFillIndex;
-	int16_t		blocksInBuffer;
-	int16_t		blockCount;
-	int16_t		bitRate;
-	std::vector<uint8_t> frameBytes;
-	std::vector<uint8_t> outVector;
-	int16_t		RSDims;
-	int16_t		au_start	[10];
-	int32_t		baudRate;
+ private:
+  bool processSuperframe(uint8_t[], int16_t);
+  audioOut_t soundOut;
+  dataOut_t dataOut;
+  programQuality_t mscQuality;
+  decodeErrorReport_t errorReportHandler;
+  void *ctx;
+  padHandler my_padHandler;
+  // void            handle_aacFrame (uint8_t *,
+  //                                 int16_t frame_length,
+  //                                 stream_parms *sp,
+  //                                 bool*);
+  void buildHeader(int16_t framelen, stream_parms *sp, uint8_t *header);
+  int16_t superFramesize;
+  int16_t blockFillIndex;
+  int16_t blocksInBuffer;
+  int16_t blockCount;
+  int16_t bitRate;
+  std::vector<uint8_t> frameBytes;
+  std::vector<uint8_t> outVector;
+  int16_t RSDims;
+  int16_t au_start[10];
+  int32_t baudRate;
 
-	firecode_checker	fc;
-	reedSolomon	my_rsDecoder;
-//	and for the aac decoder
-	faadDecoder	aacDecoder;
+  firecode_checker fc;
+  reedSolomon my_rsDecoder;
+  //	and for the aac decoder
+  faadDecoder aacDecoder;
 
-	int32_t		totalFrameCount;
-	int16_t		frameCount;
-	int16_t		successFrames;
-	int16_t		frameErrors;
-	int16_t		rsErrors;
-	int16_t		aacErrors;
-	int16_t		aacFrames;
+  int32_t totalFrameCount;
+  int16_t frameCount;
+  int16_t successFrames;
+  int16_t frameErrors;
+  int16_t rsErrors;
+  int16_t aacErrors;
+  int16_t aacFrames;
 
-	int16_t		frame_quality;
-	int16_t		rs_quality;
-	int16_t		aac_quality;
+  int16_t frame_quality;
+  int16_t rs_quality;
+  int16_t aac_quality;
 
-	int16_t		charSet;
-	void            show_frameErrors        (int);
-        void            show_rsErrors           (int);
-        void            show_aacErrors          (int);
+  int16_t charSet;
+  void show_frameErrors(int);
+  void show_rsErrors(int);
+  void show_aacErrors(int);
 
-	void		isStereo		(bool);
+  void isStereo(bool);
 };
 
 #endif
-
-

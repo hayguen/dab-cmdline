@@ -21,42 +21,37 @@
  */
 
 #ifndef __HACKRF_HANDLER__
-#define	__HACKRF_HANDLER__
+#define __HACKRF_HANDLER__
 
-#include	"ringbuffer.h"
-#include	<atomic>
-#include	"device-handler.h"
-#include	"libhackrf/hackrf.h"
+#include <atomic>
+#include "device-handler.h"
+#include "libhackrf/hackrf.h"
+#include "ringbuffer.h"
 
 typedef int (*hackrf_sample_block_cb_fn)(hackrf_transfer *transfer);
 
-
 ///////////////////////////////////////////////////////////////////////////
-class	hackrfHandler: public deviceHandler {
-public:
-			hackrfHandler		(int32_t frequency,
-	                                         int16_t  ppm,
-                                                 int16_t  lnaGain,
-                                                 int16_t  vgaGain);
-			~hackrfHandler		(void);
-	bool		restartReader		(int32_t);
-	void		stopReader		(void);
-	int32_t		getSamples		(std::complex<float> *,
-	                                                          int32_t);
-	int32_t		Samples			(void);
-	void		resetBuffer		(void);
-	int16_t		bitDepth		(void);
-//
-//	The buffer should be visible by the callback function
-	RingBuffer<std::complex<float>>	*_I_Buffer;
-	hackrf_device	*theDevice;
-private:
+class hackrfHandler : public deviceHandler {
+ public:
+  hackrfHandler(int32_t frequency, int16_t ppm, int16_t lnaGain,
+                int16_t vgaGain);
+  ~hackrfHandler(void);
+  bool restartReader(int32_t);
+  void stopReader(void);
+  int32_t getSamples(std::complex<float> *, int32_t);
+  int32_t Samples(void);
+  void resetBuffer(void);
+  int16_t bitDepth(void);
+  //
+  //	The buffer should be visible by the callback function
+  RingBuffer<std::complex<float>> *_I_Buffer;
+  hackrf_device *theDevice;
 
-	int32_t		inputRate;
-	int32_t		vfoFrequency;
-	std::atomic<bool>	running;
-	void		setLNAGain		(int);
-	void		setVGAGain		(int);
+ private:
+  int32_t inputRate;
+  int32_t vfoFrequency;
+  std::atomic<bool> running;
+  void setLNAGain(int);
+  void setVGAGain(int);
 };
 #endif
-

@@ -19,47 +19,45 @@
  *    along with DAB-library; if not, write to the Free Software
  *    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-#ifndef	__OFDM_DECODER__
-#define	__OFDM_DECODER__
+#ifndef __OFDM_DECODER__
+#define __OFDM_DECODER__
 
-#include	<stdint.h>
-#include	<vector>
-#include	<atomic>
-#include	"dab-constants.h"
-#include	"ringbuffer.h"
-#include	"phasetable.h"
-#include	"freq-interleaver.h"
-#include	"fft_handler.h"
+#include <stdint.h>
+#include <atomic>
+#include <vector>
+#include "dab-constants.h"
+#include "fft_handler.h"
+#include "freq-interleaver.h"
+#include "phasetable.h"
+#include "ringbuffer.h"
 
-class	dabParams;
+class dabParams;
 
-class	ofdmDecoder {
-public:
-		ofdmDecoder		(uint8_t	dabMode,
-                                         RingBuffer<std::complex<float>> *);
-		~ofdmDecoder		(void);
-	void	processBlock_0		(std::complex<float> *);
-	void	decode		(std::complex<float> *, int32_t n, int16_t *);
-	int16_t	get_snr			(void);
-private:
-	dabParams	params;
-	fft_handler	my_fftHandler;
-	interLeaver	myMapper;
-	int16_t		get_snr		(std::complex<float> *);
-        RingBuffer<std::complex<float>> *iqBuffer;
-	int		cnt;
-	int32_t		T_s;
-	int32_t		T_u;
-	int32_t		T_g;
-	int32_t		carriers;
-	int32_t		nrBlocks;
-	int16_t		getMiddle	(void);
-	std::vector <complex<float> >	phaseReference;
-	std::complex<float>	*fft_buffer;
-	int32_t		blockIndex;
-	float		current_snr;
+class ofdmDecoder {
+ public:
+  ofdmDecoder(uint8_t dabMode, RingBuffer<std::complex<float>> *);
+  ~ofdmDecoder(void);
+  void processBlock_0(std::complex<float> *);
+  void decode(std::complex<float> *, int32_t n, int16_t *);
+  int16_t get_snr(void);
+
+ private:
+  dabParams params;
+  fft_handler my_fftHandler;
+  interLeaver myMapper;
+  int16_t get_snr(std::complex<float> *);
+  RingBuffer<std::complex<float>> *iqBuffer;
+  int cnt;
+  int32_t T_s;
+  int32_t T_u;
+  int32_t T_g;
+  int32_t carriers;
+  int32_t nrBlocks;
+  int16_t getMiddle(void);
+  std::vector<complex<float>> phaseReference;
+  std::complex<float> *fft_buffer;
+  int32_t blockIndex;
+  float current_snr;
 };
 
 #endif
-
-

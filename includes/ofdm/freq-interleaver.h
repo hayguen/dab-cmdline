@@ -20,30 +20,29 @@
  *    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 #
-#ifndef	__FREQ_INTERLEAVER__
-#define	__FREQ_INTERLEAVER__
-#include	<cstdint>
-#include	<vector>
-#include	"dab-constants.h"
-#include	"dab-params.h"
+#ifndef __FREQ_INTERLEAVER__
+#define __FREQ_INTERLEAVER__
+#include <cstdint>
+#include <vector>
+#include "dab-constants.h"
+#include "dab-params.h"
 
 /**
-  *	\class interLeaver
-  *	Implements frequency interleaving according to section 14.6
-  *	of the DAB standard
-  */
-class	interLeaver {
-public:
-		interLeaver	(uint8_t);
-		~interLeaver();
-	int16_t	mapIn		(int16_t);
-private:
-	dabParams	p;
-	void    createMapper	(int16_t T_u, int16_t V1,
-                                 int16_t lwb, int16_t upb,
-	                         int16_t * v);
-	std::vector<int16_t> permTable;
+ *	\class interLeaver
+ *	Implements frequency interleaving according to section 14.6
+ *	of the DAB standard
+ */
+class interLeaver {
+ public:
+  interLeaver(uint8_t);
+  ~interLeaver();
+  int16_t mapIn(int16_t);
+
+ private:
+  dabParams p;
+  void createMapper(int16_t T_u, int16_t V1, int16_t lwb, int16_t upb,
+                    int16_t* v);
+  std::vector<int16_t> permTable;
 };
 
 #endif
-

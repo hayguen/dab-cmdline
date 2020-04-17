@@ -20,20 +20,19 @@
  *    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 #
-#ifndef	__UEP_PROTECTION__
-#define	__UEP_PROTECTION__
+#ifndef __UEP_PROTECTION__
+#define __UEP_PROTECTION__
 
-#include	<vector>
-#include	<cstdio>
-#include	<cstdint>
-#include	"protection.h"
+#include <cstdint>
+#include <cstdio>
+#include <vector>
+#include "protection.h"
 
-	class uep_protection: public protection {
-public:
-		uep_protection (int16_t, int16_t);
-		~uep_protection();
-bool		deconvolve	(int16_t *, int32_t, uint8_t *);
+class uep_protection : public protection {
+ public:
+  uep_protection(int16_t, int16_t);
+  ~uep_protection();
+  bool deconvolve(int16_t *, int32_t, uint8_t *);
 };
 
 #endif
-

@@ -20,29 +20,28 @@
  *    along with Qt-DAB; if not, write to the Free Software
  *    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-#ifndef	__MOT_HANDLER__
-#define	__MOT_HANDLER__
-#include	"dab-constants.h"
-#include	"virtual-datahandler.h"
-#include	<vector>
-#include	"dab-api.h"
+#ifndef __MOT_HANDLER__
+#define __MOT_HANDLER__
+#include <vector>
+#include "dab-api.h"
+#include "dab-constants.h"
+#include "virtual-datahandler.h"
 
-class	motObject;
-class	motDirectory;
+class motObject;
+class motDirectory;
 
-class	motHandler:public virtual_dataHandler {
-public:
-		motHandler	(motdata_t motdataHandler,
-	                         void	*ctx);
-		~motHandler	(void);
-	void	add_mscDatagroup	(std::vector<uint8_t>);
-private:
-	motdata_t	motdataHandler;
-	void		*ctx;
-	void		setHandle	(motObject *, uint16_t);
-	motObject	*getHandle	(uint16_t);
-	int		orderNumber;
-	motDirectory	*theDirectory;
+class motHandler : public virtual_dataHandler {
+ public:
+  motHandler(motdata_t motdataHandler, void *ctx);
+  ~motHandler(void);
+  void add_mscDatagroup(std::vector<uint8_t>);
+
+ private:
+  motdata_t motdataHandler;
+  void *ctx;
+  void setHandle(motObject *, uint16_t);
+  motObject *getHandle(uint16_t);
+  int orderNumber;
+  motDirectory *theDirectory;
 };
 #endif
-

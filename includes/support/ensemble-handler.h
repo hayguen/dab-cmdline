@@ -6,7 +6,7 @@
  *
  *    This file is part of the DAB-library
  *    Many of the ideas as implemented in DAB-cmdline are derived from
- *    other work, made available through the GNU general Public License. 
+ *    other work, made available through the GNU general Public License.
  *    All copyrights of the original authors are recognized.
  *
  *    DAB-library is free software; you can redistribute it and/or modify
@@ -25,33 +25,34 @@
  *
  */
 
-#ifndef	__ENSEMBLE_HANDLER__
-#define	__ENSEMBLE_HANDLER__
+#ifndef __ENSEMBLE_HANDLER__
+#define __ENSEMBLE_HANDLER__
 
-#include	<stdio.h>
-#include	<stdint.h>
-#include	<mutex>
-#include	<string>
-#include	<list>
+#include <stdint.h>
+#include <stdio.h>
+#include <list>
+#include <mutex>
+#include <string>
 
-class	ensembleHandler {
-public:
-		ensembleHandler		(void);
-		~ensembleHandler	(void);
-	void	addtoEnsemble		(const std::string &, int32_t);
-	void	nameforEnsemble		(int id, const std::string &s);
-	std::string nameofEnsemble	(void);
-	bool	ensembleExists		(void);
-	std::string findService		(const std::string &);
-	std::string findService		(int32_t);
-	std::string getProgram		(int16_t);
-	void	clearEnsemble		(void);
-	std::list<std::string> data	(void);
-	int	size			(void);
-private:
-	std::list<std::string> stationList;
-	std::string ensembleName;
-	bool	ensembleFound	= false;
-	std::mutex	locker;
+class ensembleHandler {
+ public:
+  ensembleHandler(void);
+  ~ensembleHandler(void);
+  void addtoEnsemble(const std::string &, int32_t);
+  void nameforEnsemble(int id, const std::string &s);
+  std::string nameofEnsemble(void);
+  bool ensembleExists(void);
+  std::string findService(const std::string &);
+  std::string findService(int32_t);
+  std::string getProgram(int16_t);
+  void clearEnsemble(void);
+  std::list<std::string> data(void);
+  int size(void);
+
+ private:
+  std::list<std::string> stationList;
+  std::string ensembleName;
+  bool ensembleFound = false;
+  std::mutex locker;
 };
 #endif

@@ -152,7 +152,8 @@ uep_protection::uep_protection(int16_t bitRate, int16_t protLevel)
   int8_t *PI4;
   int8_t *PI_X;
 
-  //fprintf(stderr, "protLevel %d, bitRate %d outSize = %d\n", protLevel, bitRate,
+  // fprintf(stderr, "protLevel %d, bitRate %d outSize = %d\n", protLevel,
+  // bitRate,
   //        outSize);
   index = findIndex(bitRate, protLevel);
   if (index == -1) {

@@ -23,50 +23,42 @@
  *	MOT handling is a crime, here we have a single class responsible
  *	for handling a MOT directory
  */
-#ifndef	__MOT_DIRECTORY__
-#define	__MOT_DIRECTORY__
+#ifndef __MOT_DIRECTORY__
+#define __MOT_DIRECTORY__
 
-#include	"mot-object.h"
-#include	"dab-api.h"
+#include "dab-api.h"
+#include "mot-object.h"
 
+class motDirectory {
+ public:
+  motDirectory(motdata_t, void *, uint16_t, int16_t, int32_t, int16_t,
+               uint8_t *);
+  ~motDirectory(void);
+  motObject *getHandle(uint16_t);
+  void setHandle(motObject *, uint16_t);
+  void directorySegment(uint16_t transportId, uint8_t *segment,
+                        int16_t segmentNumber, int32_t segmentSize,
+                        bool lastSegment);
+  uint16_t get_transportId();
 
-class	motDirectory {
-public:
-			motDirectory	(motdata_t,
-	                                 void	*,
-	                                 uint16_t,
-	                                 int16_t,
-	                                 int32_t,
-	                                 int16_t,
-	                                 uint8_t *);
-			~motDirectory	(void);
-	motObject	*getHandle	(uint16_t);
-	void		setHandle	(motObject *, uint16_t);
-	void		directorySegment (uint16_t transportId,
-                                        uint8_t *segment,
-                                        int16_t segmentNumber,
-                                        int32_t segmentSize,
-                                        bool    lastSegment);
-	uint16_t	get_transportId();
-private:
-	motdata_t	motdataHandler;
-	void		*ctx;
-	void		analyse_theDirectory();
-	uint16_t	transportId;
+ private:
+  motdata_t motdataHandler;
+  void *ctx;
+  void analyse_theDirectory();
+  uint16_t transportId;
 
-	uint8_t		*dir_segments;
-	bool		marked [512];
-	int16_t		dir_segmentSize;
-	int16_t		num_dirSegments;
-	int16_t		dirSize;
-	int16_t		numObjects;
-	typedef struct {
-	   bool		inUse;
-	   uint16_t	transportId;
-	   motObject	*motSlide;
-	} motComponentType;
-	motComponentType	*motComponents;
+  uint8_t *dir_segments;
+  bool marked[512];
+  int16_t dir_segmentSize;
+  int16_t num_dirSegments;
+  int16_t dirSize;
+  int16_t numObjects;
+  typedef struct {
+    bool inUse;
+    uint16_t transportId;
+    motObject *motSlide;
+  } motComponentType;
+  motComponentType *motComponents;
 };
 
 #endif
-

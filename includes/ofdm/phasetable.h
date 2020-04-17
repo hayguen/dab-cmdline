@@ -20,30 +20,28 @@
  *    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 #
-#ifndef	__PHASE_TABLE__
-#define	__PHASE_TABLE__
+#ifndef __PHASE_TABLE__
+#define __PHASE_TABLE__
 
-#include	<cstdio>
-#include	<cstdint>
-#include	"dab-constants.h"
+#include <cstdint>
+#include <cstdio>
+#include "dab-constants.h"
 
 struct phasetableElement {
-	int32_t	kmin, kmax;
-	int32_t i;
-	int32_t n;
+  int32_t kmin, kmax;
+  int32_t i;
+  int32_t n;
 };
-
 
 class phaseTable {
-public:
-		phaseTable 	(int16_t);
-		~phaseTable();
-	float	get_Phi		(int32_t);
-private:
+ public:
+  phaseTable(int16_t);
+  ~phaseTable();
+  float get_Phi(int32_t);
 
-	struct phasetableElement	*currentTable;
-	int16_t		Mode;
-	int32_t		h_table (int32_t i, int32_t j);
+ private:
+  struct phasetableElement *currentTable;
+  int16_t Mode;
+  int32_t h_table(int32_t i, int32_t j);
 };
 #endif
-

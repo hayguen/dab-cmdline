@@ -21,12 +21,11 @@
  *
  */
 #
-#ifndef	__PROTTABLES
-#define	__PROTTABLES
+#ifndef __PROTTABLES
+#define __PROTTABLES
 
-#include	<stdint.h>
+#include <stdint.h>
 
-int8_t	*get_PCodes (int16_t);
+int8_t *get_PCodes(int16_t);
 
 #endif
-

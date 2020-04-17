@@ -20,33 +20,33 @@
  *    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 #
-#ifndef	__PHASEREFERENCE__
-#define	__PHASEREFERENCE__
+#ifndef __PHASEREFERENCE__
+#define __PHASEREFERENCE__
 
-#include	<stdio.h>
-#include	<stdint.h>
-#include	<vector>
-#include	"phasetable.h"
-#include	"dab-constants.h"
-#include	"fft_handler.h"
-#include	"dab-params.h"
+#include <stdint.h>
+#include <stdio.h>
+#include <vector>
+#include "dab-constants.h"
+#include "dab-params.h"
+#include "fft_handler.h"
+#include "phasetable.h"
 
 class phaseReference : public phaseTable {
-public:
-		phaseReference (uint8_t, int16_t, int16_t);
-		~phaseReference	(void);
-	int32_t	findIndex	(std::complex<float> *);
-	int16_t	estimateOffset	(std::complex<float> *);
-private:
-	std::vector<std::complex<float>>        refTable;
-	std::vector<float>      phaseDifferences;
-	dabParams		params;
-	int32_t			T_u;
-	int16_t			threshold;
-	int16_t			diff_length;
+ public:
+  phaseReference(uint8_t, int16_t, int16_t);
+  ~phaseReference(void);
+  int32_t findIndex(std::complex<float> *);
+  int16_t estimateOffset(std::complex<float> *);
 
-	fft_handler	my_fftHandler;
-	std::complex<float>     *fft_buffer;
+ private:
+  std::vector<std::complex<float>> refTable;
+  std::vector<float> phaseDifferences;
+  dabParams params;
+  int32_t T_u;
+  int16_t threshold;
+  int16_t diff_length;
+
+  fft_handler my_fftHandler;
+  std::complex<float> *fft_buffer;
 };
 #endif
-

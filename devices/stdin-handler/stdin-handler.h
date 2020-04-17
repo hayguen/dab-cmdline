@@ -19,31 +19,31 @@
  *    along with DAB library; if not, write to the Free Software
  *    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-#ifndef	__STDIN_HANDLER__
-#define	__STDIN_HANDLER__
+#ifndef __STDIN_HANDLER__
+#define __STDIN_HANDLER__
 
-#include        "ringbuffer.h"
-#include        "device-handler.h"
-#include        <thread>
-#include        <atomic>
+#include <atomic>
+#include <thread>
+#include "device-handler.h"
+#include "ringbuffer.h"
 /*
  */
-class	stdinHandler: public deviceHandler {
-public:
-			stdinHandler	(void);
-	       		~stdinHandler	(void);
-	int32_t		getSamples	(std::complex<float> *, int32_t);
-	int32_t		Samples		(void);
-	bool		restartReader	(int32_t frequency);
-	void		stopReader	(void);
-private:
-virtual	void		run		(void);
-	FILE		*filePointer;
-	int		period;
-	RingBuffer<std::complex<float>>	*_I_Buffer;
-	std::thread	workerHandle;
-	std::atomic<bool> running;
+class stdinHandler : public deviceHandler {
+ public:
+  stdinHandler(void);
+  ~stdinHandler(void);
+  int32_t getSamples(std::complex<float> *, int32_t);
+  int32_t Samples(void);
+  bool restartReader(int32_t frequency);
+  void stopReader(void);
+
+ private:
+  virtual void run(void);
+  FILE *filePointer;
+  int period;
+  RingBuffer<std::complex<float>> *_I_Buffer;
+  std::thread workerHandle;
+  std::atomic<bool> running;
 };
 
 #endif
-
