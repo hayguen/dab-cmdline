@@ -146,6 +146,6 @@ bool eep_protection::deconvolve(int16_t *v, int32_t size, uint8_t *outBuffer) {
   for (i = 0; i < outSize * 4 + 24; i++)
     if (indexTable[i]) viterbiBlock[i] = v[inputCounter++];
 
-  viterbi_768::deconvolve(viterbiBlock.data(), outBuffer);
+  viterbiHandler::deconvolve(viterbiBlock.data(), outBuffer);
   return true;
 }

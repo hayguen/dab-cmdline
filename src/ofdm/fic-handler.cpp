@@ -40,7 +40,7 @@
 ficHandler::ficHandler(uint8_t dabMode, ensemblename_t ensemblenameHandler,
                        programname_t programnameHandler,
                        fib_quality_t fib_qualityHandler, void *userData)
-    : viterbi_768(768, true),
+    : viterbiHandler(768),
       params(dabMode),
       fibProcessor(ensemblenameHandler, programnameHandler, userData) {
   int16_t i, j, k;

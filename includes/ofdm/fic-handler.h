@@ -34,9 +34,9 @@
 #include "dab-api.h"
 #include "dab-params.h"
 #include "fib-processor.h"
-#include "viterbi-768.h"
+#include "viterbi-handler.h"
 
-class ficHandler : public viterbi_768 {
+class ficHandler : public viterbiHandler {
  public:
   ficHandler(uint8_t,  // dabMode
              ensemblename_t, programname_t, fib_quality_t, void *);

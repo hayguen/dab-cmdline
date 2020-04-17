@@ -25,7 +25,7 @@
 #include <stdint.h>
 #include <string>
 //
-//	a simple convenience class
+//    a simple convenience class
 //
 
 #define BAND_III 0100
@@ -36,5 +36,6 @@ class bandHandler {
   bandHandler(void);
   ~bandHandler(void);
   int32_t Frequency(uint8_t band, std::string Channel);
+  std::string nextChannel(uint8_t dabBand, std::string Channel);
 };
 #endif

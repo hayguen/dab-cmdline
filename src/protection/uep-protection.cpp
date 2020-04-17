@@ -233,6 +233,6 @@ bool uep_protection::deconvolve(int16_t *v, int32_t size, uint8_t *outBuffer) {
     if (indexTable[i]) viterbiBlock[i] = v[inputCounter++];
 
   ///     The actual deconvolution is done by the viterbi decoder
-  viterbi_768::deconvolve(viterbiBlock.data(), outBuffer);
+  viterbiHandler::deconvolve(viterbiBlock.data(), outBuffer);
   return true;
 }

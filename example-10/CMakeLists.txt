@@ -295,7 +295,6 @@ endif ()
 	           ../includes/backend/data/journaline
 	           ../includes/protection
 	           ../includes/support
-	           ../includes/support/viterbi_768
 	           /usr/include/
 	)
 
@@ -304,7 +303,6 @@ endif ()
 	     ./fibbits.h
 	     ./proc_fig0ext6.h
 	     ./ringbuffer.h
-	     ./band-handler.h
 	     ./dab_tables.h
 	     ./server-thread/tcp-server.h
 	     ../dab-api.h
@@ -339,11 +337,12 @@ endif ()
 	     ../includes/backend/data/mot/mot-handler.h
 	     ../includes/backend/data/mot/mot-dir.h
 	     ../includes/backend/data/mot/mot-object.h
-	     ../includes/protection/protTables.h
 	     ../includes/protection/protection.h
+	     ../includes/protection/protTables.h
 	     ../includes/protection/uep-protection.h
 	     ../includes/protection/eep-protection.h
-	     ../includes/support/viterbi_768/viterbi-768.h
+	     ../includes/support/band-handler.h
+	     ../includes/support/viterbi-handler.h
 	     ../includes/support/fft_handler.h
 	     ../includes/support/dab-params.h
 	     ../includes/support/tii_table.h
@@ -354,7 +353,6 @@ endif ()
 	     ./main.cpp
 #	     ./fibbits.cpp
 	     ./proc_fig0ext6.cpp
-	     ./band-handler.cpp
 	     ./dab_tables.cpp
 	     ./server-thread/tcp-server.cpp
 	     ../convenience.c
@@ -388,12 +386,12 @@ endif ()
 	     ../src/backend/data/mot/mot-handler.cpp
 	     ../src/backend/data/mot/mot-dir.cpp
 	     ../src/backend/data/mot/mot-object.cpp
-	     ../src/protection/protTables.cpp
 	     ../src/protection/protection.cpp
+	     ../src/protection/protTables.cpp
 	     ../src/protection/eep-protection.cpp
 	     ../src/protection/uep-protection.cpp
-	     ../src/support/viterbi_768/viterbi-768.cpp
-	     ../src/support/viterbi_768/spiral-no-sse.c
+	     ../src/support/band-handler.cpp
+	     ../src/support/viterbi-handler.cpp
 	     ../src/support/fft_handler.cpp
 	     ../src/support/dab-params.cpp
 	     ../src/support/tii_table.cpp

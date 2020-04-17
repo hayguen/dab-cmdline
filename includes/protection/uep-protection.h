@@ -25,7 +25,6 @@
 
 #include <cstdint>
 #include <cstdio>
-#include <vector>
 #include "protection.h"
 
 class uep_protection : public protection {

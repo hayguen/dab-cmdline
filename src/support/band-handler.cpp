@@ -21,7 +21,7 @@
  *    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "band-handler.h"
+#include "includes/support/band-handler.h"
 
 struct dabFrequencies {
   const char *key;
@@ -50,7 +50,7 @@ static struct dabFrequencies Lband_frequencies[] = {
 bandHandler::bandHandler(void) {}
 bandHandler::~bandHandler(void) {}
 
-//	find the frequency for a given channel in a given band
+//    find the frequency for a given channel in a given band
 int32_t bandHandler::Frequency(uint8_t dabBand, std::string Channel) {
   int32_t tunedFrequency = 0;
   struct dabFrequencies *finger;
@@ -71,4 +71,26 @@ int32_t bandHandler::Frequency(uint8_t dabBand, std::string Channel) {
   if (tunedFrequency == 0) tunedFrequency = finger[0].fKHz * 1000;
 
   return tunedFrequency;
+}
+
+std::string bandHandler::nextChannel(uint8_t dabBand, std::string Channel) {
+  struct dabFrequencies *finger;
+  int i;
+
+  if (dabBand == BAND_III)
+    finger = bandIII_frequencies;
+  else
+    finger = Lband_frequencies;
+
+  for (i = 0; finger[i].key != NULL; i++) {
+    if (finger[i].key == Channel) {
+      if (finger[i + 1].key == NULL)
+        return finger[0].key;
+      else
+        return finger[i + 1].key;
+      break;
+    }
+  }
+
+  return "";
 }
