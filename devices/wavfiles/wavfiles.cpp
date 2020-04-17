@@ -19,190 +19,170 @@
  *    along with DAB library; if not, write to the Free Software
  *    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-#include	<stdio.h>
-#include	<unistd.h>
-#include	<stdlib.h>
-#include	<fcntl.h>
-#include	<sys/time.h>
-#include	<time.h>
-#include	<cstring>
-#include	"wavfiles.h"
+#include "wavfiles.h"
+#include <fcntl.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/time.h>
+#include <time.h>
+#include <unistd.h>
+#include <cstring>
 
-static inline
-int64_t		getMyTime	(void) {
-struct timeval	tv;
+static inline int64_t getMyTime(void) {
+  struct timeval tv;
 
-	gettimeofday (&tv, NULL);
-	return ((int64_t)tv. tv_sec * 1000000 + (int64_t)tv. tv_usec);
+  gettimeofday(&tv, NULL);
+  return ((int64_t)tv.tv_sec * 1000000 + (int64_t)tv.tv_usec);
 }
 
-#define	__BUFFERSIZE	8 * 32768
+#define __BUFFERSIZE 8 * 32768
 
-	wavFiles::wavFiles (std::string f, bool repeater) {
-SF_INFO *sf_info;
+wavFiles::wavFiles(std::string f, bool repeater) {
+  SF_INFO *sf_info;
 
-	fileName	= f;
-	this	-> repeater	= repeater;
-	this	-> eofHandler	= nullptr;
-	this	-> userData	= nullptr;
-	
-	_I_Buffer	= new RingBuffer<std::complex<float>>(__BUFFERSIZE);
+  fileName = f;
+  this->repeater = repeater;
+  this->eofHandler = nullptr;
+  this->userData = nullptr;
 
-	sf_info		= (SF_INFO *)alloca (sizeof (SF_INFO));
-	sf_info	-> format	= 0;
-	filePointer	= sf_open (f. c_str (), SFM_READ, sf_info);
-	if (filePointer == NULL) {
-	   fprintf (stderr, "file %s no legitimate sound file\n", 
-	                                f. c_str ());
-	   throw (24);
-	}
-	else
-	{
-	   fprintf (stderr, "sound file '%s' opened with/as wave device\n",  f. c_str ());
-	}
-	if ((sf_info -> samplerate != 2048000) ||
-	    (sf_info -> channels != 2)) {
-	   fprintf (stderr, "This is not a recorded DAB file, sorry\n");
-	   sf_close (filePointer);
-	   throw (25);
-	}
-	currPos		= 0;
-	running. store (false);
+  _I_Buffer = new RingBuffer<std::complex<float>>(__BUFFERSIZE);
+
+  sf_info = (SF_INFO *)alloca(sizeof(SF_INFO));
+  sf_info->format = 0;
+  filePointer = sf_open(f.c_str(), SFM_READ, sf_info);
+  if (filePointer == NULL) {
+    fprintf(stderr, "file %s no legitimate sound file\n", f.c_str());
+    throw(24);
+  } else {
+    fprintf(stderr, "sound file '%s' opened with/as wave device\n", f.c_str());
+  }
+  if ((sf_info->samplerate != 2048000) || (sf_info->channels != 2)) {
+    fprintf(stderr, "This is not a recorded DAB file, sorry\n");
+    sf_close(filePointer);
+    throw(25);
+  }
+  currPos = 0;
+  running.store(false);
 }
 
-	wavFiles::wavFiles (std::string f,
-	                    double fileOffsetInSeconds,
-	                    device_eof_callback_t eofHandler,
-	                    void * userData) {
-SF_INFO *sf_info;
+wavFiles::wavFiles(std::string f, double fileOffsetInSeconds,
+                   device_eof_callback_t eofHandler, void *userData) {
+  SF_INFO *sf_info;
 
-	fileName		= f;
-	repeater		= false;
-	this	-> eofHandler	= eofHandler;
-	this	-> userData	= userData;
-	_I_Buffer	= new RingBuffer<std::complex<float>>(__BUFFERSIZE);
+  fileName = f;
+  repeater = false;
+  this->eofHandler = eofHandler;
+  this->userData = userData;
+  _I_Buffer = new RingBuffer<std::complex<float>>(__BUFFERSIZE);
 
-	sf_info		= (SF_INFO *)alloca (sizeof (SF_INFO));
-	sf_info	-> format	= 0;
-	filePointer	= sf_open (f. c_str (), SFM_READ, sf_info);
-	if (filePointer == NULL) {
-	   fprintf (stderr, "file %s no legitimate sound file\n", 
-	                                f. c_str ());
-	   throw (24);
-	}
-	else
-	{
-	   fprintf (stderr, "sound file '%s' opened with/as wave device\n",  f. c_str ());
-	}
-	if ((sf_info -> samplerate != 2048000) ||
-	    (sf_info -> channels != 2)) {
-	   fprintf (stderr, "This is not a recorded DAB file, sorry\n");
-	   sf_close (filePointer);
-	   throw (25);
-	}
-	currPos = (int64_t)(fileOffsetInSeconds * 2048000.0 );
-	sf_seek (filePointer, (sf_count_t)currPos, SEEK_SET);
-	running. store (false);
+  sf_info = (SF_INFO *)alloca(sizeof(SF_INFO));
+  sf_info->format = 0;
+  filePointer = sf_open(f.c_str(), SFM_READ, sf_info);
+  if (filePointer == NULL) {
+    fprintf(stderr, "file %s no legitimate sound file\n", f.c_str());
+    throw(24);
+  } else {
+    fprintf(stderr, "sound file '%s' opened with/as wave device\n", f.c_str());
+  }
+  if ((sf_info->samplerate != 2048000) || (sf_info->channels != 2)) {
+    fprintf(stderr, "This is not a recorded DAB file, sorry\n");
+    sf_close(filePointer);
+    throw(25);
+  }
+  currPos = (int64_t)(fileOffsetInSeconds * 2048000.0);
+  sf_seek(filePointer, (sf_count_t)currPos, SEEK_SET);
+  running.store(false);
 }
 
-	wavFiles::~wavFiles (void) {
-	if (running. load ())
-	   workerHandle. join ();
-	running. store (false);
-	sf_close (filePointer);
-	delete _I_Buffer;
+wavFiles::~wavFiles(void) {
+  if (running.load()) workerHandle.join();
+  running.store(false);
+  sf_close(filePointer);
+  delete _I_Buffer;
 }
 
-bool	wavFiles::restartReader	(int32_t frequency) {
-	(void)frequency;
-	workerHandle = std::thread (&wavFiles::run, this);
-	running. store (true);
-	return true;
+bool wavFiles::restartReader(int32_t frequency) {
+  (void)frequency;
+  workerHandle = std::thread(&wavFiles::run, this);
+  running.store(true);
+  return true;
 }
 
-void	wavFiles::stopReader	(void) {
-	if (running. load ()) {
-	   running. store (false);
-           workerHandle. join ();
-	}
-	running. store (false);
+void wavFiles::stopReader(void) {
+  if (running.load()) {
+    running.store(false);
+    workerHandle.join();
+  }
+  running.store(false);
 }
 //
 //	size is in I/Q pairs
-int32_t	wavFiles::getSamples	(std::complex<float> *V, int32_t size) {
-int32_t	amount;
-	if (filePointer == NULL)
-	   return 0;
-	if (!running. load ())
-	   return 0;
+int32_t wavFiles::getSamples(std::complex<float> *V, int32_t size) {
+  int32_t amount;
+  if (filePointer == NULL) return 0;
+  if (!running.load()) return 0;
 
-    while (_I_Buffer -> GetRingBufferReadAvailable () < (int32_t)size)
-	   usleep (100);
+  while (_I_Buffer->GetRingBufferReadAvailable() < (int32_t)size) usleep(100);
 
-	amount = _I_Buffer	-> getDataFromBuffer (V, size);
-	return amount;
+  amount = _I_Buffer->getDataFromBuffer(V, size);
+  return amount;
 }
 
-int32_t	wavFiles::Samples (void) {
-	return _I_Buffer -> GetRingBufferReadAvailable ();
+int32_t wavFiles::Samples(void) {
+  return _I_Buffer->GetRingBufferReadAvailable();
 }
 //
 //	The actual interface to the filereader is in a separate thread
 
-void	wavFiles::run (void) {
-int32_t	t, i;
-std::complex<float>	*bi;
-int32_t	bufferSize	= 32768;
-int64_t	period;
-int64_t	nextStop;
-bool	eofReached	= false;
+void wavFiles::run(void) {
+  int32_t t, i;
+  std::complex<float> *bi;
+  int32_t bufferSize = 32768;
+  int64_t period;
+  int64_t nextStop;
+  bool eofReached = false;
 
-	running. store (true);
-	period		= (32768 * 1000) / 2048;	// full IQs read
-	fprintf (stderr, "Period = %ld\n", period);
-	bi		= new std::complex<float> [bufferSize];
-	nextStop	= getMyTime ();
-	while (running. load ()) {
-	   while (_I_Buffer -> WriteSpace () < bufferSize) {
-	      if (!running. load ())
-	         break;
-	      usleep (100);
-	   }
+  running.store(true);
+  period = (32768 * 1000) / 2048;  // full IQs read
+  fprintf(stderr, "Period = %lld\n", period);
+  bi = new std::complex<float>[bufferSize];
+  nextStop = getMyTime();
+  while (running.load()) {
+    while (_I_Buffer->WriteSpace() < bufferSize) {
+      if (!running.load()) break;
+      usleep(100);
+    }
 
-	   nextStop += period;
-	   t = readBuffer (bi, bufferSize);
-	   if (t < bufferSize) {
-	      eofReached	= true;
-	      for (i = t; i < bufferSize; i ++)
-	          bi [i] = 0;
-	      t = bufferSize;
-	   }
-	   _I_Buffer -> putDataIntoBuffer (bi, bufferSize);
-	   if (eofReached) {
-	      if (eofHandler != nullptr)
-	         eofHandler (userData);
-	      eofReached	= false;
-	   }
-	   while (nextStop - getMyTime () > 0)
-	      usleep (nextStop - getMyTime ());
-	}
-	fprintf (stderr, "taak voor replay eindigt hier\n");
-	delete [] bi;
+    nextStop += period;
+    t = readBuffer(bi, bufferSize);
+    if (t < bufferSize) {
+      eofReached = true;
+      for (i = t; i < bufferSize; i++) bi[i] = 0;
+      t = bufferSize;
+    }
+    _I_Buffer->putDataIntoBuffer(bi, bufferSize);
+    if (eofReached) {
+      if (eofHandler != nullptr) eofHandler(userData);
+      eofReached = false;
+    }
+    while (nextStop - getMyTime() > 0) usleep(nextStop - getMyTime());
+  }
+  fprintf(stderr, "taak voor replay eindigt hier\n");
+  delete[] bi;
 }
 /*
  *	length is number of uints that we read.
  */
-int32_t	wavFiles::readBuffer (std::complex<float> *data, int32_t length) {
-int32_t	i, n;
-float	temp [2 * length];
+int32_t wavFiles::readBuffer(std::complex<float> *data, int32_t length) {
+  int32_t i, n;
+  float temp[2 * length];
 
-	n = sf_readf_float (filePointer, temp, length);
-	if (n < length) {
-	   sf_seek (filePointer, 0, SEEK_SET);
-//	   fprintf (stderr, "End of file, restarting\n");
-	}
-	for (i = 0; i < n; i ++)
-	   data [i] = std::complex<float> (temp [2 * i], temp [2 * i + 1]);
-	return	n & ~01;
+  n = sf_readf_float(filePointer, temp, length);
+  if (n < length) {
+    sf_seek(filePointer, 0, SEEK_SET);
+    //	   fprintf (stderr, "End of file, restarting\n");
+  }
+  for (i = 0; i < n; i++)
+    data[i] = std::complex<float>(temp[2 * i], temp[2 * i + 1]);
+  return n & ~01;
 }
-

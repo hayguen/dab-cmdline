@@ -21,15 +21,10 @@
  *
  */
 
-#include	"virtual-datahandler.h"
+#include "virtual-datahandler.h"
 
-	virtual_dataHandler::virtual_dataHandler (void) {
-}
+virtual_dataHandler::virtual_dataHandler(void) {}
 
-	virtual_dataHandler::~virtual_dataHandler (void) {
-}
+virtual_dataHandler::~virtual_dataHandler(void) {}
 
-void	virtual_dataHandler::add_mscDatagroup (std::vector<uint8_t> m) {
-	(void)m;
-}
-
+void virtual_dataHandler::add_mscDatagroup(std::vector<uint8_t> m) { (void)m; }

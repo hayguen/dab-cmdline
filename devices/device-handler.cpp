@@ -23,60 +23,36 @@
  * 	Default (void) implementation of
  * 	virtual input class
  */
-#include	"device-handler.h"
+#include "device-handler.h"
 
-	deviceHandler::deviceHandler (void) {
-	lastFrequency	= 100000;
+deviceHandler::deviceHandler(void) { lastFrequency = 100000; }
+
+deviceHandler::~deviceHandler(void) {}
+
+bool deviceHandler::restartReader(int32_t) { return true; }
+
+void deviceHandler::stopReader(void) {}
+
+void deviceHandler::run(void) {}
+
+int32_t deviceHandler::getSamples(std::complex<float> *v, int32_t amount) {
+  (void)v;
+  (void)amount;
+  return 0;
 }
 
-	deviceHandler::~deviceHandler (void) {
-}
+int32_t deviceHandler::Samples(void) { return 0; }
 
-bool	deviceHandler::restartReader	(int32_t) {
-	return true;
-}
+int32_t deviceHandler::defaultFrequency(void) { return 220000000; }
 
-void	deviceHandler::stopReader	(void) {
-}
+void deviceHandler::resetBuffer(void) {}
 
-void	deviceHandler::run		(void) {
-}
+void deviceHandler::setGain(int32_t x) { (void)x; }
 
-int32_t	deviceHandler::getSamples	(std::complex<float> *v,
-	                                              int32_t amount) {
-	(void)v; 
-	(void)amount; 
-	return 0;
-}
+bool deviceHandler::has_autogain(void) { return false; }
 
-int32_t	deviceHandler::Samples		(void) {
-	return 0;
-}
+void deviceHandler::set_autogain(bool b) { (void)b; }
 
-int32_t	deviceHandler::defaultFrequency	(void) {
-	return 220000000;
-}
+void deviceHandler::set_ifgainReduction(int x) { (void)x; }
 
-void	deviceHandler::resetBuffer	(void) {
-}
-
-void	deviceHandler::setGain		(int32_t x) {
-	(void)x;
-}
-
-bool	deviceHandler::has_autogain	(void) {
-	return false;
-}
-
-void	deviceHandler::set_autogain	(bool b) {
-	(void)b;
-}
-
-void	deviceHandler::set_ifgainReduction  (int x) {
-	(void)x;
-}
-
-void	deviceHandler::set_lnaState	(int x) {
-	(void)x;
-}
-
+void deviceHandler::set_lnaState(int x) { (void)x; }

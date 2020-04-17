@@ -22,129 +22,107 @@
  *	MOT handling is a crime, here we have a single class responsible
  *	for handling a MOT directory
  */
-#include	"mot-dir.h"
+#include "mot-dir.h"
 
-	motDirectory::motDirectory (motdata_t	motdataHandler,
-	                            void	*ctx,
-	                            uint16_t	transportId,
-	                            int16_t	segmentSize,
-	                            int32_t	dirSize,
-	                            int16_t	objects,
-	                            uint8_t	*segment) {
-int16_t	i;
+motDirectory::motDirectory(motdata_t motdataHandler, void *ctx,
+                           uint16_t transportId, int16_t segmentSize,
+                           int32_t dirSize, int16_t objects, uint8_t *segment) {
+  int16_t i;
 
-	   this	-> motdataHandler	= motdataHandler;
-	   this	-> ctx			= ctx;
-	   for (i = 0; i < 512; i ++)
-	      marked [i] = false;
-	   num_dirSegments	= -1;
-	   this	-> transportId	= transportId;
-	   this	-> dirSize	= dirSize;
-	   this	-> numObjects	= objects;
-	   this	-> dir_segmentSize	= segmentSize;
-	   dir_segments		= new uint8_t [dirSize];
-	   motComponents	= new motComponentType [objects];
-	   for (i = 0; i < objects; i ++)
-	      motComponents [i]. inUse = false;
-	   memcpy (&dir_segments [0], segment, segmentSize);
-	   marked [0] = true;
-	}
-
-	motDirectory::~motDirectory (void) {
-int	i;
-	delete []	dir_segments;
-
-	for (i = 0; i < numObjects; i ++) 
-	   if (motComponents [i]. inUse)
-	      delete motComponents [i]. motSlide;
-	delete []	motComponents;
+  this->motdataHandler = motdataHandler;
+  this->ctx = ctx;
+  for (i = 0; i < 512; i++) marked[i] = false;
+  num_dirSegments = -1;
+  this->transportId = transportId;
+  this->dirSize = dirSize;
+  this->numObjects = objects;
+  this->dir_segmentSize = segmentSize;
+  dir_segments = new uint8_t[dirSize];
+  motComponents = new motComponentType[objects];
+  for (i = 0; i < objects; i++) motComponents[i].inUse = false;
+  memcpy(&dir_segments[0], segment, segmentSize);
+  marked[0] = true;
 }
 
-motObject	*motDirectory::getHandle (uint16_t transportId) {
-int i;
-	for (i = 0; i < numObjects; i ++)
-	   if ((motComponents [i]. inUse) &&
-	             (motComponents [i]. transportId == transportId))
-	      return motComponents [i]. motSlide;
+motDirectory::~motDirectory(void) {
+  int i;
+  delete[] dir_segments;
 
-	return nullptr;
+  for (i = 0; i < numObjects; i++)
+    if (motComponents[i].inUse) delete motComponents[i].motSlide;
+  delete[] motComponents;
 }
 
-void	motDirectory::setHandle (motObject *h, uint16_t transportId) {
-int	i;
+motObject *motDirectory::getHandle(uint16_t transportId) {
+  int i;
+  for (i = 0; i < numObjects; i++)
+    if ((motComponents[i].inUse) &&
+        (motComponents[i].transportId == transportId))
+      return motComponents[i].motSlide;
 
-	for (i = 0; i < numObjects; i ++)
-	   if (!motComponents [i]. inUse) {
-	      motComponents [i]. inUse		= true;
-	      motComponents [i]. transportId	= transportId;
-	      motComponents [i]. motSlide	= h;
-	      return;
-	   }
+  return nullptr;
+}
+
+void motDirectory::setHandle(motObject *h, uint16_t transportId) {
+  int i;
+
+  for (i = 0; i < numObjects; i++)
+    if (!motComponents[i].inUse) {
+      motComponents[i].inUse = true;
+      motComponents[i].transportId = transportId;
+      motComponents[i].motSlide = h;
+      return;
+    }
 }
 //
 //	unfortunately, directory segments do not need to come in
 //	in order
-void	motDirectory::directorySegment (uint16_t transportId,
-	                                uint8_t	*segment,
-	                                int16_t	segmentNumber,
-	                                int32_t	segmentSize,
-	                                bool	lastSegment) {
-int16_t	i;
+void motDirectory::directorySegment(uint16_t transportId, uint8_t *segment,
+                                    int16_t segmentNumber, int32_t segmentSize,
+                                    bool lastSegment) {
+  int16_t i;
 
-	if (this -> transportId != transportId)
-	   return;
-	if (this -> marked [segmentNumber])
-	   return;
-	if (lastSegment)
-	   this -> num_dirSegments = segmentNumber + 1;
-	this	-> marked [segmentNumber] = true;
-	uint8_t	*address = &dir_segments [segmentNumber * dir_segmentSize];
-	memcpy (address, segment, segmentSize);
-//
-//	we are "complete" if we know the number of segments and
-//	all segments are "in"
-	if (this -> num_dirSegments != -1) {
-	   for (i = 0; i < this -> num_dirSegments; i ++)
-	      if (!this -> marked [i])
-	         return;
-	}
-//
-//	yes we have all data to build up the directory
-	analyse_theDirectory ();
+  if (this->transportId != transportId) return;
+  if (this->marked[segmentNumber]) return;
+  if (lastSegment) this->num_dirSegments = segmentNumber + 1;
+  this->marked[segmentNumber] = true;
+  uint8_t *address = &dir_segments[segmentNumber * dir_segmentSize];
+  memcpy(address, segment, segmentSize);
+  //
+  //	we are "complete" if we know the number of segments and
+  //	all segments are "in"
+  if (this->num_dirSegments != -1) {
+    for (i = 0; i < this->num_dirSegments; i++)
+      if (!this->marked[i]) return;
+  }
+  //
+  //	yes we have all data to build up the directory
+  analyse_theDirectory();
 }
 //
 //	This is the tough one, we collected the bits, and now
 //	we need to extract the "motObject"s from it
 
-void	motDirectory::analyse_theDirectory (void) {
-uint32_t	currentBase	= 11;	// in bytes
-uint8_t	*data			= dir_segments;
-uint16_t extensionLength	= (dir_segments [currentBase] << 8) |
-	                                             data [currentBase + 1];
+void motDirectory::analyse_theDirectory(void) {
+  uint32_t currentBase = 11;  // in bytes
+  uint8_t *data = dir_segments;
+  uint16_t extensionLength =
+      (dir_segments[currentBase] << 8) | data[currentBase + 1];
 
-int16_t	i;
+  int16_t i;
 
-	currentBase += 2 + extensionLength;
-	for (i = 0; i < numObjects; i ++) {
-	   uint16_t transportId	= (data [currentBase] << 8) |
-	                                    data [currentBase + 1];
-	   if (transportId == 0)	// just a dummy
-	      break;
-	   uint8_t *segment	= &data [currentBase + 2];
-	   motObject *handle	= new motObject (motdataHandler,
-	                                         true,
-	                                         transportId,
-	                                         segment,
-	                                         -1,
-	                                         false,
-	                                         ctx);
+  currentBase += 2 + extensionLength;
+  for (i = 0; i < numObjects; i++) {
+    uint16_t transportId = (data[currentBase] << 8) | data[currentBase + 1];
+    if (transportId == 0)  // just a dummy
+      break;
+    uint8_t *segment = &data[currentBase + 2];
+    motObject *handle = new motObject(motdataHandler, true, transportId,
+                                      segment, -1, false, ctx);
 
-	   currentBase		+= 2 + handle -> get_headerSize ();
-	   setHandle (handle, transportId);
-	}
+    currentBase += 2 + handle->get_headerSize();
+    setHandle(handle, transportId);
+  }
 }
 
-uint16_t	motDirectory::get_transportId	(void) {
-	return transportId;
-}
-
+uint16_t motDirectory::get_transportId(void) { return transportId; }

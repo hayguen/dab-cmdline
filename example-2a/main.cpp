@@ -25,135 +25,124 @@
  *	your wishes. Do not take it as a definitive and "ready: program
  *	for the DAB-library
  */
-#include	<unistd.h>
-#include	<signal.h>
-#include	<getopt.h>
-#include        <cstdio>
-#include        <iostream>
-#include	<sndfile.h>
-#include	<complex>
-#include	<vector>
-#include	<mutex>
-#include	"dab-api.h"
-#include	"audiosink.h"
-#include	"filesink.h"
-#include	"band-handler.h"
-#ifdef	HAVE_SDRPLAY
-#include	"sdrplay-handler.h"
-#elif	HAVE_AIRSPY
-#include	"airspy-handler.h"
-#elif	HAVE_RTLSDR
-#include	"rtlsdr-handler.h"
-#elif	HAVE_WAVFILES
-#include	"wavfiles.h"
-#elif	HAVE_RAWFILES
-#include	"rawfiles.h"
-#elif	HAVE_RTL_TCP
-#include	"rtl_tcp-client.h"
+#include <getopt.h>
+#include <signal.h>
+#include <sndfile.h>
+#include <unistd.h>
+#include <complex>
+#include <cstdio>
+#include <iostream>
+#include <mutex>
+#include <vector>
+#include "audiosink.h"
+#include "band-handler.h"
+#include "dab-api.h"
+#include "filesink.h"
+#ifdef HAVE_SDRPLAY
+#include "sdrplay-handler.h"
+#elif HAVE_AIRSPY
+#include "airspy-handler.h"
+#elif HAVE_RTLSDR
+#include "rtlsdr-handler.h"
+#elif HAVE_WAVFILES
+#include "wavfiles.h"
+#elif HAVE_RAWFILES
+#include "rawfiles.h"
+#elif HAVE_RTL_TCP
+#include "rtl_tcp-client.h"
 #endif
-#include	<locale>
-#include	<codecvt>
-#include	<atomic>
-#ifdef	DATA_STREAMER
-#include	"tcp-server.h"
+#include <atomic>
+#include <codecvt>
+#include <locale>
+#ifdef DATA_STREAMER
+#include "tcp-server.h"
 #endif
-#include	<string>
+#include <string>
 using std::cerr;
 using std::endl;
 
-void    printOptions (void);	// forward declaration
+void printOptions(void);  // forward declaration
 //	we deal with callbacks from different threads. So, if you extend
 //	the functions, take care and add locking whenever needed
-static
-std::atomic<bool> run;
+static std::atomic<bool> run;
 
-static
-void	*theRadio	= NULL;
+static void *theRadio = NULL;
 
-static
-std::atomic<bool>timeSynced;
+static std::atomic<bool> timeSynced;
 
-static
-std::atomic<bool>timesyncSet;
+static std::atomic<bool> timesyncSet;
 
-static
-std::atomic<bool>ensembleRecognized;
+static std::atomic<bool> ensembleRecognized;
 
-static
-audioBase	*soundOut	= NULL;
+static audioBase *soundOut = NULL;
 
-#ifdef	DATA_STREAMER
-tcpServer	tdcServer (8888);
+#ifdef DATA_STREAMER
+tcpServer tdcServer(8888);
 #endif
 
-std::string	programName		= "Sky Radio";
-int32_t		serviceIdentifier	= -1;
+std::string programName = "Sky Radio";
+int32_t serviceIdentifier = -1;
 
-static void sighandler (int signum) {
-        fprintf (stderr, "Signal caught, terminating!\n");
-	run. store (false);
+static void sighandler(int signum) {
+  fprintf(stderr, "Signal caught, terminating!\n");
+  run.store(false);
 }
 
-static
-void	syncsignalHandler (bool b, void *userData) {
-	timeSynced. store (b);
-	timesyncSet. store (true);
-	(void)userData;
+static void syncsignalHandler(bool b, void *userData) {
+  timeSynced.store(b);
+  timesyncSet.store(true);
+  (void)userData;
 }
 //
 //	This function is called whenever the dab engine has taken
 //	some time to gather information from the FIC bloks
 //	the Boolean b tells whether or not an ensemble has been
-//	recognized, the names of the programs are in the 
+//	recognized, the names of the programs are in the
 //	ensemble
-static
-void	ensemblenameHandler (std::string name, int Id, void *userData) {
-	fprintf (stderr, "ensemble %s is (%X) recognized\n",
-	                          name. c_str (), (uint32_t)Id);
-	ensembleRecognized. store (true);
+static void ensemblenameHandler(std::string name, int Id, void *userData) {
+  fprintf(stderr, "ensemble %s is (%X) recognized\n", name.c_str(),
+          (uint32_t)Id);
+  ensembleRecognized.store(true);
 }
-
 
 std::vector<std::string> programNames;
 std::vector<int> programSIds;
 
-static
-void	programnameHandler (std::string s, int SId, void *userdata) {
-	for (std::vector<std::string>::iterator it = programNames.begin();
-	             it != programNames. end(); ++it)
-	   if (*it == s)
-	      return;
-	programNames. push_back (s);
-	programSIds . push_back (SId);
-	std::cerr << "program " << s << " is part of the ensemble\n";
+static void programnameHandler(std::string s, int SId, void *userdata) {
+  for (std::vector<std::string>::iterator it = programNames.begin();
+       it != programNames.end(); ++it)
+    if (*it == s) return;
+  programNames.push_back(s);
+  programSIds.push_back(SId);
+  std::cerr << "program " << s << " is part of the ensemble\n";
 }
 
-static
-void	programdataHandler (audiodata *d, void *ctx) {
-	(void)ctx;
-	std::cerr << "\tstartaddress\t= " << d -> startAddr << "\n";
-	std::cerr << "\tlength\t\t= "     << d -> length << "\n";
-	std::cerr << "\tsubChId\t\t= "    << d -> subchId << "\n";
-	std::cerr << "\tprotection\t= "   << d -> protLevel << "\n";
-	std::cerr << "\tbitrate\t\t= "    << d -> bitRate << "\n";
+static void programdataHandler(audiodata *d, void *ctx) {
+  (void)ctx;
+  std::cerr << "\tstartaddress\t= " << d->startAddr << "\n";
+  std::cerr << "\tlength\t\t= " << d->length << "\n";
+  std::cerr << "\tsubChId\t\t= " << d->subchId << "\n";
+  std::cerr << "\tprotection\t= " << d->protLevel << "\n";
+  std::cerr << "\tbitrate\t\t= " << d->bitRate << "\n";
 }
 
 //
 //	The function is called from within the library with
 //	a string, the so-called dynamic label
-static
-void	dataOut_Handler (std::string dynamicLabel, void *ctx) {
-	(void)ctx;
-	std::cerr << dynamicLabel << "\r";
+static void dataOut_Handler(std::string dynamicLabel, void *ctx) {
+  (void)ctx;
+  std::cerr << dynamicLabel << "\r";
 }
 //
 //	The function is called from the MOT handler, with
 //	as parameters the filename where the picture is stored
-//	d denotes the subtype of the picture 
+//	d denotes the subtype of the picture
 //	typedef void (*motdata_t)(std::string, int, void *);
-void	motdataHandler (std::string s, int d, void *ctx) {
-	(void)s; (void)d; (void)ctx;
-	fprintf (stderr, "plaatje %s\n", s. c_str ());
+void motdataHandler(std::string s, int d, void *ctx) {
+  (void)s;
+  (void)d;
+  (void)ctx;
+  fprintf(stderr, "plaatje %s\n", s.c_str());
 }
 
 //
@@ -168,28 +157,26 @@ void	motdataHandler (std::string s, int d, void *ctx) {
 //	and 0xFF for frametype 1
 //	Note that the callback function is executed in the thread
 //	that executes the tdcHandler code.
-static
-void	bytesOut_Handler (uint8_t *data, int16_t amount,
-	                  uint8_t type, void *ctx) {
+static void bytesOut_Handler(uint8_t *data, int16_t amount, uint8_t type,
+                             void *ctx) {
 #ifdef DATA_STREAMER
-uint8_t localBuf [amount + 8];
-int16_t i;
-	localBuf [0] = 0xFF;
-	localBuf [1] = 0x00;
-	localBuf [2] = 0xFF;
-	localBuf [3] = 0x00;
-	localBuf [4] = (amount >> 8) & 0xFF;
-	localBuf [5] = amount & 0xFF;
-	localBuf [6] = 0x00;
-	localBuf [7] = type == 0 ? 0 : 0xFF;
-	for (i = 0; i < amount; i ++)
-	   localBuf [8 + i] = data;
-	tdcServer. sendData (localBuf, amount + 8);
+  uint8_t localBuf[amount + 8];
+  int16_t i;
+  localBuf[0] = 0xFF;
+  localBuf[1] = 0x00;
+  localBuf[2] = 0xFF;
+  localBuf[3] = 0x00;
+  localBuf[4] = (amount >> 8) & 0xFF;
+  localBuf[5] = amount & 0xFF;
+  localBuf[6] = 0x00;
+  localBuf[7] = type == 0 ? 0 : 0xFF;
+  for (i = 0; i < amount; i++) localBuf[8 + i] = data;
+  tdcServer.sendData(localBuf, amount + 8);
 #else
-	(void)data;
-	(void)amount;
+  (void)data;
+  (void)amount;
 #endif
-	(void)ctx;
+  (void)ctx;
 }
 //
 //	This function is overloaded. In the normal form it
@@ -200,373 +187,331 @@ int16_t i;
 //	However, in the "special mode", the aac frames are send out
 //	Obviously, the parameters "rate" and "isStereo" are meaningless
 //	then.
-static
-SNDFILE	*audiofilePointer	= NULL;
+static SNDFILE *audiofilePointer = NULL;
 
 mutex pcmLock;
-int	sleepLimit	= -1;
-int	sleepCounter	= -1;
-static
-void	pcmHandler (int16_t *buffer, int size, int rate,
-	                              bool isStereo, void *ctx) {
-static bool isStarted	= false;
+int sleepLimit = -1;
+int sleepCounter = -1;
+static void pcmHandler(int16_t *buffer, int size, int rate, bool isStereo,
+                       void *ctx) {
+  static bool isStarted = false;
 
-	(void)isStereo;
-	if (!isStarted) {
-	   soundOut	-> restart ();
-	   isStarted	= true;
-	}
-	pcmLock. lock ();
-	if (audiofilePointer != NULL)
-	   soundOut	-> audioOut (audiofilePointer, buffer, size, rate);
-	else
-	   soundOut	-> audioOut (buffer, size, rate);
-	pcmLock. unlock ();
+  (void)isStereo;
+  if (!isStarted) {
+    soundOut->restart();
+    isStarted = true;
+  }
+  pcmLock.lock();
+  if (audiofilePointer != NULL)
+    soundOut->audioOut(audiofilePointer, buffer, size, rate);
+  else
+    soundOut->audioOut(buffer, size, rate);
+  pcmLock.unlock();
 }
 
-static
-void	systemData (bool flag, int16_t snr, int32_t freqOff, void *ctx) {
-//	fprintf (stderr, "synced = %s, snr = %d, offset = %d\n",
-//	                    flag? "on":"off", snr, freqOff);
+static void systemData(bool flag, int16_t snr, int32_t freqOff, void *ctx) {
+  //	fprintf (stderr, "synced = %s, snr = %d, offset = %d\n",
+  //	                    flag? "on":"off", snr, freqOff);
 }
 
-static
-void	fibQuality	(int16_t q, void *ctx) {
-//	fprintf (stderr, "fic quality = %d\n", q);
+static void fibQuality(int16_t q, void *ctx) {
+  //	fprintf (stderr, "fic quality = %d\n", q);
 }
 
-static
-void	mscQuality	(int16_t fe, int16_t rsE, int16_t aacE, void *ctx) {
-//	fprintf (stderr, "msc quality = %d %d %d\n", fe, rsE, aacE);
+static void mscQuality(int16_t fe, int16_t rsE, int16_t aacE, void *ctx) {
+  //	fprintf (stderr, "msc quality = %d %d %d\n", fe, rsE, aacE);
 }
 
-int	main (int argc, char **argv) {
-// Default values
-uint8_t		theMode		= 1;
-std::string	theChannel	= "11C";
-uint8_t		theBand		= BAND_III;
-int16_t		ppmCorrection	= 0;
-int		theGain		= 45;	// scale = 0 .. 100
-std::string	soundChannel	= "default";
-int16_t		latency		= 10;
-int16_t		timeSyncTime	= 5;
-int16_t		freqSyncTime	= 5;
-bool		autogain	= false;
-int		opt;
-struct sigaction sigact;
-bandHandler	dabBand;
-deviceHandler	*theDevice;
-#ifdef	HAVE_WAVFILES
-std::string	fileName;
-#elif	HAVE_RAWFILES
-std::string	fileName;
+int main(int argc, char **argv) {
+  // Default values
+  uint8_t theMode = 1;
+  std::string theChannel = "11C";
+  uint8_t theBand = BAND_III;
+  int16_t ppmCorrection = 0;
+  int theGain = 45;  // scale = 0 .. 100
+  std::string soundChannel = "default";
+  int16_t latency = 10;
+  int16_t timeSyncTime = 5;
+  int16_t freqSyncTime = 5;
+  bool autogain = false;
+  int opt;
+  struct sigaction sigact;
+  bandHandler dabBand;
+  deviceHandler *theDevice;
+#ifdef HAVE_WAVFILES
+  std::string fileName;
+#elif HAVE_RAWFILES
+  std::string fileName;
 #elif HAVE_RTL_TCP
-std::string	hostname = "127.0.0.1";		// default
-int32_t		basePort = 1234;		// default
+  std::string hostname = "127.0.0.1";  // default
+  int32_t basePort = 1234;             // default
 #endif
-bool	err;
+  bool err;
 
-	std::cerr << "dab_cmdline V 1.0alfa,\n \
+  std::cerr << "dab_cmdline V 1.0alfa,\n \
 	                Copyright 2017 J van Katwijk, Lazy Chair Computing\n";
-	timeSynced.	store (false);
-	timesyncSet.	store (false);
-	run.		store (false);
-	std::wcout.imbue(std::locale("en_US.utf8"));
-	if (argc == 1) {
-	   printOptions ();
-	   exit (1);
-	}
+  timeSynced.store(false);
+  timesyncSet.store(false);
+  run.store(false);
+  std::wcout.imbue(std::locale("en_US.utf8"));
+  if (argc == 1) {
+    printOptions();
+    exit(1);
+  }
 
-	std::setlocale (LC_ALL, "en-US.utf8");
+  std::setlocale(LC_ALL, "en-US.utf8");
 
 //	For file input we do not need options like Q, G and C,
 //	We do need an option to specify the filename
-#if	(!defined (HAVE_WAVFILES) && !defined (HAVE_RAWFILES))
-	while ((opt = getopt (argc, argv, "D:d:M:B:C:P:G:A:L:S:QO:F:T:")) != -1) {
-#elif   HAVE_RTL_TCP
-	while ((opt = getopt (argc, argv, "D:d:M:B:C:P:G:A:L:S:H:I:QO:F:T:")) != -1) {
+#if (!defined(HAVE_WAVFILES) && !defined(HAVE_RAWFILES))
+  while ((opt = getopt(argc, argv, "D:d:M:B:C:P:G:A:L:S:QO:F:T:")) != -1) {
+#elif HAVE_RTL_TCP
+  while ((opt = getopt(argc, argv, "D:d:M:B:C:P:G:A:L:S:H:I:QO:F:T:")) != -1) {
 #else
-	while ((opt = getopt (argc, argv, "D:d:M:B:P:A:L:S:F:O:")) != -1) {
+  while ((opt = getopt(argc, argv, "D:d:M:B:P:A:L:S:F:O:")) != -1) {
 #endif
-	   switch (opt) {
+    switch (opt) {
+      case 'D':
+        freqSyncTime = atoi(optarg);
+        break;
 
-	      case 'D':
-	         freqSyncTime	= atoi (optarg);
-	         break;
+      case 'd':
+        timeSyncTime = atoi(optarg);
+        break;
 
-	      case 'd':
-	         timeSyncTime	= atoi (optarg);
-	         break;
+      case 'M':
+        theMode = atoi(optarg);
+        if (!((theMode == 1) || (theMode == 2) || (theMode == 4))) theMode = 1;
+        break;
 
-	      case 'M':
-	         theMode	= atoi (optarg);
-	         if (!((theMode == 1) || (theMode == 2) || (theMode == 4)))
-	            theMode = 1; 
-	         break;
+      case 'B':
+        theBand =
+            std::string(optarg) == std::string("L_BAND") ? L_BAND : BAND_III;
+        break;
 
-	      case 'B':
-	         theBand = std::string (optarg) == std::string ("L_BAND") ?
-	                                                 L_BAND : BAND_III;
-	         break;
+      case 'P':
+        programName = optarg;
+        break;
 
-	      case 'P':
-	         programName	= optarg;
-	         break;
+      case 'p':
+        ppmCorrection = atoi(optarg);
+        break;
 
-	      case 'p':
-	         ppmCorrection	= atoi (optarg);
-	         break;
-
-#ifdef	HAVE_WAVFILES
-	      case 'F':
-	         fileName	= std::string (optarg);
-	         break;
-#elif	HAVE_RAWFILES
-	      case 'F':
-	         fileName	= std::string (optarg);
-	         break;
+#ifdef HAVE_WAVFILES
+      case 'F':
+        fileName = std::string(optarg);
+        break;
+#elif HAVE_RAWFILES
+      case 'F':
+        fileName = std::string(optarg);
+        break;
 #else
-	      case 'F':	
-	         {  std::string file	= std::string (optarg);
-	            SF_INFO sf_info;
-	            sf_info. samplerate   = 48000;
-	            sf_info. channels     = 2;
-	            sf_info. format       = SF_FORMAT_WAV | SF_FORMAT_FLOAT;
-	            audiofilePointer      = sf_open (file. c_str (),
-	                                                SFM_WRITE, &sf_info);
-	         }
-	         break;
+      case 'F': {
+        std::string file = std::string(optarg);
+        SF_INFO sf_info;
+        sf_info.samplerate = 48000;
+        sf_info.channels = 2;
+        sf_info.format = SF_FORMAT_WAV | SF_FORMAT_FLOAT;
+        audiofilePointer = sf_open(file.c_str(), SFM_WRITE, &sf_info);
+      } break;
 
-	      case 'T':
-	         sleepLimit	= atoi (optarg);
-	         sleepLimit	= 60 * sleepLimit;
-	         sleepCounter	= 0;
-	         break;
+      case 'T':
+        sleepLimit = atoi(optarg);
+        sleepLimit = 60 * sleepLimit;
+        sleepCounter = 0;
+        break;
 
-	      case 'C':
-	         theChannel	= std::string (optarg);
-	         break;
+      case 'C':
+        theChannel = std::string(optarg);
+        break;
 
-	      case 'G':
-	         theGain	= atoi (optarg);
-	         break;
+      case 'G':
+        theGain = atoi(optarg);
+        break;
 
-	      case 'Q':
-	         autogain	= true;
-	         break;
+      case 'Q':
+        autogain = true;
+        break;
 
-#ifdef	HAVE_RTL_TCP
-	      case 'H':
-	         hostname	= std::string (optarg);
-	         break;
+#ifdef HAVE_RTL_TCP
+      case 'H':
+        hostname = std::string(optarg);
+        break;
 
-	      case 'I':
-	         basePort	= atoi (optarg);
-	         break;
+      case 'I':
+        basePort = atoi(optarg);
+        break;
 #endif
 #endif
 
-	      case 'O':
-	         soundOut	= new fileSink (std::string (optarg), &err);
-	         if (!err) {
-	            std::cerr << "sorry, could not open file\n";
-	            exit (32);
-	         }
-	         break;
-
-	      case 'A':
-	         soundChannel	= optarg;
-	         break;
-
-	      case 'L':
-	         latency	= atoi (optarg);
-	         break;
-
-	      case 'S': {
-                 std::stringstream ss;
-                 ss << std::hex << optarg;
-                 ss >> serviceIdentifier;
-                 break;
-              }
-
-	      default:
-	         printOptions ();
-	         exit (1);
-	   }
-	}
-//
-	sigact.sa_handler = sighandler;
-	sigemptyset(&sigact.sa_mask);
-	sigact.sa_flags = 0;
-
-	int32_t frequency	= dabBand. Frequency (theBand, theChannel);
-	try {
-#ifdef	HAVE_SDRPLAY
-	   theDevice	= new sdrplayHandler (frequency,
-	                                      ppmCorrection,
-	                                      theGain,
-	                                      autogain,
-	                                      0,
-	                                      0);
-#elif	HAVE_AIRSPY
-	   theDevice	= new airspyHandler (frequency,
-	                                     ppmCorrection,
-	                                     theGain);
-#elif	HAVE_RTLSDR
-	   theDevice	= new rtlsdrHandler (frequency,
-	                                     ppmCorrection,
-	                                     theGain,
-	                                     autogain);
-#elif	HAVE_WAVFILES
-	   theDevice	= new wavFiles (fileName);
-#elif	defined (HAVE_RAWFILES)
-	   theDevice	= new rawFiles (fileName);
-#elif	HAVE_RTL_TCP
-	   theDevice	= new rtl_tcp_client (hostname,
-	                                      basePort,
-	                                      frequency,
-	                                      theGain,
-	                                      autogain,
-	                                      ppmCorrection);
-#endif
-
-	}
-	catch (int e) {
-	   std::cerr << "allocating device failed (" << e << "), fatal\n";
-	   exit (32);
-	}
-//
-	if (soundOut == NULL) {	// not bound to a file?
-	   if (audiofilePointer != NULL)
-	      soundOut = new audioBase ();
-	   else
-	      soundOut	= new audioSink	(latency, soundChannel, &err);
-	   if (err) {
-	      std::cerr << "no valid sound channel, fatal\n";
-	      exit (33);
-	   }
-	}
-//
-//	and with a sound device we now can create a "backend"
-	theRadio	= dabInit (theDevice,
-	                           theMode,
-	                           syncsignalHandler,
-	                           systemData,
-	                           ensemblenameHandler,
-	                           programnameHandler,
-	                           fibQuality,
-	                           pcmHandler,
-	                           dataOut_Handler,
-	                           bytesOut_Handler,
-	                           programdataHandler,
-	                           mscQuality,
-	                           motdataHandler,	// MOT in PAD
-	                           nullptr,		// spectrum buffer
-	                           nullptr,		// iqBuffer
-	                           nullptr		// Ctx
-	                          );
-	if (theRadio == NULL) {
-	   std::cerr << "sorry, no radio available, fatal\n";
-	   exit (4);
-	}
-
-	theDevice	-> setGain (theGain);
-	if (autogain)
-	   theDevice	-> set_autogain (autogain);
-	theDevice	-> setVFOFrequency (frequency);
-	theDevice	-> restartReader ();
-	theDevice	-> setGain (theGain);
-	if (autogain)
-	   theDevice	-> set_autogain (autogain);
-	theDevice	-> setVFOFrequency (frequency);
-//
-//	The device should be working right now
-
-	timesyncSet.		store (false);
-	ensembleRecognized.	store (false);
-	dabStartProcessing (theRadio);
-
-	while (!timeSynced. load () && (--timeSyncTime >= 0))
-           sleep (1);
-
-        if (!timeSynced. load ()) {
-           cerr << "There does not seem to be a DAB signal here" << endl;
-	   theDevice -> stopReader ();
-           sleep (1);
-           dabStop	(theRadio);
-	   dabExit	(theRadio);
-           delete theDevice;
-           exit (22);
-	}
-        else
-	   std::cerr << "there might be a DAB signal here" << endl;
-
-	while (!ensembleRecognized. load () &&
-	                             (--freqSyncTime >= 0)) {
-	   std::cerr << freqSyncTime + 1 << "\r";
-	   sleep (1);
-	}
-	std::cerr << "\n";
-
-	if (!ensembleRecognized. load ()) {
-	   std::cerr << "no ensemble data found, fatal\n";
-	   theDevice -> stopReader ();
-	   sleep (1);
-	   dabStop	(theRadio);
-	   dabExit	(theRadio);
-	   delete theDevice;
-	   exit (22);
-	}
-
-	run. store (true);
-	if (serviceIdentifier != -1) 
-	   programName = dab_getserviceName (theRadio, serviceIdentifier);
-	std::cerr << "we try to start program " <<
-                                                 programName << "\n";
-        if (!is_audioService (theRadio, programName. c_str ())) {
-           std::cerr << "sorry  we cannot handle service " <<
-                                                 programName << "\n";
-           run. store (false);
+      case 'O':
+        soundOut = new fileSink(std::string(optarg), &err);
+        if (!err) {
+          std::cerr << "sorry, could not open file\n";
+          exit(32);
         }
+        break;
 
-        audiodata ad;
-        dataforAudioService (theRadio,
-                             programName. c_str (), &ad, 0);
-        if (!ad. defined) {
-           std::cerr << "sorry  we cannot handle service " <<
-                                                 programName << "\n";
-           run. store (false);
-        }
+      case 'A':
+        soundChannel = optarg;
+        break;
 
-        dabReset_msc (theRadio);
-        set_audioChannel (theRadio, &ad);
+      case 'L':
+        latency = atoi(optarg);
+        break;
 
-	while (run. load ()) {
-	   sleep (1);
-	   if ((sleepCounter >= 0) && (audiofilePointer != NULL)) {
-	      sleepCounter ++;
-	      if (sleepCounter >= sleepLimit) {
-	         pcmLock. lock ();
-		 sf_close (audiofilePointer);
-	         audiofilePointer = NULL;
-	         run. store (false);
-	         pcmLock. unlock ();
-	      }
-	   }
-	}
+      case 'S': {
+        std::stringstream ss;
+        ss << std::hex << optarg;
+        ss >> serviceIdentifier;
+        break;
+      }
 
-	theDevice	-> stopReader ();
-	dabReset	(theRadio);
-	if (audiofilePointer != NULL)
-	   sf_close (audiofilePointer);
-	dabExit		(theRadio);
-	delete theDevice;	
-	delete soundOut;
+      default:
+        printOptions();
+        exit(1);
+    }
+  }
+  //
+  sigact.sa_handler = sighandler;
+  sigemptyset(&sigact.sa_mask);
+  sigact.sa_flags = 0;
+
+  int32_t frequency = dabBand.Frequency(theBand, theChannel);
+  try {
+#ifdef HAVE_SDRPLAY
+    theDevice =
+        new sdrplayHandler(frequency, ppmCorrection, theGain, autogain, 0, 0);
+#elif HAVE_AIRSPY
+    theDevice = new airspyHandler(frequency, ppmCorrection, theGain);
+#elif HAVE_RTLSDR
+    theDevice = new rtlsdrHandler(frequency, ppmCorrection, theGain, autogain);
+#elif HAVE_WAVFILES
+  theDevice = new wavFiles(fileName);
+#elif defined(HAVE_RAWFILES)
+  theDevice = new rawFiles(fileName);
+#elif HAVE_RTL_TCP
+  theDevice = new rtl_tcp_client(hostname, basePort, frequency, theGain,
+                                 autogain, ppmCorrection);
+#endif
+
+  } catch (int e) {
+    std::cerr << "allocating device failed (" << e << "), fatal\n";
+    exit(32);
+  }
+  //
+  if (soundOut == NULL) {  // not bound to a file?
+    if (audiofilePointer != NULL)
+      soundOut = new audioBase();
+    else
+      soundOut = new audioSink(latency, soundChannel, &err);
+    if (err) {
+      std::cerr << "no valid sound channel, fatal\n";
+      exit(33);
+    }
+  }
+  //
+  //	and with a sound device we now can create a "backend"
+  theRadio =
+      dabInit(theDevice, theMode, syncsignalHandler, systemData,
+              ensemblenameHandler, programnameHandler, fibQuality, pcmHandler,
+              dataOut_Handler, bytesOut_Handler, programdataHandler, mscQuality,
+              motdataHandler,  // MOT in PAD
+              nullptr,         // spectrum buffer
+              nullptr,         // iqBuffer
+              nullptr          // Ctx
+      );
+  if (theRadio == NULL) {
+    std::cerr << "sorry, no radio available, fatal\n";
+    exit(4);
+  }
+
+  theDevice->setGain(theGain);
+  if (autogain) theDevice->set_autogain(autogain);
+  theDevice->setVFOFrequency(frequency);
+  theDevice->restartReader();
+  theDevice->setGain(theGain);
+  if (autogain) theDevice->set_autogain(autogain);
+  theDevice->setVFOFrequency(frequency);
+  //
+  //	The device should be working right now
+
+  timesyncSet.store(false);
+  ensembleRecognized.store(false);
+  dabStartProcessing(theRadio);
+
+  while (!timeSynced.load() && (--timeSyncTime >= 0)) sleep(1);
+
+  if (!timeSynced.load()) {
+    cerr << "There does not seem to be a DAB signal here" << endl;
+    theDevice->stopReader();
+    sleep(1);
+    dabStop(theRadio);
+    dabExit(theRadio);
+    delete theDevice;
+    exit(22);
+  } else
+    std::cerr << "there might be a DAB signal here" << endl;
+
+  while (!ensembleRecognized.load() && (--freqSyncTime >= 0)) {
+    std::cerr << freqSyncTime + 1 << "\r";
+    sleep(1);
+  }
+  std::cerr << "\n";
+
+  if (!ensembleRecognized.load()) {
+    std::cerr << "no ensemble data found, fatal\n";
+    theDevice->stopReader();
+    sleep(1);
+    dabStop(theRadio);
+    dabExit(theRadio);
+    delete theDevice;
+    exit(22);
+  }
+
+  run.store(true);
+  if (serviceIdentifier != -1)
+    programName = dab_getserviceName(theRadio, serviceIdentifier);
+  std::cerr << "we try to start program " << programName << "\n";
+  if (!is_audioService(theRadio, programName.c_str())) {
+    std::cerr << "sorry  we cannot handle service " << programName << "\n";
+    run.store(false);
+  }
+
+  audiodata ad;
+  dataforAudioService(theRadio, programName.c_str(), &ad, 0);
+  if (!ad.defined) {
+    std::cerr << "sorry  we cannot handle service " << programName << "\n";
+    run.store(false);
+  }
+
+  dabReset_msc(theRadio);
+  set_audioChannel(theRadio, &ad);
+
+  while (run.load()) {
+    sleep(1);
+    if ((sleepCounter >= 0) && (audiofilePointer != NULL)) {
+      sleepCounter++;
+      if (sleepCounter >= sleepLimit) {
+        pcmLock.lock();
+        sf_close(audiofilePointer);
+        audiofilePointer = NULL;
+        run.store(false);
+        pcmLock.unlock();
+      }
+    }
+  }
+
+  theDevice->stopReader();
+  dabReset(theRadio);
+  if (audiofilePointer != NULL) sf_close(audiofilePointer);
+  dabExit(theRadio);
+  delete theDevice;
+  delete soundOut;
 }
 
-void    printOptions (void) {
-        std::cerr << 
-"                          dab-cmdline options are\n\
+void printOptions(void) {
+  std::cerr << "                          dab-cmdline options are\n\
                           -D number   amount of time to look for an ensemble\n\
 	                  -d number   seconds within a time sync should be reached\n\
                           -M Mode     Mode is 1, 2 or 4. Default is Mode 1\n\
@@ -581,4 +526,3 @@ void    printOptions (void) {
                           -S hexnumber use hexnumber to identify program\n\n\
 	                  -O filename put the output into a file rather than through portaudio\n";
 }
-

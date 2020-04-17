@@ -6,7 +6,7 @@
  *
  *    This file is part of the SDR-J.
  *    Many of the ideas as implemented in SDR-J are derived from
- *    other work, made available through the GNU general Public License. 
+ *    other work, made available through the GNU general Public License.
  *    All copyrights of the original authors are recognized.
  *
  *    SDR-J is free software; you can redistribute it and/or modify
@@ -25,27 +25,25 @@
  *
  *	Main program
  */
-#include	<QApplication>
-#include	<QDir>
-#include	"client.h"
+#include <QApplication>
+#include <QDir>
+#include "client.h"
 
-
-#ifdef	__MINGW32__
-#include	"windows.h"
+#ifdef __MINGW32__
+#include "windows.h"
 #endif
 
-int	main (int argc, char **argv) {
-Client	*myClient;
+int main(int argc, char **argv) {
+  Client *myClient;
 
-	QApplication a (argc, argv);
-	myClient 	= new Client ();
-	myClient	-> show ();
-	a. exec ();
-/*
- *	done:
- */
-	fflush (stdout);
-	fflush (stderr);
-	qDebug ("It is done\n");
+  QApplication a(argc, argv);
+  myClient = new Client();
+  myClient->show();
+  a.exec();
+  /*
+   *	done:
+   */
+  fflush(stdout);
+  fflush(stderr);
+  qDebug("It is done\n");
 }
-

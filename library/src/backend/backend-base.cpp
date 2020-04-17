@@ -20,21 +20,14 @@
  *    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  */
-#include	"backend-base.h"
+#include "backend-base.h"
 
-	backendBase::backendBase (void) {
+backendBase::backendBase(void) {}
+
+backendBase::~backendBase(void) {}
+
+void backendBase::setError_handler(decodeErrorReport_t err_Handler) {
+  (void)err_Handler;
 }
 
-	backendBase::~backendBase	(void) {
-}
-
-void	backendBase::setError_handler(decodeErrorReport_t err_Handler) {
-	(void)err_Handler;
-}
-
-void	backendBase::addtoFrame	(uint8_t *v) {
-	(void)v;
-}
-
-
-
+void backendBase::addtoFrame(uint8_t *v) { (void)v; }

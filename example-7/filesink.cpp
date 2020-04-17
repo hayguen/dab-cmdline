@@ -21,43 +21,36 @@
  *    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  */
-#include	<stdio.h>
-#include	"filesink.h"
+#include "filesink.h"
+#include <stdio.h>
 
-	fileSink::fileSink	(std::string fileName, bool *success) {
-	if (fileName == "-")	{	// stdout
-	   outputFile = stdout;
-	   *success = true;
-	}
-	else {
-	   outputFile = fopen (fileName. c_str (), "w+b");
-	   *success = outputFile != NULL;
-	}
-	audioOK = *success;
+fileSink::fileSink(std::string fileName, bool *success) {
+  if (fileName == "-") {  // stdout
+    outputFile = stdout;
+    *success = true;
+  } else {
+    outputFile = fopen(fileName.c_str(), "w+b");
+    *success = outputFile != NULL;
+  }
+  audioOK = *success;
 }
 
-
-	fileSink::~fileSink	(void) {
-	   if (audioOK)
-	      fclose (outputFile);
-	}
-
-void	fileSink::stop		(void) {
+fileSink::~fileSink(void) {
+  if (audioOK) fclose(outputFile);
 }
 
-void	fileSink::restart	(void) {
+void fileSink::stop(void) {}
+
+void fileSink::restart(void) {}
+
+void fileSink::audioOutput(float *buffer, int32_t amount) {
+  if (audioOK) {
+    int16_t localBuffer[2 * amount];
+    int16_t i;
+    for (i = 0; i < amount; i++) {
+      localBuffer[2 * i] = buffer[2 * i] * 32767;
+      localBuffer[2 * i + 1] = buffer[2 * i + 1] * 32767;
+    }
+    fwrite(localBuffer, 2 * sizeof(int16_t), amount, outputFile);
+  }
 }
-
-void	fileSink::audioOutput	(float *buffer, int32_t amount) {
-	if (audioOK) {
-	   int16_t localBuffer [2 * amount];
-	   int16_t i;
-	   for (i = 0; i < amount; i ++) {
-	      localBuffer [2 * i    ] = buffer [2 * i] * 32767;
-	      localBuffer [2 * i + 1] = buffer [2 * i + 1] * 32767;
-	   }
-	   fwrite (localBuffer, 2 * sizeof (int16_t), amount, outputFile);
-	}
-}
-
-

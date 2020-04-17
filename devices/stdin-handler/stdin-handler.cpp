@@ -19,116 +19,107 @@
  *    along with DAB library; if not, write to the Free Software
  *    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * 	stdinHandler 
+ * 	stdinHandler
  *	takes the input bytes from stdin
  */
-#include        <stdio.h>
-#include        <unistd.h>
-#include        <stdlib.h>
-#include        <fcntl.h>
-#include        <sys/time.h>
-#include        <time.h>
-#include        <cstring>
-#include        "stdin-handler.h"
+#include "stdin-handler.h"
+#include <fcntl.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/time.h>
+#include <time.h>
+#include <unistd.h>
+#include <cstring>
 
-static inline
-int64_t         getMyTime       (void) {
-struct timeval  tv;
+static inline int64_t getMyTime(void) {
+  struct timeval tv;
 
-        gettimeofday (&tv, NULL);
-        return ((int64_t)tv. tv_sec * 1000000 + (int64_t)tv. tv_usec);
+  gettimeofday(&tv, NULL);
+  return ((int64_t)tv.tv_sec * 1000000 + (int64_t)tv.tv_usec);
 }
 
-#define	__BUFFERSIZE	16 * 32768
+#define __BUFFERSIZE 16 * 32768
 //
 //
-	stdinHandler::stdinHandler (void) {
-	_I_Buffer	= new RingBuffer<std::complex<float>>(__BUFFERSIZE);
-	
-	filePointer	= stdin;
-	if (filePointer == NULL) {
-	   fprintf (stderr, "Cannot open stdin\n");
-	   delete _I_Buffer;
-	   throw (31);
-	}
-	running. store (false);
+stdinHandler::stdinHandler(void) {
+  _I_Buffer = new RingBuffer<std::complex<float>>(__BUFFERSIZE);
+
+  filePointer = stdin;
+  if (filePointer == NULL) {
+    fprintf(stderr, "Cannot open stdin\n");
+    delete _I_Buffer;
+    throw(31);
+  }
+  running.store(false);
 }
 
-	stdinHandler::~stdinHandler (void) {
-	if (running. load ()) {
-	   running. store (false);
-	   workerHandle. join ();
-	}
-	fclose (filePointer);
-	delete _I_Buffer;
+stdinHandler::~stdinHandler(void) {
+  if (running.load()) {
+    running.store(false);
+    workerHandle.join();
+  }
+  fclose(filePointer);
+  delete _I_Buffer;
 }
 
-bool	stdinHandler::restartReader	(int32_t frequency) {
-	(void)frequency;
-	workerHandle = std::thread (&stdinHandler::run, this);
-	running. store (true);
-	return true;
+bool stdinHandler::restartReader(int32_t frequency) {
+  (void)frequency;
+  workerHandle = std::thread(&stdinHandler::run, this);
+  running.store(true);
+  return true;
 }
 
-
-void	stdinHandler::stopReader	(void) {
-	if (running. load ())
-           workerHandle. join ();
-        running. store (false);
+void stdinHandler::stopReader(void) {
+  if (running.load()) workerHandle.join();
+  running.store(false);
 }
 
-int32_t	stdinHandler::getSamples	(std::complex<float> *V, int32_t size) {
-int32_t	amount;
+int32_t stdinHandler::getSamples(std::complex<float> *V, int32_t size) {
+  int32_t amount;
 
-	if (filePointer == NULL)
-	   return 0;
+  if (filePointer == NULL) return 0;
 
-	while ((_I_Buffer -> GetRingBufferReadAvailable ()) < size)
-	   usleep (100);
+  while ((_I_Buffer->GetRingBufferReadAvailable()) < size) usleep(100);
 
-	amount	= _I_Buffer -> getDataFromBuffer (V, size);
-	return amount;
+  amount = _I_Buffer->getDataFromBuffer(V, size);
+  return amount;
 }
 
-int32_t	stdinHandler::Samples (void) {
-	return _I_Buffer -> GetRingBufferReadAvailable ();
+int32_t stdinHandler::Samples(void) {
+  return _I_Buffer->GetRingBufferReadAvailable();
 }
 //
 //	The actual interface to the filereader is in a separate thread
 //	we read in fragments of 2 msec
-void	stdinHandler::run (void) {
-int32_t	t, i;
-std::complex<float>	*bi;
-uint8_t	*b2;
-int32_t	bufferSize	= 2048 * 2;
-int64_t	nextStop;
+void stdinHandler::run(void) {
+  int32_t t, i;
+  std::complex<float> *bi;
+  uint8_t *b2;
+  int32_t bufferSize = 2048 * 2;
+  int64_t nextStop;
 
-	running. store (true);
-	bi		= new std::complex<float> [bufferSize];
-	b2		= new uint8_t [bufferSize * 2]; 
-	nextStop	= getMyTime ();
-	while (running. load ()) {
-	   while (_I_Buffer -> WriteSpace () < bufferSize + 10) {
-	      if (!running. load ())
-	         break;
-	      usleep (100);
-	   }
+  running.store(true);
+  bi = new std::complex<float>[bufferSize];
+  b2 = new uint8_t[bufferSize * 2];
+  nextStop = getMyTime();
+  while (running.load()) {
+    while (_I_Buffer->WriteSpace() < bufferSize + 10) {
+      if (!running.load()) break;
+      usleep(100);
+    }
 
-	   nextStop += period;
-	   t = fread (b2, 1, 2 * bufferSize, filePointer);
-	   for (i = 0; i < bufferSize; i ++) {
-	      bi [i] = std::complex <float> (
-	                            (b2 [2 * i    ] - 128) / 128.0,
-	                            (b2 [2 * i + 1] - 128) / 128.0);
-	   }
+    nextStop += period;
+    t = fread(b2, 1, 2 * bufferSize, filePointer);
+    for (i = 0; i < bufferSize; i++) {
+      bi[i] = std::complex<float>((b2[2 * i] - 128) / 128.0,
+                                  (b2[2 * i + 1] - 128) / 128.0);
+    }
 
-	   _I_Buffer -> putDataIntoBuffer (bi, t);
-	   if (nextStop - getMyTime () > 0)
-	      usleep (nextStop - getMyTime ());
-	}
+    _I_Buffer->putDataIntoBuffer(bi, t);
+    if (nextStop - getMyTime() > 0) usleep(nextStop - getMyTime());
+  }
 
-	delete [] b2;
-	delete [] bi;
-	fprintf (stderr, "taak voor replay eindigt hier\n");
+  delete[] b2;
+  delete[] bi;
+  fprintf(stderr, "taak voor replay eindigt hier\n");
 }
-

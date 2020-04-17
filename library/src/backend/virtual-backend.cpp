@@ -2,7 +2,7 @@
 /*
  *    Copyright (C) 2013 .. 2017
  *    Jan van Katwijk (J.vanKatwijk@gmail.com)
- *    Lazy Chair programming 
+ *    Lazy Chair programming
  *
  *    This file is part of the DAB-library
  *    DAB-library is free software; you can redistribute it and/or modify
@@ -22,40 +22,30 @@
 //
 //	dummy for the dab handler
 //
-#include	"dab-constants.h"
-#include	"virtual-backend.h"
+#include "virtual-backend.h"
+#include "dab-constants.h"
 
-        virtualBackend::virtualBackend  (int16_t a, int16_t l) {
-        startAddress    = a;
-        segmentLength   = l;
+virtualBackend::virtualBackend(int16_t a, int16_t l) {
+  startAddress = a;
+  segmentLength = l;
 }
 
-        virtualBackend::~virtualBackend (void) {
+virtualBackend::~virtualBackend(void) {}
+
+void virtualBackend::setError_handler(decodeErrorReport_t err_Handler) {
+  (void)err_Handler;
 }
 
-void	virtualBackend::setError_handler(decodeErrorReport_t err_Handler) {
-	(void)err_Handler;
+int32_t virtualBackend::process(int16_t *v, int16_t c) {
+  (void)v;
+  (void)c;
+  return 32768;
 }
 
-int32_t virtualBackend::process (int16_t *v, int16_t c) {
-        (void)v;
-        (void)c;
-        return 32768;
-}
+int16_t virtualBackend::startAddr(void) { return startAddress; }
 
-int16_t virtualBackend::startAddr (void) {
-        return startAddress;
-}
+int16_t virtualBackend::Length(void) { return segmentLength; }
 
-int16_t virtualBackend::Length (void) {
-        return segmentLength;
-}
+void virtualBackend::stopRunning(void) {}
 
-
-void    virtualBackend::stopRunning     (void) {
-}
-
-void    virtualBackend::stop    (void) {
-}
-
-
+void virtualBackend::stop(void) {}
