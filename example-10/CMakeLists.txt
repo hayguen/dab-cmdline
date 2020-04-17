@@ -285,16 +285,17 @@ endif ()
 	           ./
 	           ./server-thread
 	           ../
-	           ../library
-	           ../library/includes
-	           ../library/includes/ofdm
-	           ../library/includes/backend
-	           ../library/includes/backend/audio
-	           ../library/includes/backend/data
-	           ../library/includes/backend/data/mot
-	           ../library/includes/backend/data/journaline
-	           ../library/includes/support
-	           ../library/includes/support/viterbi_768
+	           ../devices
+	           ../includes
+	           ../includes/ofdm
+	           ../includes/backend
+	           ../includes/backend/audio
+	           ../includes/backend/data
+	           ../includes/backend/data/mot
+	           ../includes/backend/data/journaline
+	           ../includes/protection
+	           ../includes/support
+	           ../includes/support/viterbi_768
 	           /usr/include/
 	)
 
@@ -309,43 +310,43 @@ endif ()
 	     ../dab-api.h
 	     ../convenience.h
 	     ../devices/device-handler.h
-	     ../library/includes/dab-constants.h
-	     ../library/includes/dab-processor.h
-	     ../library/includes/ofdm/phasereference.h
-	     ../library/includes/ofdm/phasetable.h
-	     ../library/includes/ofdm/freq-interleaver.h
-	     ../library/includes/ofdm/timesyncer.h
-	     ../library/includes/ofdm/fic-handler.h
-	     ../library/includes/ofdm/fib-processor.h
-	     ../library/includes/ofdm/tii_detector.h
-	     ../library/includes/ofdm/sample-reader.h
-	     ../library/includes/backend/firecode-checker.h
-	     ../library/includes/backend/backend-base.h
-	     ../library/includes/backend/charsets.h
-	     ../library/includes/backend/galois.h
-	     ../library/includes/backend/reed-solomon.h
-	     ../library/includes/backend/msc-handler.h
-	     ../library/includes/backend/virtual-backend.h
-	     ../library/includes/backend/audio-backend.h
-	     ../library/includes/backend/data-backend.h
-	     ../library/includes/backend/audio/faad-decoder.h
-	     ../library/includes/backend/audio/mp4processor.h 
-	     ../library/includes/backend/audio/mp2processor.h 
-	     ../library/includes/backend/data/virtual-datahandler.h 
-	     ../library/includes/backend/data/tdc-datahandler.h 
-	     ../library/includes/backend/data/pad-handler.h 
-	     ../library/includes/backend/data/data-processor.h
-	     ../library/includes/backend/data/mot/mot-handler.h
-	     ../library/includes/backend/data/mot/mot-dir.h
-	     ../library/includes/backend/data/mot/mot-object.h
-	     ../library/includes/support/viterbi_768/viterbi-768.h
-	     ../library/includes/support/protTables.h
-	     ../library/includes/support/protection.h
-	     ../library/includes/support/uep-protection.h
-	     ../library/includes/support/eep-protection.h
-	     ../library/includes/support/fft_handler.h
-	     ../library/includes/support/dab-params.h
-	     ../library/includes/support/tii_table.h
+	     ../includes/dab-constants.h
+	     ../includes/dab-processor.h
+	     ../includes/ofdm/phasereference.h
+	     ../includes/ofdm/phasetable.h
+	     ../includes/ofdm/freq-interleaver.h
+	     ../includes/ofdm/timesyncer.h
+	     ../includes/ofdm/fic-handler.h
+	     ../includes/ofdm/fib-processor.h
+	     ../includes/ofdm/tii_detector.h
+	     ../includes/ofdm/sample-reader.h
+	     ../includes/backend/firecode-checker.h
+	     ../includes/backend/backend-base.h
+	     ../includes/backend/charsets.h
+	     ../includes/backend/galois.h
+	     ../includes/backend/reed-solomon.h
+	     ../includes/backend/msc-handler.h
+	     ../includes/backend/virtual-backend.h
+	     ../includes/backend/audio-backend.h
+	     ../includes/backend/data-backend.h
+	     ../includes/backend/audio/faad-decoder.h
+	     ../includes/backend/audio/mp4processor.h 
+	     ../includes/backend/audio/mp2processor.h 
+	     ../includes/backend/data/virtual-datahandler.h 
+	     ../includes/backend/data/tdc-datahandler.h 
+	     ../includes/backend/data/pad-handler.h 
+	     ../includes/backend/data/data-processor.h
+	     ../includes/backend/data/mot/mot-handler.h
+	     ../includes/backend/data/mot/mot-dir.h
+	     ../includes/backend/data/mot/mot-object.h
+	     ../includes/protection/protTables.h
+	     ../includes/protection/protection.h
+	     ../includes/protection/uep-protection.h
+	     ../includes/protection/eep-protection.h
+	     ../includes/support/viterbi_768/viterbi-768.h
+	     ../includes/support/fft_handler.h
+	     ../includes/support/dab-params.h
+	     ../includes/support/tii_table.h
 	)
 
 	set (${objectName}_SRCS
@@ -358,44 +359,44 @@ endif ()
 	     ./server-thread/tcp-server.cpp
 	     ../convenience.c
 	     ../devices/device-handler.cpp
-	     ../library/dab-api.cpp
-	     ../library/src/dab-processor.cpp
-	     ../library/src/ofdm/ofdm-decoder.cpp
-	     ../library/src/ofdm/phasereference.cpp
-	     ../library/src/ofdm/phasetable.cpp
-	     ../library/src/ofdm/freq-interleaver.cpp
-	     ../library/src/ofdm/timesyncer.cpp
-	     ../library/src/ofdm/sample-reader.cpp
-	     ../library/src/ofdm/fib-processor.cpp
-	     ../library/src/ofdm/fic-handler.cpp
-	     ../library/src/ofdm/tii_detector.cpp
-	     ../library/src/backend/firecode-checker.cpp
-	     ../library/src/backend/backend-base.cpp
-	     ../library/src/backend/charsets.cpp
-	     ../library/src/backend/galois.cpp
-	     ../library/src/backend/reed-solomon.cpp
-	     ../library/src/backend/msc-handler.cpp
-	     ../library/src/backend/virtual-backend.cpp
-	     ../library/src/backend/audio-backend.cpp
-	     ../library/src/backend/data-backend.cpp
-	     ../library/src/backend/audio/mp4processor.cpp 
-	     ../library/src/backend/audio/mp2processor.cpp 
-	     ../library/src/backend/data/virtual-datahandler.cpp 
-	     ../library/src/backend/data/tdc-datahandler.cpp 
-	     ../library/src/backend/data/pad-handler.cpp 
-	     ../library/src/backend/data/data-processor.cpp
-	     ../library/src/backend/data/mot/mot-handler.cpp
-	     ../library/src/backend/data/mot/mot-dir.cpp
-	     ../library/src/backend/data/mot/mot-object.cpp
-	     ../library/src/support/viterbi_768/viterbi-768.cpp
-	     ../library/src/support/viterbi_768/spiral-no-sse.c
-	     ../library/src/support/protTables.cpp
-	     ../library/src/support/protection.cpp
-	     ../library/src/support/eep-protection.cpp
-	     ../library/src/support/uep-protection.cpp
-	     ../library/src/support/fft_handler.cpp
-	     ../library/src/support/dab-params.cpp
-	     ../library/src/support/tii_table.cpp
+	     ../src/dab-api.cpp
+	     ../src/dab-processor.cpp
+	     ../src/ofdm/ofdm-decoder.cpp
+	     ../src/ofdm/phasereference.cpp
+	     ../src/ofdm/phasetable.cpp
+	     ../src/ofdm/freq-interleaver.cpp
+	     ../src/ofdm/timesyncer.cpp
+	     ../src/ofdm/sample-reader.cpp
+	     ../src/ofdm/fib-processor.cpp
+	     ../src/ofdm/fic-handler.cpp
+	     ../src/ofdm/tii_detector.cpp
+	     ../src/backend/firecode-checker.cpp
+	     ../src/backend/backend-base.cpp
+	     ../src/backend/charsets.cpp
+	     ../src/backend/galois.cpp
+	     ../src/backend/reed-solomon.cpp
+	     ../src/backend/msc-handler.cpp
+	     ../src/backend/virtual-backend.cpp
+	     ../src/backend/audio-backend.cpp
+	     ../src/backend/data-backend.cpp
+	     ../src/backend/audio/mp4processor.cpp 
+	     ../src/backend/audio/mp2processor.cpp 
+	     ../src/backend/data/virtual-datahandler.cpp 
+	     ../src/backend/data/tdc-datahandler.cpp 
+	     ../src/backend/data/pad-handler.cpp 
+	     ../src/backend/data/data-processor.cpp
+	     ../src/backend/data/mot/mot-handler.cpp
+	     ../src/backend/data/mot/mot-dir.cpp
+	     ../src/backend/data/mot/mot-object.cpp
+	     ../src/protection/protTables.cpp
+	     ../src/protection/protection.cpp
+	     ../src/protection/eep-protection.cpp
+	     ../src/protection/uep-protection.cpp
+	     ../src/support/viterbi_768/viterbi-768.cpp
+	     ../src/support/viterbi_768/spiral-no-sse.c
+	     ../src/support/fft_handler.cpp
+	     ../src/support/dab-params.cpp
+	     ../src/support/tii_table.cpp
 	)
 
 #

@@ -54,7 +54,7 @@ typedef	int (*  pfnrtlsdr_read_async) (rtlsdr_dev_t *,
 	                               uint32_t);
 typedef int (*  pfnrtlsdr_cancel_async) (rtlsdr_dev_t *);
 typedef int (*  pfnrtlsdr_set_direct_sampling) (rtlsdr_dev_t *, int);
-typedef uint32_t (*  pfnrtlsdr_get_device_count) (void);
+typedef uint32_t (*  pfnrtlsdr_get_device_count) ();
 typedef	int (* pfnrtlsdr_set_freq_correction)(rtlsdr_dev_t *, int);
 typedef	char *(* pfnrtlsdr_get_device_name)(int);
 typedef	const char *(* pfnrtlsdr_get_opt_help)(int longInfo);

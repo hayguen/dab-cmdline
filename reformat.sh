@@ -6,4 +6,10 @@
 # execute without arguments for testing
 # execute appending " | bash" to reformat all the files
 
-find . -regex '.*\.\(cpp\|hpp\|c\|cc\|cxx\)' -printf "clang-format -i -style=Google \"%p\"\n"
+GIT_TOP_DIR=$(git rev-parse --show-toplevel)
+if [ ! "$(pwd)" = "$GIT_TOP_DIR" ]; then
+  echo "execute this from $GIT_TOP_DIR"
+  exit 1
+fi
+
+find . -regex '.*\.\(cpp\|hpp\|h\|c\|cc\|cxx\)' -printf "clang-format -i -style=Google \"%p\"\n"
