@@ -50,12 +50,12 @@ class dabProcessor {
                fib_quality_t, audioOut_t, bytesOut_t, dataOut_t, programdata_t,
                programQuality_t, motdata_t, RingBuffer<std::complex<float>> *,
                RingBuffer<std::complex<float>> *, void *);
-  virtual ~dabProcessor(void);
-  void reset(void);
-  void stop(void);
+  virtual ~dabProcessor();
+  void reset();
+  void stop();
   void setOffset(int32_t);
-  void start(void);
-  bool signalSeemsGood(void);
+  void start();
+  bool signalSeemsGood();
   void show_Corrector(int);
   //      inheriting from our delegates
   void setSelectedService(std::string);
@@ -68,9 +68,9 @@ class dabProcessor {
   std::string get_serviceName(int32_t);
   void set_audioChannel(audiodata *);
   void set_dataChannel(packetdata *);
-  std::string get_ensembleName(void);
-  void clearEnsemble(void);
-  void reset_msc(void);
+  std::string get_ensembleName();
+  void clearEnsemble();
+  void reset_msc();
 
   void setTII_handler(tii_t tii_Handler, tii_ex_t tii_ExHandler,
                       int tii_framedelay, float alfa, int resetFrameCount);
@@ -121,6 +121,6 @@ class dabProcessor {
 
   bool wasSecond(int16_t, dabParams *);
 
-  virtual void run(void);
+  virtual void run();
 };
 #endif

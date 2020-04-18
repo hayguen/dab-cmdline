@@ -34,9 +34,9 @@
 class phaseReference : public phaseTable {
  public:
   phaseReference(uint8_t, int16_t, int16_t);
-  ~phaseReference(void);
-  int32_t findIndex(std::complex<float> *);
-  int16_t estimateOffset(std::complex<float> *);
+  ~phaseReference();
+  int32_t findIndex(const std::complex<float> *);
+  int16_t estimateOffset(const std::complex<float> *);
 
  private:
   std::vector<std::complex<float>> refTable;
@@ -47,6 +47,5 @@ class phaseReference : public phaseTable {
   int16_t diff_length;
 
   fft_handler my_fftHandler;
-  std::complex<float> *fft_buffer;
 };
 #endif

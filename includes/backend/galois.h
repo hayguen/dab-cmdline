@@ -37,19 +37,19 @@ class galois {
   std::vector<uint16_t> index_of; /* Antilog lookup table */
  public:
   galois(uint16_t mm, uint16_t poly);
-  ~galois();
+  ~galois() { }
   int modnn(int);
-  uint16_t add_poly(uint16_t a, uint16_t b);
-  uint16_t add_power(uint16_t a, uint16_t b);
+  uint16_t add_poly(uint16_t a, uint16_t b) { return a ^ b; }
+  uint16_t add_power(uint16_t a, uint16_t b) { return index_of[alpha_to[a] ^ alpha_to[b]]; }
   uint16_t multiply_poly(uint16_t a, uint16_t b);  // a*b
-  uint16_t multiply_power(uint16_t a, uint16_t b);
+  uint16_t multiply_power(uint16_t a, uint16_t b) { return modnn(a + b); }
   uint16_t divide_poly(uint16_t a, uint16_t b);  // a/b
-  uint16_t divide_power(uint16_t a, uint16_t b);
-  uint16_t pow_poly(uint16_t a, uint16_t n);  // a^n
-  uint16_t pow_power(uint16_t a, uint16_t n);
-  uint16_t power2poly(uint16_t a);
-  uint16_t poly2power(uint16_t a);
-  uint16_t inverse_poly(uint16_t a);
-  uint16_t inverse_power(uint16_t a);
+  uint16_t divide_power(uint16_t a, uint16_t b) { return modnn(d_q - 1 + a - b); }
+  uint16_t pow_poly(uint16_t a, uint16_t n) { return alpha_to[pow_power(index_of[a], n)]; } // a^n
+  uint16_t pow_power(uint16_t a, uint16_t n) { return (a == 0) ? 0 : (a * n) % (d_q - 1); }
+  uint16_t power2poly(uint16_t a) { return alpha_to[a]; }
+  uint16_t poly2power(uint16_t a) { return index_of[a]; }
+  uint16_t inverse_poly(uint16_t a) { return alpha_to[inverse_power(index_of[a])]; }
+  uint16_t inverse_power(uint16_t a) { return d_q - 1 - a; }
 };
 #endif

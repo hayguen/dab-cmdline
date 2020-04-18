@@ -33,7 +33,7 @@
 #include <vector>
 #include "dab-api.h"
 #include "dab-params.h"
-#include "fib-processor.h"
+#include "fib-decoder.h"
 #include "viterbi-handler.h"
 
 class ficHandler : public viterbiHandler {

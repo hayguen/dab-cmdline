@@ -80,7 +80,7 @@ using namespace std;
 
 static inline bool isIndeterminate(float x) { return x != x; }
 
-static inline bool isInfinite(double x) {
+static inline bool isInfinite(float x) {
   return x == numeric_limits<float>::infinity();
 }
 
@@ -93,7 +93,7 @@ static inline std::complex<float> cdiv(std::complex<float> x, float y) {
 }
 
 static inline float get_db(float x) {
-  return 20 * log10((x + 1) / (float)(256));
+  return 20 * log10((x + 0.005F) / 256.0F);
 }
 //
 
@@ -103,9 +103,7 @@ static inline float get_db(float x) {
 static inline float jan_abs(std::complex<float> z) {
   float re = real(z);
   float im = imag(z);
-  if (re < 0) re = -re;
-  if (im < 0) im = -im;
-  return re + im;
+  return (re < 0 ? -re : re) + (im < 0 ? -im : im);
 }
 //
 

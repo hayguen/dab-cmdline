@@ -40,13 +40,12 @@ phaseReference::phaseReference(uint8_t dabMode, int16_t threshold,
   this->diff_length = diff_length;
   refTable.resize(T_u);
   phaseDifferences.resize(diff_length);
-  fft_buffer = my_fftHandler.getVector();
 
   for (i = 1; i <= params.get_carriers() / 2; i++) {
     Phi_k = get_Phi(i);
-    refTable[i] = std::complex<float>(cos(Phi_k), sin(Phi_k));
+    refTable[i] = std::complex<float>(cosf(Phi_k), sinf(Phi_k));
     Phi_k = get_Phi(-i);
-    refTable[T_u - i] = std::complex<float>(cos(Phi_k), sin(Phi_k));
+    refTable[T_u - i] = std::complex<float>(cosf(Phi_k), sinf(Phi_k));
   }
   //
   //      prepare a table for the coarse frequency synchronization
@@ -55,29 +54,30 @@ phaseReference::phaseReference(uint8_t dabMode, int16_t threshold,
         arg(refTable[(T_u + i) % T_u] * conj(refTable[(T_u + i + 1) % T_u])));
 }
 
-phaseReference::~phaseReference(void) {}
+phaseReference::~phaseReference() {}
 
 /**
  *	\brief findIndex
  *	the vector v contains "T_u" samples that are believed to
  *	belong to the first non-null block of a DAB frame.
- *	We correlate the data in this verctor with the predefined
+ *	We correlate the data in this vector with the predefined
  *	data, and if the maximum exceeds a threshold value,
  *	we believe that that indicates the first sample we were
  *	looking for.
  */
-int32_t phaseReference::findIndex(std::complex<float> *v) {
+int32_t phaseReference::findIndex(const std::complex<float> *v) {
   int32_t i;
   int32_t maxIndex = -1;
   float sum = 0;
   float Max = -10000;
+  std::complex<float> *fft_buffer = my_fftHandler.getVector();
 
   memcpy(fft_buffer, v, T_u * sizeof(std::complex<float>));
-  my_fftHandler.do_FFT(fft_handler::fftForward);
+  my_fftHandler.do_FFT();
   //	 into the frequency domain, now correlate
   for (i = 0; i < T_u; i++) fft_buffer[i] *= conj(refTable[i]);
   //	and, again, back into the time domain
-  my_fftHandler.do_FFT(fft_handler::fftBackwards);
+  my_fftHandler.do_IFFT();
   /**
    *	We compute the average signal value ...
    */
@@ -114,12 +114,13 @@ int32_t phaseReference::findIndex(std::complex<float> *v) {
 //      at the "weight" of the positive and negative carriers in the
 //      fft, but that did not work too well.
 #define SEARCH_RANGE (2 * 35)
-int16_t phaseReference::estimateOffset(std::complex<float> *v) {
+int16_t phaseReference::estimateOffset(const std::complex<float> *v) {
+  std::complex<float> *fft_buffer = my_fftHandler.getVector();
   int16_t i, j, index = 100;
   float computedDiffs[SEARCH_RANGE + diff_length + 1];
 
   memcpy(fft_buffer, v, T_u * sizeof(std::complex<float>));
-  my_fftHandler.do_FFT(fft_handler::fftForward);
+  my_fftHandler.do_FFT();
 
   for (i = T_u - SEARCH_RANGE / 2; i < T_u + SEARCH_RANGE / 2 + diff_length;
        i++)

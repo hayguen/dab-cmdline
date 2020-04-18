@@ -21,33 +21,20 @@
  *    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 #include "fft_handler.h"
-#include <cstring>
 
-fft_handler::fft_handler(uint8_t dabMode) : p(dabMode) {
+fft_handler::fft_handler(uint8_t dabMode) {
   int i;
+  dabParams p(dabMode);
   this->fftSize = p.get_T_u();
-  vector = (complex<float> *)fftwf_malloc(sizeof(complex<float>) * fftSize);
+  vector = (std::complex<float> *)FFTW_MALLOC(sizeof(std::complex<float>) * fftSize);
   for (i = 0; i < fftSize; i++) vector[i] = std::complex<float>(0, 0);
-  plan = fftwf_plan_dft_1d(fftSize, reinterpret_cast<fftwf_complex *>(vector),
-                           reinterpret_cast<fftwf_complex *>(vector),
-                           FFTW_FORWARD, FFTW_ESTIMATE);
+  plan = FFTW_PLAN_DFT_1D(fftSize, reinterpret_cast<fftwf_complex *>(vector),
+                          reinterpret_cast<fftwf_complex *>(vector),
+                          FFTW_FORWARD, FFTW_ESTIMATE);
 }
 
-fft_handler::~fft_handler(void) {
-  fftwf_destroy_plan(plan);
-  fftwf_free(vector);
+fft_handler::~fft_handler() {
+  FFTW_DESTROY_PLAN(plan);
+  FFTW_FREE(vector);
 }
 
-complex<float> *fft_handler::getVector() { return vector; }
-//
-//	Note that we do not scale in case of backwards fft,
-//	not needed for our applications
-void fft_handler::do_FFT(fftDirection direction) {
-  int16_t i;
-
-  if (direction == fftBackwards)
-    for (i = 0; i < fftSize; i++) vector[i] = conj(vector[i]);
-  fftwf_execute(plan);
-  if (direction == fftBackwards)
-    for (i = 0; i < fftSize; i++) vector[i] = conj(vector[i]);
-}

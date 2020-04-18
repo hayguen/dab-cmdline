@@ -70,9 +70,9 @@ dabProcessor::dabProcessor(
   running.store(false);
 }
 
-dabProcessor::~dabProcessor(void) { stop(); }
+dabProcessor::~dabProcessor() { stop(); }
 
-void dabProcessor::start(void) {
+void dabProcessor::start() {
   if (running.load()) return;
   threadHandle = std::thread(&dabProcessor::run, this);
 }
@@ -85,7 +85,7 @@ void dabProcessor::start(void) {
  *	and sending them to the ofdmDecoder who will transfer the results
  *	Finally, estimating the small freqency error
  */
-void dabProcessor::run(void) {
+void dabProcessor::run() {
   std::complex<float> FreqCorr;
   timeSyncer myTimeSyncer(&myReader);
   int32_t i;
@@ -282,12 +282,12 @@ void dabProcessor::run(void) {
   //	fprintf (stderr, "dabProcessor is shutting down\n");
 }
 
-void dabProcessor::reset(void) {
+void dabProcessor::reset() {
   stop();
   start();
 }
 
-void dabProcessor::stop(void) {
+void dabProcessor::stop() {
   if (running.load()) {
     running.store(false);
     myReader.setRunning(false);
@@ -305,7 +305,7 @@ void dabProcessor::show_Corrector(int freqOffset) {
     systemdataHandler(isSynced, my_ofdmDecoder.get_snr(), freqOffset, userData);
 }
 
-bool dabProcessor::signalSeemsGood(void) { return isSynced; }
+bool dabProcessor::signalSeemsGood() { return isSynced; }
 //
 //	to be handled by delegates
 uint8_t dabProcessor::kindofService(std::string s) {
@@ -330,7 +330,7 @@ std::string dabProcessor::get_serviceName(int32_t SId) {
   return my_ficHandler.nameFor(SId);
 }
 
-void dabProcessor::reset_msc(void) { my_mscHandler.reset(); }
+void dabProcessor::reset_msc() { my_mscHandler.reset(); }
 
 void dabProcessor::setTII_handler(tii_t tii_Handler, tii_ex_t tii_ExHandler,
                                   int framedelay, float alfa,
@@ -386,7 +386,7 @@ void dabProcessor::set_dataChannel(packetdata *d) {
   my_mscHandler.set_dataChannel(d);
 }
 
-void dabProcessor::clearEnsemble(void) { my_ficHandler.reset(); }
+void dabProcessor::clearEnsemble() { my_ficHandler.reset(); }
 
 bool dabProcessor::wasSecond(int16_t cf, dabParams *p) {
   switch (p->get_dabMode()) {

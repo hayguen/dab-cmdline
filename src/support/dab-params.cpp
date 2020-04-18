@@ -75,22 +75,3 @@ dabParams::dabParams(uint8_t Mode) {
   }
 }
 
-dabParams::~dabParams(void) {}
-
-int16_t dabParams::get_dabMode(void) { return dabMode; }
-
-int16_t dabParams::get_L(void) { return L; }
-
-int16_t dabParams::get_carriers(void) { return K; }
-
-int16_t dabParams::get_T_null(void) { return T_null; }
-
-int16_t dabParams::get_T_s(void) { return T_s; }
-
-int16_t dabParams::get_T_u(void) { return T_u; }
-
-int16_t dabParams::get_T_g(void) { return T_g; }
-
-int32_t dabParams::get_T_F(void) { return T_F; }
-
-int32_t dabParams::get_carrierDiff(void) { return carrierDiff; }

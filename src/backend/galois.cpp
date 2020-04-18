@@ -62,31 +62,13 @@ int galois::modnn(int x) {
   return x;
 }
 
-galois::~galois() {}
-
 static inline uint16_t round_mod(int16_t a, int16_t n) {
   return (a % n < 0) ? (a % n + n) : (a % n);
 }
 
-uint16_t galois::add_poly(uint16_t a, uint16_t b) { return a ^ b; }
-
-uint16_t galois::poly2power(uint16_t a) { return index_of[a]; }
-
-uint16_t galois::power2poly(uint16_t a) { return alpha_to[a]; }
-
-uint16_t galois::add_power(uint16_t a, uint16_t b) {
-  return index_of[alpha_to[a] ^ alpha_to[b]];
-}
-
-uint16_t galois::multiply_power(uint16_t a, uint16_t b) { return modnn(a + b); }
-
 uint16_t galois::multiply_poly(uint16_t a, uint16_t b) {
   if ((a == 0) || (b == 0)) return 0;
   return alpha_to[multiply_power(index_of[a], index_of[b])];
-}
-
-uint16_t galois::divide_power(uint16_t a, uint16_t b) {
-  return modnn(d_q - 1 + a - b);
 }
 
 uint16_t galois::divide_poly(uint16_t a, uint16_t b) {
@@ -94,16 +76,3 @@ uint16_t galois::divide_poly(uint16_t a, uint16_t b) {
   return alpha_to[divide_power(index_of[a], index_of[b])];
 }
 
-uint16_t galois::inverse_poly(uint16_t a) {
-  return alpha_to[inverse_power(index_of[a])];
-}
-
-uint16_t galois::inverse_power(uint16_t a) { return d_q - 1 - a; }
-
-uint16_t galois::pow_poly(uint16_t a, uint16_t n) {
-  return alpha_to[pow_power(index_of[a], n)];
-}
-
-uint16_t galois::pow_power(uint16_t a, uint16_t n) {
-  return (a == 0) ? 0 : (a * n) % (d_q - 1);
-}

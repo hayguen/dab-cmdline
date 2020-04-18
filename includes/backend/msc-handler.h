@@ -61,7 +61,6 @@ class mscHandler {
   void process_mscBlock(std::vector<int16_t>, int16_t);
   dabParams params;
   fft_handler my_fftHandler;
-  std::complex<float> *fft_buffer;
   interLeaver myMapper;
   audioOut_t soundOut;
   dataOut_t dataOut;

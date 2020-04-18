@@ -23,27 +23,46 @@
 
 #ifndef __FFT_HANDLER__
 #define __FFT_HANDLER__
-//
-//	Simple wrapper around fftwf
-#include <fftw3.h>
+
+//  Simple wrapper around fftwf
 #include "dab-constants.h"
 #include "dab-params.h"
 
+#define FFTW_MALLOC fftwf_malloc
+#define FFTW_PLAN_DFT_1D fftwf_plan_dft_1d
+#define FFTW_DESTROY_PLAN fftwf_destroy_plan
+#define FFTW_FREE fftwf_free
+#define FFTW_PLAN fftwf_plan
+#define FFTW_EXECUTE fftwf_execute
+#include <fftw3.h>
+
+/*
+ *  a simple wrapper
+ */
+
 class fft_handler {
  public:
-  enum fftDirection { fftForward, fftBackwards };
-  fft_handler(uint8_t);
-  ~fft_handler(void);
-  complex<float> *getVector(void);
-  void do_FFT(fftDirection);
-  inline void do_FFT(void) { do_FFT(fftForward); }
-  inline void do_IFFT(void) { do_FFT(fftBackwards); }
+  fft_handler(uint8_t dabMode);
+  ~fft_handler();
+
+  inline std::complex<float> *getVector() { return vector; }
+
+  inline void do_FFT() { FFTW_EXECUTE(plan); }
+
+  //	Note that we do not scale here, not needed
+  //	for the purpose we are using it for
+  inline void do_IFFT() {
+    int32_t i;
+
+    for (i = 0; i < fftSize; i++) vector[i] = conj(vector[i]);
+    FFTW_EXECUTE(plan);
+    for (i = 0; i < fftSize; i++) vector[i] = conj(vector[i]);
+  }
 
  private:
-  dabParams p;
+  std::complex<float> *vector;
+  FFTW_PLAN plan;
   int32_t fftSize;
-  complex<float> *vector;
-  fftwf_plan plan;
 };
 
 #endif

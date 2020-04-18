@@ -1,27 +1,28 @@
 #
 /*
- *    Copyright (C) 2013 .. 2017
+ *    Copyright (C) 2013 .. 2020
  *    Jan van Katwijk (J.vanKatwijk@gmail.com)
- *    Lazy Chair Programming
+ *    Lazy Chair Computing
  *
- *    This file is part of the DAB-library
- *    DAB-library is free software; you can redistribute it and/or modify
+ *    This file is part of the Qt-DAB
+ *
+ *    Qt-DAB is free software; you can redistribute it and/or modify
  *    it under the terms of the GNU General Public License as published by
  *    the Free Software Foundation; either version 2 of the License, or
  *    (at your option) any later version.
  *
- *    DAB-library is distributed in the hope that it will be useful,
+ *    Qt-DAB is distributed in the hope that it will be useful,
  *    but WITHOUT ANY WARRANTY; without even the implied warranty of
  *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *    GNU General Public License for more details.
  *
  *    You should have received a copy of the GNU General Public License
- *    along with DAB-library; if not, write to the Free Software
+ *    along with Qt-DAB; if not, write to the Free Software
  *    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 #
-#ifndef __FIB_PROCESSOR__
-#define __FIB_PROCESSOR__
+#ifndef __FIB_DECODER__
+#define __FIB_DECODER__
 #
 //
 #include <stdint.h>
@@ -163,13 +164,15 @@ class fib_processor {
   bool FIG0Extension25(const uint8_t *);
   bool FIG0Extension26(const uint8_t *);
 
-  int16_t HandleFIG0Extension1(const uint8_t *, int16_t, uint8_t);
-  int16_t HandleFIG0Extension2(const uint8_t *, int16_t, uint8_t, uint8_t);
-  int16_t HandleFIG0Extension3(const uint8_t *, int16_t);
-  int16_t HandleFIG0Extension5(const uint8_t *, int16_t);
-  int16_t HandleFIG0Extension8(const uint8_t *, int16_t, uint8_t);
-  int16_t HandleFIG0Extension13(const uint8_t *, int16_t, uint8_t);
-  int16_t HandleFIG0Extension22(const uint8_t *, int16_t);
+  int16_t HandleFIG0Extension1(const uint8_t *, int16_t, uint8_t, uint8_t, uint8_t);
+  int16_t HandleFIG0Extension2(const uint8_t *, int16_t, uint8_t, uint8_t, uint8_t);
+  int16_t HandleFIG0Extension3(const uint8_t *, int16_t, uint8_t, uint8_t, uint8_t);
+  int16_t HandleFIG0Extension5(const uint8_t *, uint8_t, uint8_t, uint8_t, int16_t);
+  int16_t HandleFIG0Extension8(const uint8_t *, int16_t, uint8_t, uint8_t, uint8_t);
+  int16_t HandleFIG0Extension13(const uint8_t *, int16_t, uint8_t, uint8_t, uint8_t);
+  int16_t HandleFIG0Extension21(const uint8_t *, uint8_t, uint8_t, uint8_t, int16_t);
+  int16_t HandleFIG0Extension22(const uint8_t *, uint8_t, uint8_t, uint8_t, int16_t);
+
   bool FIG0processingOutput[32];
   uint8_t FIBrawCompressed[32];
 

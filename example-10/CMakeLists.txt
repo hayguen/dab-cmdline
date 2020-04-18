@@ -315,7 +315,7 @@ endif ()
 	     ../includes/ofdm/freq-interleaver.h
 	     ../includes/ofdm/timesyncer.h
 	     ../includes/ofdm/fic-handler.h
-	     ../includes/ofdm/fib-processor.h
+	     ../includes/ofdm/fib-decoder.h
 	     ../includes/ofdm/tii_detector.h
 	     ../includes/ofdm/sample-reader.h
 	     ../includes/backend/firecode-checker.h
@@ -365,7 +365,7 @@ endif ()
 	     ../src/ofdm/freq-interleaver.cpp
 	     ../src/ofdm/timesyncer.cpp
 	     ../src/ofdm/sample-reader.cpp
-	     ../src/ofdm/fib-processor.cpp
+	     ../src/ofdm/fib-decoder.cpp
 	     ../src/ofdm/fic-handler.cpp
 	     ../src/ofdm/tii_detector.cpp
 	     ../src/backend/firecode-checker.cpp

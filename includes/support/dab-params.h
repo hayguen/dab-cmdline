@@ -28,17 +28,17 @@
 
 class dabParams {
  public:
-  dabParams(uint8_t);
-  ~dabParams(void);
-  int16_t get_dabMode(void);
-  int16_t get_L(void);
-  int16_t get_carriers(void);
-  int16_t get_T_null(void);
-  int16_t get_T_s(void);
-  int16_t get_T_u(void);
-  int16_t get_T_g(void);
-  int32_t get_T_F(void);
-  int32_t get_carrierDiff(void);
+  dabParams(uint8_t Mode);
+
+  int16_t get_dabMode()  { return dabMode; }
+  int16_t get_L()        { return L; }
+  int16_t get_carriers() { return K; }
+  int16_t get_T_null()   { return T_null; }
+  int16_t get_T_s()      { return T_s; }
+  int16_t get_T_u()      { return T_u; }
+  int16_t get_T_g()      { return T_g; }
+  int32_t get_T_F()      { return T_F; }
+  int32_t get_carrierDiff() { return carrierDiff; }
 
  private:
   uint8_t dabMode;
