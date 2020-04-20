@@ -31,7 +31,10 @@
 //	protection level/classes, ..
 //	https://www.etsi.org/deliver/etsi_tr/101400_101499/10149603/01.01.02_60/tr_10149603v010102p.pdf
 
-static const char *uep_rates[] = {"7/20", "2/5", "1/2", "3/5"};
+// see https://www.etsi.org/deliver/etsi_i_ets/300700_300799/300799/01_30_9733/ets_300799e01v.pdf
+// page 19:  0.34 av, 0.43 av, 0.5 av, 0.6 av, 0.75 av
+static const char *uep_rates[] = {"7/20", "2/5", "1/2", "3/5", "3/4"};
+
 static const char *eep_Arates[] = {
     "1/4", "3/8", "1/2",
     "3/4"};  // see ETSI EN 300 401 V1.3.2 (2000-09), Table 8, page 46
@@ -920,9 +923,23 @@ const char *getProtectionLevel(bool shortForm, int16_t protLevel) {
 const char *getCodeRate(bool shortForm, int16_t protLevel) {
   int h = protLevel;
 
-  if (!shortForm)
-    return ((h & (1 << 2)) == 0) ? eep_Arates[h & 03]
-                                 : eep_Brates[h & 03];  // EEP -A/-B
-  else
-    return uep_rates[h & 03];  // UEP
+  if (!shortForm) {
+  #if 0
+    if ( 1 <= h && h <= 7 )
+      return ((h & (1 << 2)) == 0) ? eep_Arates[h & 03]
+                                   : eep_Brates[h & 03];  // EEP -A/-B
+  #endif
+    if ( 0 <= h && h <= 3 )
+      return eep_Arates[h];
+    else if ( 4 <= h && h <= 7 )
+      return eep_Brates[h - 4];
+    else
+      return "unknown";
+  }
+  else {
+    if ( 1 <= h && h <= 5 )
+      return uep_rates[h -1];  // UEP
+    else
+      return "unknown";
+  }
 }
