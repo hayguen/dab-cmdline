@@ -47,6 +47,7 @@ class deviceHandler {
   virtual void setGain(int32_t);
   virtual bool has_autogain(void);
   virtual void set_autogain(bool);
+  virtual double currentOffset() const { return -1.0; }  // in seconds; < 0 for undefined
   //
   //	for the sdrplay
   virtual void set_ifgainReduction(int);

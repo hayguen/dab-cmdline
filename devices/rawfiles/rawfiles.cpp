@@ -47,7 +47,12 @@ rawFiles::rawFiles(std::string f, bool repeater) {
   fileName = f;
   (void)repeater;
   _I_Buffer = new RingBuffer<std::complex<float>>(__BUFFERSIZE);
-  filePointer = fopen(f.c_str(), "rb");
+  if ( !strcmp(f.c_str(), "-" ) ) {
+    filePointer = stdin;
+    fprintf(stderr, "using stdin (pipe) as input\n");
+  }
+  else
+    filePointer = fopen(f.c_str(), "rb");
   if (filePointer == NULL) {
     fprintf(stderr, "file %s cannot open\n", f.c_str());
     perror("file ?");
@@ -66,7 +71,12 @@ rawFiles::rawFiles(std::string f, double fileOffsetInSeconds,
                    device_eof_callback_t eofHandler, void *userData) {
   fileName = f;
   _I_Buffer = new RingBuffer<std::complex<float>>(__BUFFERSIZE);
-  filePointer = fopen(f.c_str(), "rb");
+  if ( !strcmp(f.c_str(), "-" ) ) {
+    filePointer = stdin;
+    fprintf(stderr, "using stdin (pipe) as input\n");
+  }
+  else
+    filePointer = fopen(f.c_str(), "rb");
   if (filePointer == NULL) {
     fprintf(stderr, "file %s cannot open\n", f.c_str());
     perror("file ?");
@@ -75,8 +85,11 @@ rawFiles::rawFiles(std::string f, double fileOffsetInSeconds,
   } else {
     fprintf(stderr, "sound file '%s' opened with/as raw device\n", f.c_str());
   }
-  currPos = (int64_t)(fileOffsetInSeconds * 2048000.0 * 2.0);
-  fseek(filePointer, currPos, SEEK_SET);
+  if ( filePointer != stdin ) {
+    currPos = (int64_t)(fileOffsetInSeconds * 2048000.0 * 2.0);
+    fseek(filePointer, currPos, SEEK_SET);
+  }
+  currPos = (int64_t)0;  // relative to start position, which needs not to be file begin
   this->eofHandler = eofHandler;
   this->userData = userData;
   running.store(false);
@@ -85,13 +98,15 @@ rawFiles::rawFiles(std::string f, double fileOffsetInSeconds,
 rawFiles::~rawFiles(void) {
   if (running.load()) workerHandle.join();
   running.store(false);
-  fclose(filePointer);
+  if (filePointer != stdin)
+    fclose(filePointer);
   delete _I_Buffer;
 }
 
 bool rawFiles::restartReader(int32_t frequency) {
   (void)frequency;
   workerHandle = std::thread(&rawFiles::run, this);
+  currPos = (int64_t)0;
   running.store(true);
   return true;
 }
@@ -109,6 +124,8 @@ int32_t rawFiles::getSamples(std::complex<float> *V, int32_t size) {
   while ((_I_Buffer->GetRingBufferReadAvailable()) < size) usleep(100);
 
   amount = _I_Buffer->getDataFromBuffer(V, size);
+
+  currPos += amount;
   return amount;
 }
 
@@ -166,8 +183,14 @@ int32_t rawFiles::readBuffer(std::complex<float> *data, int32_t length) {
     data[i] = std::complex<float>((float)(temp[2 * i] - 128) / 128,
                                   (float)(temp[2 * i + 1] - 128) / 128);
   if (n < length) {
-    fseek(filePointer, 0, SEEK_SET);
+    if (filePointer != stdin)
+      fseek(filePointer, 0, SEEK_SET);
     //	   fprintf (stderr, "End of file, restarting\n");
   }
   return n;
 }
+
+double rawFiles::currentOffset() const {
+  return ( currPos / 2048000.0 );
+}
+

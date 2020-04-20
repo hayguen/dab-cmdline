@@ -40,6 +40,7 @@ class rawFiles : public deviceHandler {
   int32_t Samples(void);
   bool restartReader(int32_t);
   void stopReader(void);
+  double currentOffset() const;
 
  private:
   std::string fileName;

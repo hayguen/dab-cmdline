@@ -821,7 +821,7 @@ void allocateDevice(bool openDevice = false, int32_t frequency = 0,
                                   rtlOpts);
 #elif (HAVE_WAVFILES || HAVE_RAWFILES)
 #if HAVE_WAVFILES
-    if (fileName) {
+    if (fileName && strcmp(fileName->c_str(), "-") ) {
       fprintf(stderr, "try to open '%s' as wavFile ..\n", fileName->c_str());
       try {
         theDevice =
@@ -849,6 +849,17 @@ void allocateDevice(bool openDevice = false, int32_t frequency = 0,
   } catch (int e) {
     fprintf(stderr, "allocating device failed (%d), fatal\n", e);
   }
+}
+
+
+static inline
+int32_t timeOutIncGranularity() {
+  double off = ( theDevice ) ? theDevice->currentOffset() : -1.0;
+  if ( off < 0 )
+    timeOut += T_GRANULARITY;
+  else
+    timeOut = (int32_t)( off * T_UNIT_MUL );
+  return timeOut;
 }
 
 int main(int argc, char **argv) {
@@ -1177,7 +1188,7 @@ int main(int argc, char **argv) {
       continueForFullEnsemble ? "true" : "false",
       abortForSnr ? "true" : "false", int(timeOut), int(waitingTime));
 #endif
-  while ((timeOut += T_GRANULARITY) < waitingTime && !abortForSnr) {
+  while (timeOutIncGranularity() < waitingTime && !abortForSnr) {
     if ((!ensembleRecognized.load() || continueForFullEnsemble) &&
         timeOut > T_GRANULARITY)
       sleepMillis(T_GRANULARITY);  // sleep (1);  // skip 1st sleep if possible
@@ -1237,7 +1248,7 @@ int main(int argc, char **argv) {
 #endif
 
   while (continueForFullEnsemble && !abortForSnr &&
-         (timeOut += T_GRANULARITY) < waitingTime) {
+         timeOutIncGranularity() < waitingTime) {
     sleepMillis(T_GRANULARITY);
     printCollectedCallbackStat("wait for full ensemble info..");
     if (scanOnly && numSnr >= 5 && avgSnr < minSNRtoExit) {
@@ -1284,7 +1295,7 @@ int main(int argc, char **argv) {
       abortForSnr ? "true" : "false", int(timeOut), int(waitingTime));
 #endif
   while (!ensembleRecognized.load() &&
-         ((timeOut += T_GRANULARITY) < waitingTime) && !abortForSnr) {
+         (timeOutIncGranularity() < waitingTime) && !abortForSnr) {
     sleepMillis(T_GRANULARITY);
     printCollectedCallbackStat("C: collecting ensembleData ..");
     if (scanOnly && numSnr >= 5 && avgSnr < minSNRtoExit) {
@@ -1377,7 +1388,7 @@ int main(int argc, char **argv) {
 
       int countGran = 0;
       while (run.load()) {
-        timeOut += T_GRANULARITY;
+        timeOutIncGranularity();
         sleepMillis(T_GRANULARITY);
         printCollectedCallbackStat("E: loading ..");
         // TODO: check for audio samples after some timeout!
