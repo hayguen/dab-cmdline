@@ -1570,7 +1570,8 @@ int main(int argc, char **argv) {
                   "checked program '%s' with SId %X\n" SINCE_START,
                   it.second->programName.c_str(), serviceIdentifier);
         }
-        for (int i = 0; i < 5; i++) {
+        // numberofComponents = getBits_4() in fib-decoder.cpp => 0 .. 15
+        for (int i = 0; i < 16; i++) {
           audiodata ad;
           packetdata pd;
           dataforAudioService(theRadio, it.second->programName.c_str(), &ad, i);
