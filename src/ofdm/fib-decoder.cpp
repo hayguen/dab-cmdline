@@ -1329,8 +1329,10 @@ void fib_processor::bind_packetService(int8_t TMid, uint32_t SId,
   int16_t i;
   int16_t firstFree = -1;
 
-  if (!s->serviceLabel.hasName)  // wait until we have a name
-    return;
+  // no need to wait for serviceLabel
+  // Jan: if (!ensemble -> services [serviceIndex]. hasName)  - with class ensembleDescriptor * ensemble
+  //if (!s->serviceLabel.hasName)  // wait until we have a name
+  //  return;
 
   for (i = 0; i < 64; i++) {
     if ((ServiceComps[i].inUse) && (ServiceComps[i].SCId == SCId)) return;
