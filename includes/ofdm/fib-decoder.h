@@ -34,19 +34,19 @@
 #include "dab-constants.h"
 #include "tii_table.h"
 
-struct dablabel {
-  std::string label;
-  bool hasName;
-};
-
-typedef struct dablabel dabLabel;
-
 typedef struct subchannelmap channelMap;
+
 //	from FIG1/2
-struct serviceid {
+struct serviceId
+{
+  serviceId() {
+    inUse = false;
+  }
+
   bool inUse;
-  uint32_t serviceId;
-  dabLabel serviceLabel;
+  int32_t SId;  // serviceId
+  char label[32];
+  bool hasName; // -> change to hasLabel ?
   bool hasPNum;
   bool hasLanguage;
   int16_t language;
@@ -54,10 +54,15 @@ struct serviceid {
   uint16_t pNum;
 };
 
-typedef struct serviceid serviceId;
 //      The service component describes the actual service
 //      It really should be a union
-struct servicecomponents {
+struct serviceComponent
+{
+  serviceComponent() {
+    inUse = false;
+    service = nullptr;
+  }
+
   bool inUse;           // just administration
   int8_t TMid;          // the transport mode
   serviceId *service;   // belongs to the service
@@ -74,8 +79,6 @@ struct servicecomponents {
   int16_t appType;        // used in packet
   bool is_madePublic;
 };
-
-typedef struct servicecomponents serviceComponent;
 
 struct subchannelmap {
   bool inUse;

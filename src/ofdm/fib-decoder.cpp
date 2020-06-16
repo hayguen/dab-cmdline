@@ -517,9 +517,9 @@ int16_t fib_processor::HandleFIG0Extension3(const uint8_t *d, int16_t used,
   if (DSCTy == 0) return used;
 
   service = packetComp->service;
-  std::string serviceName = service->serviceLabel.label;
+  const char * serviceName = service->label;
   if (packetComp->componentNr == 0)  // otherwise sub component
-    addtoEnsemble(serviceName, service->serviceId);
+    addtoEnsemble(serviceName, service->SId);
 
   packetComp->is_madePublic = true;
   packetComp->subchannelId = SubChId;
@@ -1070,7 +1070,7 @@ void fib_processor::process_FIG1(const uint8_t *d) {
                     "warning: ignoring ensemble name cause of "
                     "unimplemented Ucs2 conversion\n");
           else {
-            std::string name = toStringUsingCharset((const char *)label,
+            std::string name = toStringUsingCharset(label,
                                                     (CharacterSet)charSet);
             // without idofEnsemble: just report one name
             if (ensembleidHandler != nullptr || firstTimeEName)
@@ -1089,7 +1089,7 @@ void fib_processor::process_FIG1(const uint8_t *d) {
       SId = getBits(d, 16, 16);
       offset = 32;
       myIndex = findServiceId(SId);
-      if ((!myIndex->serviceLabel.hasName) && (charSet <= 16)) {
+      if ((!myIndex->hasName) && (charSet <= 16)) {
         for (i = 0; i < 16; i++) {
           label[i] = getBits_8(d, offset + 8 * i);
         }
@@ -1099,11 +1099,10 @@ void fib_processor::process_FIG1(const uint8_t *d) {
                   "warning: ignoring service label cause of "
                   "unimplemented Ucs2 conversion\n");
         else {
-          myIndex->serviceLabel.label.append(
-              toStringUsingCharset((const char *)label, (CharacterSet)charSet));
-          //	         fprintf (stderr, "FIG1/1: SId = %4x\t%s\n", SId,
-          // label);
-          myIndex->serviceLabel.hasName = true;
+          std::string appStr = toStringUsingCharset((const char *)label, (CharacterSet)charSet);
+          strcat(myIndex->label, appStr.c_str());
+          //	         fprintf (stderr, "FIG1/1: SId = %4x\t%s\n", SId, label);
+          myIndex->hasName = true;
         }
       }
       break;
@@ -1115,8 +1114,7 @@ void fib_processor::process_FIG1(const uint8_t *d) {
       offset = 24;
       for (i = 0; i < 16; i++) label[i] = getBits_8(d, offset + 8 * i);
 
-      //	      fprintf (stderr, "FIG1/3: RegionID = %2x\t%s\n",
-      // region_id, label);
+      // fprintf (stderr, "FIG1/3: RegionID = %2x\t%s\n", region_id, label);
       break;
 
     case 4:  // service component label 8.1.14.3
@@ -1132,16 +1130,14 @@ void fib_processor::process_FIG1(const uint8_t *d) {
 
       flagfield = getLBits(d, offset + 128, 16);
       for (i = 0; i < 16; i++) label[i] = getBits_8(d, offset + 8 * i);
-      //	      fprintf (stderr, "FIG1/4: Sid =
-      //%8x\tp/d=%d\tSCidS=%1X\tflag=%8X\t%s\n", SId, pd_flag, SCidS, flagfield,
-      // label);
+      //fprintf (stderr, "FIG1/4: Sid = %8x\tp/d=%d\tSCidS=%1X\tflag=%8X\t%s\n", SId, pd_flag, SCidS, flagfield, label);
       break;
 
     case 5:  // Data service label - 32 bits 8.1.14.2
       SId = getLBits(d, 16, 32);
       offset = 48;
       myIndex = findServiceId(SId);
-      if ((!myIndex->serviceLabel.hasName) && (charSet <= 16)) {
+      if ((!myIndex->hasName) && (charSet <= 16)) {
         for (i = 0; i < 16; i++) {
           label[i] = getBits_8(d, offset + 8 * i);
         }
@@ -1150,12 +1146,11 @@ void fib_processor::process_FIG1(const uint8_t *d) {
                   "warning: ignoring service name/label cause of "
                   "unimplemented Ucs2 conversion\n");
         else {
-          myIndex->serviceLabel.label.append(
-              toStringUsingCharset((const char *)label, (CharacterSet)charSet));
-          myIndex->serviceLabel.label.append(
-              toStringUsingCharset(" (data)", (CharacterSet)charSet));
-          myIndex->serviceLabel.hasName = true;
-          addtoEnsemble(myIndex->serviceLabel.label, SId);
+          std::string appStr = toStringUsingCharset((const char *)label, (CharacterSet)charSet);
+          strcat(myIndex->label, appStr.c_str());
+          strcat(myIndex->label, " (data)");
+          myIndex->hasName = true;
+          addtoEnsemble(myIndex->label, SId);
         }
       }
       break;
@@ -1217,14 +1212,15 @@ serviceId *fib_processor::findServiceId(int32_t serviceId) {
 
   for (i = 0; i < 64; i++)
     if ((listofServices[i].inUse) &&
-        (listofServices[i].serviceId == (uint32_t)serviceId))
+        (listofServices[i].SId == serviceId))
       return &listofServices[i];
 
   for (i = 0; i < 64; i++)
     if (!listofServices[i].inUse) {
       listofServices[i].inUse = true;
-      listofServices[i].serviceLabel.hasName = false;
-      listofServices[i].serviceId = serviceId;
+      listofServices[i].label[0] = 0;
+      listofServices[i].hasName = false;
+      listofServices[i].SId = serviceId;
       listofServices[i].language = -1;
       return &listofServices[i];
     }
@@ -1243,7 +1239,7 @@ serviceId *fib_processor::findServiceId(std::string serviceName) {
 
   for (i = 0; i < 64; i++) {
     if (listofServices[i].inUse) {
-      int res = compareNames(serviceName, listofServices[i].serviceLabel.label);
+      int res = compareNames(serviceName, listofServices[i].label);
       if (res == FULL_MATCH) {
         return &listofServices[i];
       }
@@ -1293,7 +1289,7 @@ void fib_processor::bind_audioService(int8_t TMid, uint32_t SId, int16_t compnr,
   int16_t i;
   int16_t firstFree = -1;
 
-  if (!s->serviceLabel.hasName) return;
+  if (!s->hasName) return;
 
   if (!subChannels[SubChId].inUse) return;
 
@@ -1307,8 +1303,8 @@ void fib_processor::bind_audioService(int8_t TMid, uint32_t SId, int16_t compnr,
       return;
   }
 
-  std::string dataName = s->serviceLabel.label;
-  addtoEnsemble(dataName, s->serviceId);
+  std::string dataName = s->label;
+  addtoEnsemble(dataName, s->SId);
 
   ServiceComps[firstFree].inUse = true;
   ServiceComps[firstFree].TMid = TMid;
@@ -1331,11 +1327,15 @@ void fib_processor::bind_packetService(int8_t TMid, uint32_t SId,
 
   // no need to wait for serviceLabel
   // Jan: if (!ensemble -> services [serviceIndex]. hasName)  - with class ensembleDescriptor * ensemble
-  //if (!s->serviceLabel.hasName)  // wait until we have a name
+  //if (!s->hasName)  // wait until we have a name
   //  return;
 
   for (i = 0; i < 64; i++) {
-    if ((ServiceComps[i].inUse) && (ServiceComps[i].SCId == SCId)) return;
+    if ( ServiceComps[i].inUse
+        && ServiceComps[i].service == s  // this was 2nd source of bug missing PACKET DATA
+                                         // see https://github.com/JvanKatwijk/dab-cmdline/pull/69
+        && ServiceComps[i].componentNr == compnr && ServiceComps[i].SCId == SCId )
+      return;
 
     if (!ServiceComps[i].inUse) {
       if (firstFree == -1) firstFree = i;
@@ -1368,8 +1368,9 @@ void fib_processor::clearEnsemble(void) {
   memset(subChannels, 0, sizeof(subChannels));
   for (i = 0; i < 64; i++) {
     listofServices[i].inUse = false;
-    listofServices[i].serviceId = -1;
-    listofServices[i].serviceLabel.label = "";
+    listofServices[i].SId = -1;
+    listofServices[i].label[0] = 0;
+    listofServices[i].hasName = false;
     ServiceComps[i].inUse = false;
     subChannels[i].inUse = false;
   }
@@ -1383,10 +1384,10 @@ std::string fib_processor::nameFor(int32_t serviceId) {
   for (i = 0; i < 64; i++) {
     if (!listofServices[i].inUse) continue;
 
-    if (!listofServices[i].serviceLabel.hasName) continue;
+    if (!listofServices[i].hasName) continue;
 
-    if (listofServices[i].serviceId == (uint32_t)serviceId) {
-      return listofServices[i].serviceLabel.label;
+    if (listofServices[i].SId == serviceId) {
+      return listofServices[i].label;
     }
   }
   return "no service found";
@@ -1399,18 +1400,18 @@ int32_t fib_processor::SIdFor(std::string &name) {
   for (i = 0; i < 64; i++) {
     if (!listofServices[i].inUse) continue;
 
-    if (!listofServices[i].serviceLabel.hasName) continue;
+    if (!listofServices[i].hasName) continue;
 
-    int res = compareNames(name, listofServices[i].serviceLabel.label);
+    int res = compareNames(name, listofServices[i].label);
     if (res == NO_MATCH) continue;
     if (res == PREFIX_MATCH) {
       serviceIndex = i;
       continue;
     }
     //	it is a FULL match:
-    return listofServices[i].serviceId;
+    return listofServices[i].SId;
   }
-  if (serviceIndex >= 0) return listofServices[serviceIndex].serviceId;
+  if (serviceIndex >= 0) return listofServices[serviceIndex].SId;
   return -1;
 }
 //
@@ -1427,9 +1428,9 @@ uint8_t fib_processor::kindofService(std::string &s) {
     int res;
     if (!listofServices[i].inUse) continue;
 
-    if (!listofServices[i].serviceLabel.hasName) continue;
+    if (!listofServices[i].hasName) continue;
 
-    res = compareNames(s, listofServices[i].serviceLabel.label);
+    res = compareNames(s, listofServices[i].label);
     if (res == NO_MATCH) continue;
     if (res == PREFIX_MATCH) {
       serviceIndex = i;
@@ -1440,10 +1441,10 @@ uint8_t fib_processor::kindofService(std::string &s) {
   }
 
   if (serviceIndex != -1) {
-    selectedService = listofServices[serviceIndex].serviceId;
+    selectedService = listofServices[serviceIndex].SId;
     for (j = 0; j < 64; j++) {
       if (!ServiceComps[j].inUse) continue;
-      if ((uint32_t)selectedService != ServiceComps[j].service->serviceId)
+      if (selectedService != ServiceComps[j].service->SId)
         continue;
 
       if (ServiceComps[j].componentNr != 0) continue;
