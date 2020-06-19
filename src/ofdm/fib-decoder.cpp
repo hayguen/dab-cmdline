@@ -1233,7 +1233,7 @@ serviceId *fib_processor::findServiceId(int32_t serviceId) {
 //	However, in case of servicenames where one is a prefix
 //	of the other, the full match should have precedence over the
 //	prefix match
-serviceId *fib_processor::findServiceId(std::string serviceName) {
+serviceId *fib_processor::findServiceId(std::string serviceName, bool fullMatchOnly) {
   int16_t i;
   int indexforprefixMatch = -1;
 
@@ -1249,6 +1249,8 @@ serviceId *fib_processor::findServiceId(std::string serviceName) {
     }
   }
 
+  if (fullMatchOnly)
+      return nullptr;
   return indexforprefixMatch >= 0 ? &listofServices[indexforprefixMatch]
                                   : nullptr;
 }
@@ -1475,7 +1477,8 @@ void fib_processor::dataforDataService(std::string &s, packetdata *d,
 
   d->defined = false;  // always a decent default
   fibLocker.lock();
-  selectedService = findServiceId(s);
+  const bool fullMatchOnly = true;
+  selectedService = findServiceId(s, fullMatchOnly);
   if (selectedService == nullptr) {
     fibLocker.unlock();
     return;
@@ -1518,7 +1521,8 @@ void fib_processor::dataforAudioService(std::string &s, audiodata *d,
 
   d->defined = false;
   fibLocker.lock();
-  selectedService = findServiceId(s);
+  const bool fullMatchOnly = true;
+  selectedService = findServiceId(s, fullMatchOnly);
   if (selectedService == nullptr) {
     fibLocker.unlock();
     return;

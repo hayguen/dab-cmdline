@@ -34,8 +34,6 @@
 #include "dab-constants.h"
 #include "tii_table.h"
 
-typedef struct subchannelmap channelMap;
-
 //	from FIG1/2
 struct serviceId
 {
@@ -80,7 +78,7 @@ struct serviceComponent
   bool is_madePublic;
 };
 
-struct subchannelmap {
+struct channelMap {
   bool inUse;
   int32_t SubChId;
   int32_t StartAddr;
@@ -132,7 +130,7 @@ class fib_processor {
   serviceId *findServiceId(int32_t);
   serviceComponent *find_packetComponent(int16_t);
   serviceComponent *find_serviceComponent(int32_t SId, int16_t SCId);
-  serviceId *findServiceId(std::string);
+  serviceId *findServiceId(std::string, bool fullMatchOnly = false);
   void bind_audioService(int8_t, uint32_t, int16_t, int16_t, int16_t, int16_t);
   void bind_packetService(int8_t, uint32_t, int16_t, int16_t, int16_t, int16_t);
   std::atomic<int32_t> CIFcount;
