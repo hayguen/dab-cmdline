@@ -221,6 +221,14 @@ uint8_t ficHandler::kindofService(std::string &s) {
   return result;
 }
 
+uint8_t ficHandler::kindofService(int SId) {
+  uint8_t result;
+  fibProtector.lock();
+  result = fibProcessor.kindofService(SId);
+  fibProtector.unlock();
+  return result;
+}
+
 void ficHandler::dataforAudioService(std::string &s, audiodata *d, int c) {
   fibProtector.lock();
   fibProcessor.dataforAudioService(s, d, c);
@@ -230,6 +238,18 @@ void ficHandler::dataforAudioService(std::string &s, audiodata *d, int c) {
 void ficHandler::dataforDataService(std::string &s, packetdata *d, int c) {
   fibProtector.lock();
   fibProcessor.dataforDataService(s, d, c);
+  fibProtector.unlock();
+}
+
+void ficHandler::dataforAudioService(int SId, audiodata *d, int c) {
+  fibProtector.lock();
+  fibProcessor.dataforAudioService(SId, d, c);
+  fibProtector.unlock();
+}
+
+void ficHandler::dataforDataService(int SId, packetdata *d, int c) {
+  fibProtector.lock();
+  fibProcessor.dataforDataService(SId, d, c);
   fibProtector.unlock();
 }
 

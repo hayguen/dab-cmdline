@@ -65,6 +65,14 @@ bool is_dataService(void *Handle, const char *name) {
          PACKET_SERVICE;
 }
 
+bool is_audioService_by_id(void *Handle, int SId) {
+  return ((dabProcessor *)Handle)->kindofService(SId) == AUDIO_SERVICE;
+}
+
+bool is_dataService_by_id(void *Handle, int SId) {
+  return ((dabProcessor *)Handle)->kindofService(SId) == PACKET_SERVICE;
+}
+
 void dab_setTII_handler(void *Handle, tii_t tii_Handler, tii_ex_t tii_ExHandler,
                         int tii_framedelay, float alfa, int resetFrameCount) {
   return ((dabProcessor *)Handle)
@@ -112,6 +120,14 @@ void dataforAudioService(void *Handle, const char *name, audiodata *d, int o) {
 
 void dataforDataService(void *Handle, const char *name, packetdata *pd, int o) {
   ((dabProcessor *)Handle)->dataforDataService(name, pd, o);
+}
+
+void dataforAudioService_by_id(void *Handle, int SId, audiodata *d, int o) {
+  ((dabProcessor *)Handle)->dataforAudioService(SId, d, o);
+}
+
+void dataforDataService_by_id(void *Handle, int SId, packetdata *pd, int o) {
+  ((dabProcessor *)Handle)->dataforDataService(SId, pd, o);
 }
 
 void set_audioChannel(void *Handle, audiodata *ad) {

@@ -1465,6 +1465,47 @@ uint8_t fib_processor::kindofService(std::string &s) {
   fibLocker.unlock();
   return service;
 }
+//
+//	Here we look for a primary service only
+uint8_t fib_processor::kindofService(int32_t SId) {
+  int16_t i, j;
+  int16_t service = UNKNOWN_SERVICE;
+  int32_t selectedService = -1;
+  int serviceIndex = -1;
+
+  fibLocker.lock();
+  //	first we locate the serviceId
+  for (i = 0; i < 64; i++) {
+    if (!listofServices[i].inUse) continue;
+    if (!listofServices[i].hasName) continue;
+    if ( listofServices[i].SId != SId ) continue;
+    serviceIndex = i;
+    break;
+  }
+
+  if (serviceIndex != -1) {
+    selectedService = listofServices[serviceIndex].SId;
+    for (j = 0; j < 64; j++) {
+      if (!ServiceComps[j].inUse) continue;
+      if (selectedService != ServiceComps[j].service->SId)
+        continue;
+
+      if (ServiceComps[j].componentNr != 0) continue;
+
+      if (ServiceComps[j].TMid == 03) {
+        service = PACKET_SERVICE;
+        break;
+      }
+
+      if (ServiceComps[j].TMid == 00) {
+        service = AUDIO_SERVICE;
+        break;
+      }
+    }
+  }
+  fibLocker.unlock();
+  return service;
+}
 
 void fib_processor::dataforDataService(std::string &s, packetdata *d) {
   dataforDataService(s, d, 0);
@@ -1472,7 +1513,6 @@ void fib_processor::dataforDataService(std::string &s, packetdata *d) {
 
 void fib_processor::dataforDataService(std::string &s, packetdata *d,
                                        int16_t compnr) {
-  int16_t j;
   serviceId *selectedService;
 
   d->defined = false;  // always a decent default
@@ -1483,7 +1523,28 @@ void fib_processor::dataforDataService(std::string &s, packetdata *d,
     fibLocker.unlock();
     return;
   }
+  dataforDataService(selectedService, d, compnr);
+  fibLocker.unlock();
+}
 
+void fib_processor::dataforDataService(int SId, packetdata *d,
+                                        int16_t compnr) {
+  serviceId *selectedService;
+
+  d->defined = false;
+  fibLocker.lock();
+  selectedService = findServiceId(SId);
+  if (selectedService == nullptr) {
+    fibLocker.unlock();
+    return;
+  }
+  dataforDataService(selectedService, d, compnr);
+  fibLocker.unlock();
+}
+
+void fib_processor::dataforDataService(serviceId *selectedService, packetdata *d,
+                                       int16_t compnr) {
+  int16_t j;
   for (j = 0; j < 64; j++) {
     int16_t subchId;
     if ((!ServiceComps[j].inUse) || (ServiceComps[j].TMid != 03)) continue;
@@ -1507,7 +1568,6 @@ void fib_processor::dataforDataService(std::string &s, packetdata *d,
     d->defined = true;
     break;
   }
-  fibLocker.unlock();
 }
 
 void fib_processor::dataforAudioService(std::string &s, audiodata *d) {
@@ -1516,18 +1576,38 @@ void fib_processor::dataforAudioService(std::string &s, audiodata *d) {
 
 void fib_processor::dataforAudioService(std::string &s, audiodata *d,
                                         int16_t compnr) {
-  int16_t j;
+    serviceId *selectedService;
+
+    d->defined = false;
+    fibLocker.lock();
+    const bool fullMatchOnly = true;
+    selectedService = findServiceId(s, fullMatchOnly);
+    if (selectedService == nullptr) {
+      fibLocker.unlock();
+      return;
+    }
+    dataforAudioService(selectedService, d, compnr);
+    fibLocker.unlock();
+}
+
+void fib_processor::dataforAudioService(int SId, audiodata *d,
+                                        int16_t compnr) {
   serviceId *selectedService;
 
   d->defined = false;
   fibLocker.lock();
-  const bool fullMatchOnly = true;
-  selectedService = findServiceId(s, fullMatchOnly);
+  selectedService = findServiceId(SId);
   if (selectedService == nullptr) {
     fibLocker.unlock();
     return;
   }
+  dataforAudioService(selectedService, d, compnr);
+  fibLocker.unlock();
+}
 
+void fib_processor::dataforAudioService(serviceId *selectedService, audiodata *d,
+                                        int16_t compnr) {
+  int16_t j;
   //	first we locate the serviceId
   for (j = 0; j < 64; j++) {
     int16_t subchId;
@@ -1550,7 +1630,6 @@ void fib_processor::dataforAudioService(std::string &s, audiodata *d,
     d->defined = true;
     break;
   }
-  fibLocker.unlock();
 }
 //
 //	and now for the would-be signals

@@ -217,6 +217,14 @@ bool is_audioService(void *, const char *);
 //	name is a dataservice
 bool is_dataService(void *, const char *);
 //
+//	is_audioService will return true id the main service with the
+//	ID is an audioservice
+bool is_audioService_by_id(void *, int SId);
+//
+//	is_dataService will return true id the main service with the
+//	ID is a dataservice
+bool is_dataService_by_id(void *, int SId);
+//
 //	dataforAudioService will search for the audiodata of the i-th
 //	(sub)service with the name as given. If no such service exists,
 //	the "defined" bit in the struct will be set to false;
@@ -226,6 +234,16 @@ void dataforAudioService(void *, const char *, audiodata *, int);
 //	(sub)service with the name as given. If no such service exists,
 //	the "defined" bit in the struct will be set to false;
 void dataforDataService(void *, const char *, packetdata *, int);
+//
+//	dataforAudioService_by_id will search for the audiodata of the i-th
+//	(sub)service with the name as given. If no such service exists,
+//	the "defined" bit in the struct will be set to false;
+void dataforAudioService_by_id(void *, int SId, audiodata *, int);
+//
+//	dataforDataService_by_id will search for the packetdata of the i-th
+//	(sub)service with the name as given. If no such service exists,
+//	the "defined" bit in the struct will be set to false;
+void dataforDataService_by_id(void *, int SId, packetdata *, int);
 //
 //	set-audioChannel will add - if properly defined - a handler
 //	for handling the audiodata as described in the parameter

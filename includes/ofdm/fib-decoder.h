@@ -102,10 +102,13 @@ class fib_processor {
   std::string nameFor(int32_t);
   int32_t SIdFor(std::string &);
   uint8_t kindofService(std::string &);
+  uint8_t kindofService(int32_t SId);
   void dataforAudioService(std::string &, audiodata *);
   void dataforDataService(std::string &, packetdata *);
   void dataforAudioService(std::string &, audiodata *, int16_t);
   void dataforDataService(std::string &, packetdata *, int16_t);
+  void dataforAudioService(int32_t SId, audiodata *, int16_t);
+  void dataforDataService(int32_t SId, packetdata *, int16_t);
   std::complex<float> get_coordinates(int16_t, int16_t, bool *);
 
   void reset(void);
@@ -131,8 +134,12 @@ class fib_processor {
   serviceComponent *find_packetComponent(int16_t);
   serviceComponent *find_serviceComponent(int32_t SId, int16_t SCId);
   serviceId *findServiceId(std::string, bool fullMatchOnly = false);
+
   void bind_audioService(int8_t, uint32_t, int16_t, int16_t, int16_t, int16_t);
   void bind_packetService(int8_t, uint32_t, int16_t, int16_t, int16_t, int16_t);
+  void dataforAudioService(serviceId *selectedService, audiodata *, int16_t);
+  void dataforDataService(serviceId *selectedService, packetdata *, int16_t);
+
   std::atomic<int32_t> CIFcount;
   std::atomic<bool> hasCIFcount;
   void process_FIG0(const uint8_t *);

@@ -1562,8 +1562,8 @@ int main(int argc, char **argv) {
       //	      fprintf (stderr, "going to check %s\n",
       //	                              it. second -> programName. c_str
       //());
-      if (is_audioService(theRadio, it.second->programName.c_str()) ||
-          is_dataService(theRadio, it.second->programName.c_str())) {
+      if (is_audioService_by_id(theRadio, serviceIdentifier) ||
+          is_dataService_by_id(theRadio, serviceIdentifier)) {
         if (!printAsCSV) {
           fprintf(infoStrm,
                   "\n" FMT_DURATION
@@ -1574,7 +1574,7 @@ int main(int argc, char **argv) {
         for (int i = 0; i < 16; i++) {
           audiodata ad;
           packetdata pd;
-          dataforAudioService(theRadio, it.second->programName.c_str(), &ad, i);
+          dataforAudioService_by_id(theRadio, serviceIdentifier, &ad, i);
 
           if (ad.defined) {
             uint8_t countryId = (serviceIdentifier >> 12) & 0xF;  // audio
@@ -1645,8 +1645,7 @@ int main(int argc, char **argv) {
               fprintf(infoStrm, "%s\n", outLine.c_str());
             }
           } else {
-            dataforDataService(theRadio, it.second->programName.c_str(), &pd,
-                               i);
+            dataforDataService_by_id(theRadio, serviceIdentifier, &pd, i);
 
             if (pd.defined) {
               uint8_t countryId = (serviceIdentifier >> (5 * 4)) & 0xF;

@@ -47,8 +47,11 @@ class ficHandler : public viterbiHandler {
   std::string nameFor(int32_t);
   int32_t SIdFor(std::string &);
   uint8_t kindofService(std::string &);
+  uint8_t kindofService(int SId);
   void dataforDataService(std::string &, packetdata *, int);
   void dataforAudioService(std::string &, audiodata *, int);
+  void dataforDataService(int SId, packetdata *, int);
+  void dataforAudioService(int SId, audiodata *, int);
 
   int32_t get_CIFcount(void) const;
   bool has_CIFcount(void) const;

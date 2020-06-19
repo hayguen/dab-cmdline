@@ -60,10 +60,13 @@ class dabProcessor {
   //      inheriting from our delegates
   void setSelectedService(std::string);
   uint8_t kindofService(std::string);
+  uint8_t kindofService(int SId);
   void dataforAudioService(std::string, audiodata *);
   void dataforAudioService(std::string, audiodata *, int16_t);
+  void dataforAudioService(int SId, audiodata *, int16_t);
   void dataforDataService(std::string, packetdata *);
   void dataforDataService(std::string, packetdata *, int16_t);
+  void dataforDataService(int SId, packetdata *, int16_t);
   int32_t get_SId(std::string s);
   std::string get_serviceName(int32_t);
   void set_audioChannel(audiodata *);

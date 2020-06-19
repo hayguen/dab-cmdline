@@ -312,6 +312,10 @@ uint8_t dabProcessor::kindofService(std::string s) {
   return my_ficHandler.kindofService(s);
 }
 
+uint8_t dabProcessor::kindofService(int SId) {
+  return my_ficHandler.kindofService(SId);
+}
+
 void dabProcessor::dataforAudioService(std::string s, audiodata *dd) {
   my_ficHandler.dataforAudioService(s, dd, 0);
 }
@@ -322,6 +326,14 @@ void dabProcessor::dataforAudioService(std::string s, audiodata *d, int16_t c) {
 
 void dabProcessor::dataforDataService(std::string s, packetdata *d, int16_t c) {
   my_ficHandler.dataforDataService(s, d, c);
+}
+
+void dabProcessor::dataforAudioService(int SId, audiodata *d, int16_t c) {
+  my_ficHandler.dataforAudioService(SId, d, c);
+}
+
+void dabProcessor::dataforDataService(int SId, packetdata *d, int16_t c) {
+  my_ficHandler.dataforDataService(SId, d, c);
 }
 
 int32_t dabProcessor::get_SId(std::string s) { return my_ficHandler.SIdFor(s); }
