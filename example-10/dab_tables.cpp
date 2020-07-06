@@ -57,20 +57,20 @@ struct country_codes {
 //	Table 7: ITU Region 3 - Asia and Pacific
 
 static country_codes countryTable[] = {
-    {0xA0, 0x1, "United States of America"},
-    {0xA0, 0x2, "United States of America"},
-    {0xA0, 0x3, "United States of America"},
-    {0xA0, 0x4, "United States of America"},
-    {0xA0, 0x5, "United States of America"},
-    {0xA0, 0x6, "United States of America"},
-    {0xA0, 0x7, "United States of America"},
-    {0xA0, 0x8, "United States of America"},
-    {0xA0, 0x9, "United States of America"},
-    {0xA0, 0xA, "United States of America"},
-    {0xA0, 0xB, "United States of America"},
-    {0xA0, 0xC, "United States of America"},
-    {0xA0, 0xD, "United States of America"},
-    {0xA0, 0xE, "United States of America"},
+    {0xA0, 0x1, "United States of America (1)"},
+    {0xA0, 0x2, "United States of America (2)"},
+    {0xA0, 0x3, "United States of America (3)"},
+    {0xA0, 0x4, "United States of America (4)"},
+    {0xA0, 0x5, "United States of America (5)"},
+    {0xA0, 0x6, "United States of America (6)"},
+    {0xA0, 0x7, "United States of America (7)"},
+    {0xA0, 0x8, "United States of America (8)"},
+    {0xA0, 0x9, "United States of America (9)"},
+    {0xA0, 0xA, "United States of America (A)"},
+    {0xA0, 0xB, "United States of America (B)"},
+    {0xA0, 0xC, "United States of America (C)"},
+    {0xA0, 0xD, "United States of America (D)"},
+    {0xA0, 0xE, "United States of America (E)"},
 
     {0xA1, 0xC, "Canada"},
     {0xA1, 0xF, "Greenland"},
@@ -122,9 +122,8 @@ static country_codes countryTable[] = {
     {0xA4, 0xF, "Mexico"},
 
     {0xA5, 0xC, "St. Vincent"},
-    {0xA5, 0xF,
-     "Virgin islands (British or USA)"},  // British and USA have same
-                                          // IDs! amended "or USA"
+             // British and USA have sameIDs! amended "or USA"
+    {0xA5, 0xF, "Virgin islands (British or USA)"},
     {0xA5, 0xF, "Virgin islands (USA)"},  // keep this entry .. doesn't hurt
 
     {0xA6, 0xF, "St. Pierre and Miquelon"},
@@ -254,8 +253,7 @@ static country_codes countryTable[] = {
 
     {0xE4, 0x1, "Moldova"},
     {0xE4, 0x2, "Estonia"},
-    {0xE4, 0x3,
-     "Macedonia / Kyrghyzstan"},  // amended "/ Kyrghyzstan" double used Id
+    {0xE4, 0x3, "Macedonia / Kyrghyzstan"}, // amended "/ Kyrghyzstan" double used Id
     {0xE4, 0x3, "Kyrghyzstan"},   // keep this entry .. doesn't hurt
     {0xE4, 0x6, "Ukraine"},
     {0xE4, 0x7, "Kosovo"},
@@ -269,8 +267,7 @@ static country_codes countryTable[] = {
 
     {0xF0, 0x1, "Australia: Capital Cities (commercial and community)"},
     {0xF0, 0x2, "Australia: New South Wales and ACT"},
-    {0xF0, 0x3,
-     "Australia: Capital Cities (national broadcasters, was Victoria)"},
+    {0xF0, 0x3, "Australia: Capital Cities (national broadcasters, was Victoria)"},
     {0xF0, 0x4, "Australia: Queensland"},
     {0xF0, 0x5, "Australia: South and Northern Territory"},
     {0xF0, 0x6, "Australia: Western"},
@@ -329,132 +326,75 @@ static country_codes countryTable[] = {
 // from Table 2a
 const char *getASCTy(int16_t ASCTy) {
   switch (ASCTy) {
-    case 0:
-      return "DAB";
-    case 63:
-      return "DAB+";
-    default:
-      return "unknown";
+    case 0:     return "DAB";
+    case 63:    return "DAB+";
+    default:    return "unknown (ASCTy)";
   }
 }
 
 // from Table 2b
 const char *getDSCTy(int16_t DSCTy) {
   switch (DSCTy) {
-    case 1:
-      return "Traffic Message CHannel (TMC)";
-    case 2:
-      return "Emergency Warning System (EWS)";
-    case 3:
-      return "Interactive Text Transmission System (ITTS)";
-    case 4:
-      return "Paging";
-    case 5:
-      return "Transparent Data Channel (TDC)";
-    case 24:
-      return "MPEG-2 Transport Stream";
-    case 59:
-      return "Embedded IP packets";
-    case 60:
-      return "Multimedia Object Transfer (MOT)";
-    case 61:
-      return "Proprietary service";
-    default:
-      return "unknown";
+    case 1:     return "Traffic Message CHannel (TMC)";
+    case 2:     return "Emergency Warning System (EWS)";
+    case 3:     return "Interactive Text Transmission System (ITTS)";
+    case 4:     return "Paging";
+    case 5:     return "Transparent Data Channel (TDC)";
+    case 24:    return "MPEG-2 Transport Stream";
+    case 59:    return "Embedded IP packets";
+    case 60:    return "Multimedia Object Transfer (MOT)";
+    case 61:    return "Proprietary service";
+    default:    return "unknown (DSCTy)";
   }
 }
 
 //	from Table 9 and 10
 const char *getLanguage(int16_t language) {
   switch (language) {
-    case 0x00:
-      return "Unknown/not applicable";
-    case 0x01:
-      return "Albanian";
-    case 0x02:
-      return "Breton";
-    case 0x03:
-      return "Catalan";
-    case 0x04:
-      return "Croatian";
-    case 0x05:
-      return "Welsh";
-    case 0x06:
-      return "Czech";
-    case 0x07:
-      return "Danish";
-    case 0x08:
-      return "German";
-    case 0x09:
-      return "English";
-    case 0x0A:
-      return "Spanish";
-    case 0x0B:
-      return "Esperanto";
-    case 0x0C:
-      return "Estonian";
-    case 0x0D:
-      return "Basque";
-    case 0x0E:
-      return "Faroese";
-    case 0x0F:
-      return "French";
-    case 0x10:
-      return "Frisian";
-    case 0x11:
-      return "Irish";
-    case 0x12:
-      return "Gaelic";
-    case 0x13:
-      return "Galician";
-    case 0x14:
-      return "Icelandic";
-    case 0x15:
-      return "Italian";
-    case 0x16:
-      return "Sami";
-    case 0x17:
-      return "Latin";
-    case 0x18:
-      return "Latvian";
-    case 0x19:
-      return "Luxembourgian";
-    case 0x1A:
-      return "Lithuanian";
-    case 0x1B:
-      return "Hungarian";
-    case 0x1C:
-      return "Maltese";
-    case 0x1D:
-      return "Dutch";
-    case 0x1E:
-      return "Norwegian";
-    case 0x1F:
-      return "Occitan";
-    case 0x20:
-      return "Polish";
-    case 0x21:
-      return "Portuguese";
-    case 0x22:
-      return "Romanian";
-    case 0x23:
-      return "Romansh";
-    case 0x24:
-      return "Serbian";
-    case 0x25:
-      return "Slovak";
-    case 0x26:
-      return "Slovene";
-    case 0x27:
-      return "Finnish";
-    case 0x28:
-      return "Swedish";
-    case 0x29:
-      return "Turkish";
-    case 0x2A:
-      return "Flemish";
-    case 0x2B:
-      return "Walloon";
+    case 0x00:  return "Unknown/not applicable";
+    case 0x01:  return "Albanian";
+    case 0x02:  return "Breton";
+    case 0x03:  return "Catalan";
+    case 0x04:  return "Croatian";
+    case 0x05:  return "Welsh";
+    case 0x06:  return "Czech";
+    case 0x07:  return "Danish";
+    case 0x08:  return "German";
+    case 0x09:  return "English";
+    case 0x0A:  return "Spanish";
+    case 0x0B:  return "Esperanto";
+    case 0x0C:  return "Estonian";
+    case 0x0D:  return "Basque";
+    case 0x0E:  return "Faroese";
+    case 0x0F:  return "French";
+    case 0x10:  return "Frisian";
+    case 0x11:  return "Irish";
+    case 0x12:  return "Gaelic";
+    case 0x13:  return "Galician";
+    case 0x14:  return "Icelandic";
+    case 0x15:  return "Italian";
+    case 0x16:  return "Sami";
+    case 0x17:  return "Latin";
+    case 0x18:  return "Latvian";
+    case 0x19:  return "Luxembourgian";
+    case 0x1A:  return "Lithuanian";
+    case 0x1B:  return "Hungarian";
+    case 0x1C:  return "Maltese";
+    case 0x1D:  return "Dutch";
+    case 0x1E:  return "Norwegian";
+    case 0x1F:  return "Occitan";
+    case 0x20:  return "Polish";
+    case 0x21:  return "Portuguese";
+    case 0x22:  return "Romanian";
+    case 0x23:  return "Romansh";
+    case 0x24:  return "Serbian";
+    case 0x25:  return "Slovak";
+    case 0x26:  return "Slovene";
+    case 0x27:  return "Finnish";
+    case 0x28:  return "Swedish";
+    case 0x29:  return "Turkish";
+    case 0x2A:  return "Flemish";
+    case 0x2B:  return "Walloon";
     case 0x30:  // no break
     case 0x31:  // no break
     case 0x32:  // no break
@@ -470,130 +410,68 @@ const char *getLanguage(int16_t language) {
     case 0x3C:  // no break
     case 0x3D:  // no break
     case 0x3E:  // no break
-    case 0x3F:
-      return "Reserved for national assignment";
-    case 0x7F:
-      return "Amharic";
-    case 0x7E:
-      return "Arabic";
-    case 0x7D:
-      return "Armenian";
-    case 0x7C:
-      return "Assamese";
-    case 0x7B:
-      return "Azerbaijani";
-    case 0x7A:
-      return "Bambora";
-    case 0x79:
-      return "Belorussian";
-    case 0x78:
-      return "Bengali";
-    case 0x77:
-      return "Bulgarian";
-    case 0x76:
-      return "Burmese";
-    case 0x75:
-      return "Chinese";
-    case 0x74:
-      return "Chuvash";
-    case 0x73:
-      return "Dari";
-    case 0x72:
-      return "Fulani";
-    case 0x71:
-      return "Georgian";
-    case 0x70:
-      return "Greek";
-    case 0x6F:
-      return "Gujurati";
-    case 0x6E:
-      return "Gurani";
-    case 0x6D:
-      return "Hausa";
-    case 0x6C:
-      return "Hebrew";
-    case 0x6B:
-      return "Hindi";
-    case 0x6A:
-      return "Indonesian";
-    case 0x69:
-      return "Japanese";
-    case 0x68:
-      return "Kannada";
-    case 0x67:
-      return "Kazakh";
-    case 0x66:
-      return "Khmer";
-    case 0x65:
-      return "Korean";
-    case 0x64:
-      return "Laotian";
-    case 0x63:
-      return "Macedonian";
-    case 0x62:
-      return "Malagasay";
-    case 0x61:
-      return "Malaysian";
-    case 0x60:
-      return "Moldavian";
-    case 0x5F:
-      return "Marathi";
-    case 0x5E:
-      return "Ndebele";
-    case 0x5D:
-      return "Nepali";
-    case 0x5C:
-      return "Oriya";
-    case 0x5B:
-      return "Papiamento";
-    case 0x5A:
-      return "Persian";
-    case 0x59:
-      return "Punjabi";
-    case 0x58:
-      return "Pushtu";
-    case 0x57:
-      return "Quechua";
-    case 0x56:
-      return "Russian";
-    case 0x55:
-      return "Rusyn";
-    case 0x54:
-      return "Serbo-Croat";
-    case 0x53:
-      return "Shona";
-    case 0x52:
-      return "Sinhalese";
-    case 0x51:
-      return "Somali";
-    case 0x50:
-      return "Sranan Tongo";
-    case 0x4F:
-      return "Swahili";
-    case 0x4E:
-      return "Tadzhik";
-    case 0x4D:
-      return "Tamil";
-    case 0x4C:
-      return "Tatar";
-    case 0x4B:
-      return "Telugu";
-    case 0x4A:
-      return "Thai";
-    case 0x49:
-      return "Ukranian";
-    case 0x48:
-      return "Urdu";
-    case 0x47:
-      return "Uzbek";
-    case 0x46:
-      return "Vietnamese";
-    case 0x45:
-      return "Zulu";
-    case 0x40:
-      return "Background sound/clean feed";
-    default:
-      return "unknown";
+    case 0x3F:  return "Reserved for national assignment";
+    case 0x7F:  return "Amharic";
+    case 0x7E:  return "Arabic";
+    case 0x7D:  return "Armenian";
+    case 0x7C:  return "Assamese";
+    case 0x7B:  return "Azerbaijani";
+    case 0x7A:  return "Bambora";
+    case 0x79:  return "Belorussian";
+    case 0x78:  return "Bengali";
+    case 0x77:  return "Bulgarian";
+    case 0x76:  return "Burmese";
+    case 0x75:  return "Chinese";
+    case 0x74:  return "Chuvash";
+    case 0x73:  return "Dari";
+    case 0x72:  return "Fulani";
+    case 0x71:  return "Georgian";
+    case 0x70:  return "Greek";
+    case 0x6F:  return "Gujurati";
+    case 0x6E:  return "Gurani";
+    case 0x6D:  return "Hausa";
+    case 0x6C:  return "Hebrew";
+    case 0x6B:  return "Hindi";
+    case 0x6A:  return "Indonesian";
+    case 0x69:  return "Japanese";
+    case 0x68:  return "Kannada";
+    case 0x67:  return "Kazakh";
+    case 0x66:  return "Khmer";
+    case 0x65:  return "Korean";
+    case 0x64:  return "Laotian";
+    case 0x63:  return "Macedonian";
+    case 0x62:  return "Malagasay";
+    case 0x61:  return "Malaysian";
+    case 0x60:  return "Moldavian";
+    case 0x5F:  return "Marathi";
+    case 0x5E:  return "Ndebele";
+    case 0x5D:  return "Nepali";
+    case 0x5C:  return "Oriya";
+    case 0x5B:  return "Papiamento";
+    case 0x5A:  return "Persian";
+    case 0x59:  return "Punjabi";
+    case 0x58:  return "Pushtu";
+    case 0x57:  return "Quechua";
+    case 0x56:  return "Russian";
+    case 0x55:  return "Rusyn";
+    case 0x54:  return "Serbo-Croat";
+    case 0x53:  return "Shona";
+    case 0x52:  return "Sinhalese";
+    case 0x51:  return "Somali";
+    case 0x50:  return "Sranan Tongo";
+    case 0x4F:  return "Swahili";
+    case 0x4E:  return "Tadzhik";
+    case 0x4D:  return "Tamil";
+    case 0x4C:  return "Tatar";
+    case 0x4B:  return "Telugu";
+    case 0x4A:  return "Thai";
+    case 0x49:  return "Ukranian";
+    case 0x48:  return "Urdu";
+    case 0x47:  return "Uzbek";
+    case 0x46:  return "Vietnamese";
+    case 0x45:  return "Zulu";
+    case 0x40:  return "Background sound/clean feed";
+    default:    return "unknown (Lang.)";
   }
 }
 
@@ -607,150 +485,84 @@ const char *getCountry(uint8_t ecc, uint8_t countryId) {
     ++i;
   }
 
-  return nullptr;
+  return "unknown (country)";
 }
 
 //	from Table 12
 const char *getProgramType_Not_NorthAmerica(int16_t programType) {
   switch (programType) {
-    case 0:
-      return "No programme type";
-    case 1:
-      return "News";
-    case 2:
-      return "Current Affairs";
-    case 3:
-      return "Information";
-    case 4:
-      return "Sport";
-    case 5:
-      return "Education";
-    case 6:
-      return "Drama";
-    case 7:
-      return "Culture";
-    case 8:
-      return "Science";
-    case 9:
-      return "Varied";  // Talk
-    case 10:
-      return "Pop Music";
-    case 11:
-      return "Rock Music";
-    case 12:
-      return "Easy Listening Music";
-    case 13:
-      return "Light Classical";
-    case 14:
-      return "Serious Classical";
-    case 15:
-      return "Other Music";
-    case 16:
-      return "Weather/meteorology";
-    case 17:
-      return "Finance/Business";
-    case 18:
-      return "Children's programmes";
-    case 19:
-      return "Social Affairs";  // Factual
-    case 20:
-      return "Religion";
-    case 21:
-      return "Phone In";
-    case 22:
-      return "Travel";
-    case 23:
-      return "Leisure";
-    case 24:
-      return "Jazz Music";
-    case 25:
-      return "Country Music";
-    case 26:
-      return "National Music";
-    case 27:
-      return "Oldies Music";
-    case 28:
-      return "Folk Music";
-    case 29:
-      return "Documentary";
-    case 30:
-      return "unknown programme type 30";
-    case 31:
-      return "unknown programme type 31";
-    default:
-      return "unknown programme type";
+    case  0:  return "No programme type";
+    case  1:  return "News";
+    case  2:  return "Current Affairs";
+    case  3:  return "Information";
+    case  4:  return "Sport";
+    case  5:  return "Education";
+    case  6:  return "Drama";
+    case  7:  return "Culture";
+    case  8:  return "Science";
+    case  9:  return "Varied";  // Talk
+    case 10:  return "Pop Music";
+    case 11:  return "Rock Music";
+    case 12:  return "Easy Listening Music";
+    case 13:  return "Light Classical";
+    case 14:  return "Serious Classical";
+    case 15:  return "Other Music";
+    case 16:  return "Weather/meteorology";
+    case 17:  return "Finance/Business";
+    case 18:  return "Children's programmes";
+    case 19:  return "Social Affairs";  // Factual
+    case 20:  return "Religion";
+    case 21:  return "Phone In";
+    case 22:  return "Travel";
+    case 23:  return "Leisure";
+    case 24:  return "Jazz Music";
+    case 25:  return "Country Music";
+    case 26:  return "National Music";
+    case 27:  return "Oldies Music";
+    case 28:  return "Folk Music";
+    case 29:  return "Documentary";
+    case 30:  return "unknown (Non-NA 30)";
+    case 31:  return "unknown (Non-NA 31)";
+    default:  return "unknown (Non-NA)";
   }
 }
 
 //	from Table 13
 const char *getProgramType_For_NorthAmerica(int16_t programType) {
   switch (programType) {
-    case 0:
-      return "No programme type";
-    case 1:
-      return "News";
-    case 2:
-      return "Information";
-    case 3:
-      return "Sports";
-    case 4:
-      return "Talk";
-    case 5:
-      return "Rock";
-    case 6:
-      return "Classic Rock";
-    case 7:
-      return "Adult Hits";
-    case 8:
-      return "Soft Rock";
-    case 9:
-      return "Top 40";
-    case 10:
-      return "Country";
-    case 11:
-      return "Oldies";
-    case 12:
-      return "Soft";
-    case 13:
-      return "Nostalgia";
-    case 14:
-      return "Jazz";
-    case 15:
-      return "Classical";
-    case 16:
-      return "Rhythm and Blues";
-    case 17:
-      return "Soft Rhythm and Blues";
-    case 18:
-      return "Foreign Language";
-    case 19:
-      return "Religious Music";
-    case 20:
-      return "Religious Talk";
-    case 21:
-      return "Personality";
-    case 22:
-      return "Public";
-    case 23:
-      return "College";
-    case 24:
-      return "unknown programme type 24";
-    case 25:
-      return "unknown programme type 25";
-    case 26:
-      return "unknown programme type 26";
-    case 27:
-      return "unknown programme type 27";
-    case 28:
-      return "unknown programme type 28";
-    case 29:
-      return "Weather";
-    case 30:
-      return "unknown programme type 30";
-    case 31:
-      return "unknown programme type 31";
-    default:
-      return "unknown programme type";
+    case  0:  return "No programme type";
+    case  1:  return "News";
+    case  2:  return "Information";
+    case  3:  return "Sports";
+    case  4:  return "Talk";
+    case  5:  return "Rock";
+    case  6:  return "Classic Rock";
+    case  7:  return "Adult Hits";
+    case  8:  return "Soft Rock";
+    case  9:  return "Top 40";
+    case 10:  return "Country";
+    case 11:  return "Oldies";
+    case 12:  return "Soft";
+    case 13:  return "Nostalgia";
+    case 14:  return "Jazz";
+    case 15:  return "Classical";
+    case 16:  return "Rhythm and Blues";
+    case 17:  return "Soft Rhythm and Blues";
+    case 18:  return "Foreign Language";
+    case 19:  return "Religious Music";
+    case 20:  return "Religious Talk";
+    case 21:  return "Personality";
+    case 22:  return "Public";
+    case 23:  return "College";
+    case 24:  return "unknown (North America 24)";
+    case 25:  return "unknown (North America 25)";
+    case 26:  return "unknown (North America 26)";
+    case 27:  return "unknown (North America 27)";
+    case 28:  return "unknown (North America 28)";
+    case 29:  return "Weather";
+    case 30:  return "unknown (North America 30)";
+    case 31:  return "unknown (North America 31)";
+    default:  return "unknown (North America)";
   }
 }
 
@@ -762,72 +574,39 @@ const char *getProgramType(bool gotInterTabId, uint8_t interTabId,
     return getProgramType_For_NorthAmerica(programType);
   else {
     switch (programType) {
-      case 0:
-        return "unknown programme type 0";
-      case 1:
-        return "unknown programme type 1";
-      case 2:
-        return "unknown programme type 2";
-      case 3:
-        return "unknown programme type 3";
-      case 4:
-        return "unknown programme type 4";
-      case 5:
-        return "unknown programme type 5";
-      case 6:
-        return "unknown programme type 6";
-      case 7:
-        return "unknown programme type 7";
-      case 8:
-        return "unknown programme type 8";
-      case 9:
-        return "unknown programme type 9";
-      case 10:
-        return "unknown programme type 10";
-      case 11:
-        return "unknown programme type 11";
-      case 12:
-        return "unknown programme type 12";
-      case 13:
-        return "unknown programme type 13";
-      case 14:
-        return "unknown programme type 14";
-      case 15:
-        return "unknown programme type 15";
-      case 16:
-        return "unknown programme type 16";
-      case 17:
-        return "unknown programme type 17";
-      case 18:
-        return "unknown programme type 18";
-      case 19:
-        return "unknown programme type 19";
-      case 20:
-        return "unknown programme type 20";
-      case 21:
-        return "unknown programme type 21";
-      case 22:
-        return "unknown programme type 22";
-      case 23:
-        return "unknown programme type 23";
-      case 24:
-        return "unknown programme type 24";
-      case 25:
-        return "unknown programme type 25";
-      case 26:
-        return "unknown programme type 26";
-      case 27:
-        return "unknown programme type 27";
-      case 28:
-        return "unknown programme type 28";
-      case 29:
-        return "unknown programme type 29";
-      case 30:
-        return "unknown programme type 30";
-      case 31:
-        return "unknown programme type 31";
-      default:
-        return "unknown programme type";
+      case  0:  return "unknown (0)";
+      case  1:  return "unknown (1)";
+      case  2:  return "unknown (2)";
+      case  3:  return "unknown (3)";
+      case  4:  return "unknown (4)";
+      case  5:  return "unknown (5)";
+      case  6:  return "unknown (6)";
+      case  7:  return "unknown (7)";
+      case  8:  return "unknown (8)";
+      case  9:  return "unknown (9)";
+      case 10:  return "unknown (10)";
+      case 11:  return "unknown (11)";
+      case 12:  return "unknown (12)";
+      case 13:  return "unknown (13)";
+      case 14:  return "unknown (14)";
+      case 15:  return "unknown (15)";
+      case 16:  return "unknown (16)";
+      case 17:  return "unknown (17)";
+      case 18:  return "unknown (18)";
+      case 19:  return "unknown (19)";
+      case 20:  return "unknown (20)";
+      case 21:  return "unknown (21)";
+      case 22:  return "unknown (22)";
+      case 23:  return "unknown (23)";
+      case 24:  return "unknown (24)";
+      case 25:  return "unknown (25)";
+      case 26:  return "unknown (26)";
+      case 27:  return "unknown (27)";
+      case 28:  return "unknown (28)";
+      case 29:  return "unknown (29)";
+      case 30:  return "unknown (30)";
+      case 31:  return "unknown (31)";
+      default:  return "unknown";
     }
   }
   return "unknown programme type";
@@ -836,86 +615,53 @@ const char *getProgramType(bool gotInterTabId, uint8_t interTabId,
 //	11-bit from HandleFIG0Extension13, see ETSI TS 101 756 table 16
 const char *getUserApplicationType(int16_t appType) {
   switch (appType) {
-    case 1:
-      return "Dynamic labels (X-PAD only)";
-    case 2:
-      return "MOT Slide Show";
-    case 3:
-      return "MOT Broadcast Web Site";
-    case 4:
-      return "TPEG";
-    case 5:
-      return "DGPS";
-    case 6:
-      return "TMC";
-    case 7:
-      return "SPI, was EPG";
-    case 8:
-      return "DAB Java";
-    case 9:
-      return "DMB";
-    case 0x00a:
-      return "IPDC services";
-    case 0x00b:
-      return "Voice applications";
-    case 0x00c:
-      return "Middleware";
-    case 0x00d:
-      return "Filecasting";
-    case 0x44a:
-      return "Journaline";
-    default:
-      return "unknown";
+    case 1:     return "Dynamic labels (X-PAD only)";
+    case 2:     return "MOT Slide Show";
+    case 3:     return "MOT Broadcast Web Site";
+    case 4:     return "TPEG";
+    case 5:     return "DGPS";
+    case 6:     return "TMC";
+    case 7:     return "SPI, was EPG";
+    case 8:     return "DAB Java";
+    case 9:     return "DMB";
+    case 0x0a:  return "IPDC services";
+    case 0x0b:  return "Voice applications";
+    case 0x0c:  return "Middleware";
+    case 0x0d:  return "Filecasting";
+    case 0x44a: return "Journaline";
+    default:    return "unknown (UserApp)";
   }
 }
 
 const char *getFECscheme(int16_t FEC_scheme) {
   switch (FEC_scheme) {
-    case 0:
-      return "no FEC";
-    case 1:
-      return "FEC";
-    default:
-      return "unknown";
+    case 0:   return "no FEC";
+    case 1:   return "FEC";
+    default:  return "unknown (FEC)";
   }
 }
 
 const char *getProtectionLevel(bool shortForm, int16_t protLevel) {
   if (!shortForm) {
     switch (protLevel) {
-      case 0:
-        return "EEP 1-A";
-      case 1:
-        return "EEP 2-A";
-      case 2:
-        return "EEP 3-A";
-      case 3:
-        return "EEP 4-A";
-      case 4:
-        return "EEP 1-B";
-      case 5:
-        return "EEP 2-B";
-      case 6:
-        return "EEP 3-B";
-      case 7:
-        return "EEP 4-B";
-      default:
-        return "EEP unknown";
+      case 0:   return "EEP 1-A";
+      case 1:   return "EEP 2-A";
+      case 2:   return "EEP 3-A";
+      case 3:   return "EEP 4-A";
+      case 4:   return "EEP 1-B";
+      case 5:   return "EEP 2-B";
+      case 6:   return "EEP 3-B";
+      case 7:   return "EEP 4-B";
+      default:  return "unknown (EEP)";
     }
   } else {
     switch (protLevel) {
-      case 1:
-        return "UEP 1";
-      case 2:
-        return "UEP 2";
-      case 3:
-        return "UEP 3";
-      case 4:
-        return "UEP 4";
-      case 5:
-        return "UEP 5";
-      default:
-        return "UEP unknown";
+      case 1:   return "UEP 1";
+      case 2:   return "UEP 2";
+      case 3:   return "UEP 3";
+      case 4:   return "UEP 4";
+      case 5:   return "UEP 5";
+      default:  return "unknown (UEP)";
     }
   }
 }
@@ -934,12 +680,12 @@ const char *getCodeRate(bool shortForm, int16_t protLevel) {
     else if ( 4 <= h && h <= 7 )
       return eep_Brates[h - 4];
     else
-      return "unknown";
+      return "unknown (Long CodeRate)";
   }
   else {
     if ( 1 <= h && h <= 5 )
       return uep_rates[h -1];  // UEP
     else
-      return "unknown";
+      return "unknown (Short CodeRate)";
   }
 }
