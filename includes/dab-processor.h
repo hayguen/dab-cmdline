@@ -69,6 +69,7 @@ class dabProcessor {
   void dataforDataService(int SId, packetdata *, int16_t);
   int32_t get_SId(std::string s);
   std::string get_serviceName(int32_t);
+  void printAll_metaInfo(FILE *out);
   void set_audioChannel(audiodata *);
   void set_dataChannel(packetdata *);
   std::string get_ensembleName();

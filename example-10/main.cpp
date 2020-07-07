@@ -79,6 +79,9 @@ using std::endl;
 #define LOG_EX_TII_SPECTRUM 0
 #define MAX_EX_TII_BUFFER_SIZE 16
 #define FIB_PROCESSING_IN_MAIN 0
+#define PRINT_DBG_ALL_SERVICES 1
+#define CSV_PRINT_PROTECTION_COLS 0
+
 
 std::string prepCsvStr(const std::string &s) {
   std::string r = "\"";
@@ -115,6 +118,7 @@ struct MyServiceData {
 
   int SId;
   std::string programName;
+  std::string programAbbr;
   bool gotAudio;
   audiodata audio;
   bool gotAudioPacket[4];  // 1 .. 4 --> 0 .. 3
@@ -251,6 +255,7 @@ static int print_mismatch_counter;
 static int recTolerance = -1;
 
 static std::string ensembleName;
+static std::string ensembleAbbr;
 static uint32_t ensembleIdentifier = -1;
 
 static bool scanOnly = false;
@@ -325,14 +330,15 @@ void printCollectedErrorStat(const char *txt) {
 //	the Boolean b tells whether or not an ensemble has been
 //	recognized, the names of the programs are in the
 //	ensemble
-static void ensemblenameHandler(std::string name, int EId, void *userData) {
+static void ensemblenameHandler(std::string name, std::string abbr, int EId, void *userData) {
   if (ensembleIdentifier != (uint32_t)EId || ensembleRecognized.load()) return;
   fprintf(stderr,
           "\n" FMT_DURATION
-          "ensemblenameHandler: '%s' ensemble (EId %X) is "
+          "ensemblenameHandler: '%s' / '%s' ensemble (EId %X) is "
           "recognized\n\n" SINCE_START,
-          name.c_str(), (uint32_t)EId);
+          name.c_str(), abbr.c_str(), (uint32_t)EId);
   ensembleName = name;
+  ensembleAbbr = abbr;
   ensembleRecognized.store(true);
 }
 
@@ -344,12 +350,13 @@ static void ensembleIdHandler(int EId, void *userData) {
   ensembleIdentifier = (uint32_t)EId;
 }
 
-static void programnameHandler(std::string s, int SId, void *userdata) {
-  fprintf(stderr, "programnameHandler: '%s' (SId %X) is part of the ensemble\n",
-          s.c_str(), SId);
+static void programnameHandler(std::string s, std::string abbr, int SId, void *userdata) {
+  fprintf(stderr, "programnameHandler: '%s' / '%s' (SId %X) is part of the ensemble\n",
+          s.c_str(), abbr.c_str(), SId);
   MyServiceData *d = new MyServiceData();
   d->SId = SId;
   d->programName = s;
+  d->programAbbr = abbr;
   globals.channels[SId] = d;
 
   if ((SId == serviceIdentifier || useFirstProgramName) &&
@@ -1512,6 +1519,14 @@ int main(int argc, char **argv) {
         outLine += comma + std::to_string(int(mostTii));
         outComm += comma + "num_id";
       }
+      
+      if (ensembleRecognized.load()) {
+        outLine += comma + comma + prepCsvStr("shortLabel") + comma + prepCsvStr(ensembleAbbr);
+      } else {
+        outLine += comma + comma + prepCsvStr("shortLabel") + comma + prepCsvStr("unknown");
+      }
+      outComm += comma + comma + "shortLabel" + comma + "label";
+
       fprintf(infoStrm, "%s\n", outComm.c_str());
       fprintf(infoStrm, "%s\n", outLine.c_str());
     }
@@ -1557,13 +1572,24 @@ int main(int argc, char **argv) {
     outPacketBeg += comma + prepCsvStr(theChannel);
     outPacketBeg += ensembleCols;
 
+#if PRINT_DBG_ALL_SERVICES
+        fprintf(stderr, "\n\n");
+#endif
+
     for (auto &it : globals.channels) {
       serviceIdentifier = it.first;
-      //	      fprintf (stderr, "going to check %s\n",
-      //	                              it. second -> programName. c_str
-      //());
-      if (is_audioService_by_id(theRadio, serviceIdentifier) ||
-          is_dataService_by_id(theRadio, serviceIdentifier)) {
+      int numAudioInSvc = 0;
+      int numPacketInSvc = 0;
+      char typeOfSvc = '?';
+#if PRINT_DBG_ALL_SERVICES
+      //fprintf (stderr, "going to check %s\n", it.second->programName.c_str());
+#endif
+      if (is_audioService_by_id(theRadio, serviceIdentifier))
+        typeOfSvc = 'A';
+      else if ( is_dataService_by_id(theRadio, serviceIdentifier) )
+        typeOfSvc = 'P';
+
+      if ( typeOfSvc != '?' ) {
         if (!printAsCSV) {
           fprintf(infoStrm,
                   "\n" FMT_DURATION
@@ -1577,7 +1603,9 @@ int main(int argc, char **argv) {
           dataforAudioService_by_id(theRadio, serviceIdentifier, &ad, i);
 
           if (ad.defined) {
+            ++numAudioInSvc;
             uint8_t countryId = (serviceIdentifier >> 12) & 0xF;  // audio
+            assert( i == ad.componentNr );
             if (!printAsCSV) {
               fprintf(infoStrm, "\taudioData:\n");
               fprintf(infoStrm, "\t\tsubchId\t\t= %d\n", int(ad.subchId));
@@ -1610,7 +1638,7 @@ int main(int argc, char **argv) {
               sidStrStream << std::hex << serviceIdentifier;
               outLine += comma + "0x" + sidStrStream.str();
               outLine += comma + prepCsvStr(it.second->programName.c_str());
-              outLine += comma + std::to_string(i);
+              outLine += comma + std::to_string(int(ad.componentNr));
               outLine += comma + std::to_string(countryId);
               outLine += comma + prepCsvStr(getProtectionLevel(ad.shortForm,
                                                                ad.protLevel));
@@ -1641,6 +1669,13 @@ int main(int argc, char **argv) {
                                                     ad.programType));
               outLine += comma + std::to_string(int(ad.length));
               outLine += comma + std::to_string(int(ad.subchId));
+              outLine += comma + prepCsvStr(it.second->programAbbr.c_str());
+              outLine += comma + prepCsvStr(ad.componentLabel);
+              outLine += comma + prepCsvStr(ad.componentAbbr);
+#if CSV_PRINT_PROTECTION_COLS
+              outLine += comma + std::to_string(int(ad.protIdxOrCase));
+              outLine += comma + std::to_string(int(ad.subChanSize));
+#endif
 
               fprintf(infoStrm, "%s\n", outLine.c_str());
             }
@@ -1648,7 +1683,9 @@ int main(int argc, char **argv) {
             dataforDataService_by_id(theRadio, serviceIdentifier, &pd, i);
 
             if (pd.defined) {
+              ++numPacketInSvc;
               uint8_t countryId = (serviceIdentifier >> (5 * 4)) & 0xF;
+              assert( i == pd.componentNr );
               if (!printAsCSV) {
                 fprintf(infoStrm, "\tpacket:\n");
                 fprintf(infoStrm, "\t\tsubchId\t\t= %d\n", int(pd.subchId));
@@ -1684,7 +1721,7 @@ int main(int argc, char **argv) {
                 sidStrStream << std::hex << serviceIdentifier;
                 outLine += comma + "0x" + sidStrStream.str();
                 outLine += comma + prepCsvStr(it.second->programName.c_str());
-                outLine += comma + std::to_string(i);
+                outLine += comma + std::to_string(int(pd.componentNr));
                 outLine += comma + std::to_string(int(pd.protLevel));
                 outLine += comma + prepCsvStr(getProtectionLevel(pd.shortForm,
                                                                  pd.protLevel));
@@ -1715,14 +1752,34 @@ int main(int argc, char **argv) {
                     comma + prepCsvStr(getUserApplicationType(pd.appType));
                 outLine += comma + std::to_string(int(pd.length));
                 outLine += comma + std::to_string(int(pd.subchId));
+                outLine += comma + prepCsvStr(it.second->programAbbr.c_str());
+                outLine += comma + prepCsvStr(pd.componentLabel);
+                outLine += comma + prepCsvStr(pd.componentAbbr);
+#if CSV_PRINT_PROTECTION_COLS
+                outLine += comma + std::to_string(int(pd.protIdxOrCase));
+                outLine += comma + std::to_string(int(pd.subChanSize));
+#endif
 
                 fprintf(infoStrm, "%s\n", outLine.c_str());
               }
             }
           }
         }
+#if PRINT_DBG_ALL_SERVICES
+        fprintf(stderr, "LIST: SID %08X of type %c has %d audio and %d packet components: '%s' / '%s'\n",
+          serviceIdentifier, typeOfSvc, numAudioInSvc, numPacketInSvc,
+          it.second->programName.c_str(), it.second->programAbbr.c_str() );
+#endif
+      }
+      else {
+#if PRINT_DBG_ALL_SERVICES
+        fprintf(stderr, "ERROR: SID %08X is neither audio nor data!\n", serviceIdentifier);
+#endif
       }
     }
+
+    fprintf(stderr, "\n\n");
+    dab_printAll_metaInfo(theRadio, stderr);
 
     nextOut = timeOut;
     printCollectedCallbackStat("D: quit without loading");

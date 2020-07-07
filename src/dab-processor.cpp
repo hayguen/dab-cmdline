@@ -342,6 +342,10 @@ std::string dabProcessor::get_serviceName(int32_t SId) {
   return my_ficHandler.nameFor(SId);
 }
 
+void dabProcessor::printAll_metaInfo(FILE *out) {
+  my_ficHandler.printAll_metaInfo(out);
+}
+
 void dabProcessor::reset_msc() { my_mscHandler.reset(); }
 
 void dabProcessor::setTII_handler(tii_t tii_Handler, tii_ex_t tii_ExHandler,

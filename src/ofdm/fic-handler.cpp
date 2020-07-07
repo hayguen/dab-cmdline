@@ -253,6 +253,12 @@ void ficHandler::dataforDataService(int SId, packetdata *d, int c) {
   fibProtector.unlock();
 }
 
+void ficHandler::printAll_metaInfo(FILE *out) {
+  fibProtector.lock();
+  fibProcessor.printAll_metaInfo(out);
+  fibProtector.unlock();
+}
+
 int32_t ficHandler::get_CIFcount(void) const {
   // no lock, because using std::atomic<> in fib_processor class
   int32_t r = fibProcessor.get_CIFcount();

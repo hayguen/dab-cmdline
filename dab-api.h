@@ -46,6 +46,7 @@
 //	programdata_t. It contains parameters, describing the service.
 typedef struct {
   bool defined;
+  int16_t componentNr;  // 0 == main component
   int16_t subchId;
   int16_t startAddr;
   bool shortForm;     // false EEP long form
@@ -57,12 +58,19 @@ typedef struct {
   int16_t DGflag;
   int16_t packetAddress;
   int16_t appType;
+  int16_t protIdxOrCase;
+  int16_t protTabIdx;
+  int16_t subChanSize;
   bool is_madePublic;
+  bool componentHasLabel;
+  char componentLabel[32];
+  char componentAbbr[32];
 } packetdata;
 
 //
 typedef struct {
   bool defined;
+  int16_t componentNr;  // 0 == main component
   int16_t subchId;
   int16_t startAddr;
   bool shortForm;
@@ -72,7 +80,13 @@ typedef struct {
   int16_t ASCTy;
   int16_t language;
   int16_t programType;
+  int16_t protIdxOrCase;
+  int16_t protTabIdx;
+  int16_t subChanSize;
   bool is_madePublic;
+  bool componentHasLabel;
+  char componentLabel[32];
+  char componentAbbr[32];
 } audiodata;
 
 //////////////////////// C A L L B A C K F U N C T I O N S ///////////////
@@ -96,7 +110,7 @@ typedef void (*fib_quality_t)(int16_t, void *);
 //
 //	the ensemblename is sent whenever the library detects the
 //	name an ensemble
-typedef void (*ensemblename_t)(std::string, int32_t, void *);
+typedef void (*ensemblename_t)(std::string label, std::string abbr, int32_t, void *);
 
 //
 //	the ensembleId (EId) is sent whenever the library detects the
@@ -104,7 +118,7 @@ typedef void (*ensemblename_t)(std::string, int32_t, void *);
 typedef void (*ensembleid_t)(int32_t, void *);
 //
 //	Each programname in the ensemble is sent once
-typedef void (*programname_t)(std::string, int32_t, void *);
+typedef void (*programname_t)(std::string label, std::string abbr, int32_t, void *);
 //
 //	after selecting an audio program, the audiooutput, packed
 //	as PCM data (always two channels) is sent back
@@ -275,6 +289,9 @@ void dab_setError_handler(void *, decodeErrorReport_t err_Handler);
 // save binary FIC data (all FIBs) to following file, saveFile is closed at end
 // of DAB decoding
 void dab_setFIB_handler(void *Handle, fibdata_t fib_Handler);
+
+void dab_printAll_metaInfo(void *Handle, FILE* out);
+
 }
 
 //

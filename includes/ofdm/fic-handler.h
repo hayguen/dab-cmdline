@@ -52,6 +52,7 @@ class ficHandler : public viterbiHandler {
   void dataforAudioService(std::string &, audiodata *, int);
   void dataforDataService(int SId, packetdata *, int);
   void dataforAudioService(int SId, audiodata *, int);
+  void printAll_metaInfo(FILE *out);
 
   int32_t get_CIFcount(void) const;
   bool has_CIFcount(void) const;

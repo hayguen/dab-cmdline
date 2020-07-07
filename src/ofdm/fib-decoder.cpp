@@ -27,37 +27,57 @@
 #include "ensemble-handler.h"
 
 #define OUT_CIF_COUNTER 0
+#define OUT_FIG0E1      0
+#define OUT_ALL_LABELS  1
+
+
+static const char hexTab[] = "0123456789ABCDEF";
+
+// macros for writeLabel()
+#define CHAR_POS_MASK(POS)      ( 1 << (15-(POS)) )
+#define ABBR_CHAR(POS,LBL)      LBL[POS]
+#define ABBR_POS_CHAR(POS,LBL)  hexTab[POS]
+
 
 //
 //
 // Tabelle ETSI EN 300 401 Page 50
 // Table is copied from the work of Michael Hoehn
-const int ProtLevel[64][3] = {
-    {16, 5, 32},                                               // Index 0
-    {21, 4, 32},   {24, 3, 32},   {29, 2, 32},   {35, 1, 32},  // Index 4
-    {24, 5, 48},   {29, 4, 48},   {35, 3, 48},   {42, 2, 48},
-    {52, 1, 48},  // Index 9
-    {29, 5, 56},   {35, 4, 56},   {42, 3, 56},   {52, 2, 56},
-    {32, 5, 64},  // Index 14
-    {42, 4, 64},   {48, 3, 64},   {58, 2, 64},   {70, 1, 64},
-    {40, 5, 80},  // Index 19
-    {52, 4, 80},   {58, 3, 80},   {70, 2, 80},   {84, 1, 80},
-    {48, 5, 96},  // Index 24
-    {58, 4, 96},   {70, 3, 96},   {84, 2, 96},   {104, 1, 96},
-    {58, 5, 112},  // Index 29
-    {70, 4, 112},  {84, 3, 112},  {104, 2, 112}, {64, 5, 128},
-    {84, 4, 128},  // Index 34
-    {96, 3, 128},  {116, 2, 128}, {140, 1, 128}, {80, 5, 160},
-    {104, 4, 160},  // Index 39
-    {116, 3, 160}, {140, 2, 160}, {168, 1, 160}, {96, 5, 192},
-    {116, 4, 192},  // Index 44
-    {140, 3, 192}, {168, 2, 192}, {208, 1, 192}, {116, 5, 224},
-    {140, 4, 224},  // Index 49
-    {168, 3, 224}, {208, 2, 224}, {232, 1, 224}, {128, 5, 256},
-    {168, 4, 256},  // Index 54
-    {192, 3, 256}, {232, 2, 256}, {280, 1, 256}, {160, 5, 320},
-    {208, 4, 320},  // index 59
-    {280, 2, 320}, {192, 5, 384}, {280, 3, 384}, {416, 1, 384}};
+//   subChannels[SubChId].Length    = ProtLevel[tabelIndex][0];
+//   subChannels[SubChId].protLevel = ProtLevel[tabelIndex][1];
+//   subChannels[SubChId].BitRate   = ProtLevel[tabelIndex][2];
+static const int ProtLevel[64][3] = {
+//  +0             +1             +2             +3             +4
+// Len,PL,  BR    Len,PL,  BR    Len,PL,  BR    Len,PL,  BR    Len,PL,  BR
+  { 16, 5,  32}, { 21, 4,  32}, { 24, 3,  32}, { 29, 2,  32}, { 35, 1,  32},  // 0+.
+  { 24, 5,  48}, { 29, 4,  48}, { 35, 3,  48}, { 42, 2,  48}, { 52, 1,  48},  // 5+.
+  { 29, 5,  56}, { 35, 4,  56}, { 42, 3,  56}, { 52, 2,  56}, { 32, 5,  64},  // 10+.
+  { 42, 4,  64}, { 48, 3,  64}, { 58, 2,  64}, { 70, 1,  64}, { 40, 5,  80},  // 15+.
+  { 52, 4,  80}, { 58, 3,  80}, { 70, 2,  80}, { 84, 1,  80}, { 48, 5,  96},  // 20+.
+  { 58, 4,  96}, { 70, 3,  96}, { 84, 2,  96}, {104, 1,  96}, { 58, 5, 112},  // 25+.
+  { 70, 4, 112}, { 84, 3, 112}, {104, 2, 112}, { 64, 5, 128}, { 84, 4, 128},  // 30+.
+  { 96, 3, 128}, {116, 2, 128}, {140, 1, 128}, { 80, 5, 160}, {104, 4, 160},  // 35+.
+  {116, 3, 160}, {140, 2, 160}, {168, 1, 160}, { 96, 5, 192}, {116, 4, 192},  // 40+.
+  {140, 3, 192}, {168, 2, 192}, {208, 1, 192}, {116, 5, 224}, {140, 4, 224},  // 45+.
+  {168, 3, 224}, {208, 2, 224}, {232, 1, 224}, {128, 5, 256}, {168, 4, 256},  // 50+.
+  {192, 3, 256}, {232, 2, 256}, {280, 1, 256}, {160, 5, 320}, {208, 4, 320},  // 55+.
+  {280, 2, 320}, {192, 5, 384}, {280, 3, 384}, {416, 1, 384}                  // 60+. - 63
+};
+
+#if OUT_FIG0E1
+static const char* Afactors[] = { "/ 12 *  8", "/ 8 *   8", "/  6 *  8", "/  4 *  8" };
+static const char* Bfactors[] = { "/ 27 * 32", "/ 21 * 32", "/ 18 * 32", "/ 15 * 32" };
+#endif
+
+
+inline static bool existsInTab(int16_t num, const int16_t *tab, int16_t v) {
+  for (int16_t k = 0; k < num; ++k) {
+    if (tab[k] == v)
+      return true;
+  }
+  return false;
+}
+
 
 //
 fib_processor::fib_processor(ensemblename_t ensemblenameHandler,
@@ -346,15 +366,31 @@ int16_t fib_processor::HandleFIG0Extension1(const uint8_t *d, int16_t offset,
   int16_t tabelIndex;
   int16_t option, protLevel, subChanSize;
   (void)pd;  // not used right now, maybe later
+
+#if OUT_FIG0E1
+  const char *wasAlreadyInUse = subChannels[SubChId].inUse ? "used" : "free";
+#endif
+  subChannels[SubChId].SubChId = SubChId;
   subChannels[SubChId].StartAddr = StartAdr;
   subChannels[SubChId].inUse = true;
 
   if (getBits_1(d, bitOffset + 16) == 0) {  // short form
     tabelIndex = getBits_6(d, bitOffset + 18);
-    subChannels[SubChId].Length = ProtLevel[tabelIndex][0];
+    int32_t Length = ProtLevel[tabelIndex][0];
+    int32_t protLevel = ProtLevel[tabelIndex][1];
+    int32_t BitRate = ProtLevel[tabelIndex][2];
+#if OUT_FIG0E1
+    fprintf(stderr, "FIG0/1: SubChId = %02d (%s), short form, tab idx %d, [len %d, protLevel %d, bitrate %d]\n",
+            SubChId, wasAlreadyInUse, tabelIndex, Length, protLevel, BitRate );
+#endif
+
     subChannels[SubChId].shortForm = true;
-    subChannels[SubChId].protLevel = ProtLevel[tabelIndex][1];
-    subChannels[SubChId].BitRate = ProtLevel[tabelIndex][2];
+    subChannels[SubChId].protIdxOrCase = tabelIndex;
+    subChannels[SubChId].Length = Length;
+    subChannels[SubChId].protLevel = protLevel;
+    subChannels[SubChId].subChanSize = 0;
+    subChannels[SubChId].BitRate = BitRate;
+
     bitOffset += 24;
   } else {  // EEP long form
     subChannels[SubChId].shortForm = false;
@@ -365,24 +401,49 @@ int16_t fib_processor::HandleFIG0Extension1(const uint8_t *d, int16_t offset,
       subChannels[SubChId].protLevel = protLevel;
       subChanSize = getBits(d, bitOffset + 22, 10);
       subChannels[SubChId].Length = subChanSize;
-      if (protLevel == 0)  // actually protLevel 1
-        subChannels[SubChId].BitRate = subChanSize / 12 * 8;
-      if (protLevel == 1) subChannels[SubChId].BitRate = subChanSize / 8 * 8;
-      if (protLevel == 2) subChannels[SubChId].BitRate = subChanSize / 6 * 8;
-      if (protLevel == 3) subChannels[SubChId].BitRate = subChanSize / 4 * 8;
-    } else                    // option should be 001
-        if (option == 001) {  // B Level protection
+      subChannels[SubChId].subChanSize = subChanSize;
+      subChannels[SubChId].protIdxOrCase = 100 + protLevel;
+      int32_t BitRate = -1;
+      // protLevel == 0: actually protLevel 1
+      if (protLevel == 0) BitRate = subChanSize / 12 * 8;
+      if (protLevel == 1) BitRate = subChanSize / 8 * 8;
+      if (protLevel == 2) BitRate = subChanSize / 6 * 8;
+      if (protLevel == 3) BitRate = subChanSize / 4 * 8;
+      subChannels[SubChId].BitRate = BitRate;
+#if OUT_FIG0E1
+      fprintf(stderr, "FIG0/1: SubChId = %02d (%s), EEP-A long form, protLevel %d, #CU %d  %s, bitrate %d\n",
+               SubChId, wasAlreadyInUse, protLevel, subChanSize,
+               ( (0 <= protLevel && protLevel <= 3) ? Afactors[protLevel] : "?" ),
+               BitRate );
+#endif
+    } else if (option == 001) {  // B Level protection
       protLevel = getBits_2(d, bitOffset + 20);
       //
       //	we encode the B protection levels by adding a 04 to the level
       subChannels[SubChId].protLevel = protLevel + (1 << 2);
       subChanSize = getBits(d, bitOffset + 22, 10);
       subChannels[SubChId].Length = subChanSize;
-      if (protLevel == 0)  // actually prot level 1
-        subChannels[SubChId].BitRate = subChanSize / 27 * 32;
-      if (protLevel == 1) subChannels[SubChId].BitRate = subChanSize / 21 * 32;
-      if (protLevel == 2) subChannels[SubChId].BitRate = subChanSize / 18 * 32;
-      if (protLevel == 3) subChannels[SubChId].BitRate = subChanSize / 15 * 32;
+      subChannels[SubChId].subChanSize = subChanSize;
+      subChannels[SubChId].protIdxOrCase = 200 + protLevel;
+      int32_t BitRate = -1;
+      // protLevel == 0: actually prot level 1
+      if (protLevel == 0) BitRate = subChanSize / 27 * 32;
+      if (protLevel == 1) BitRate = subChanSize / 21 * 32;
+      if (protLevel == 2) BitRate = subChanSize / 18 * 32;
+      if (protLevel == 3) BitRate = subChanSize / 15 * 32;
+      subChannels[SubChId].BitRate = BitRate;
+#if OUT_FIG0E1
+      fprintf(stderr, "FIG0/1: SubChId = %02d (%s), EEP-B long form, protLevel %d, #CU %d  %s, bitrate %d\n",
+               SubChId, wasAlreadyInUse, protLevel, subChanSize,
+               ( (0 <= protLevel && protLevel <= 3) ? Bfactors[protLevel] : "?" ),
+               BitRate );
+#endif
+    } else {
+      subChannels[SubChId].protIdxOrCase = 300 + option;
+#if OUT_FIG0E1
+      fprintf(stderr, "FIG0/1: SubChId = %02d (%s), ???, option %d\n",
+               SubChId, wasAlreadyInUse, option );
+#endif
     }
 
     bitOffset += 32;
@@ -487,8 +548,7 @@ int16_t fib_processor::HandleFIG0Extension3(const uint8_t *d, int16_t used,
   int16_t packetAddress = getBits(d, used * 8 + 30, 10);
   uint16_t CAOrg = 0;
 
-  serviceComponent *packetComp = find_packetComponent(SCId);
-  serviceId *service;
+  serviceComponent *packetComp = find_packetComponent(SubChId, SCId);
 
   (void)OE_bit;
   (void)PD_bit;
@@ -508,24 +568,24 @@ int16_t fib_processor::HandleFIG0Extension3(const uint8_t *d, int16_t used,
   //      If the component exists, we first look whether is
   //      was already handled
   if (packetComp->is_madePublic) return used;
-  //
-  //      We want to have the subchannel OK
-  if (!subChannels[SubChId].inUse) return used;
 
   //      if the  Data Service Component Type == 0, we do not deal
   //      with it
-  if (DSCTy == 0) return used;
+  //if (DSCTy == 0) return used;
 
-  service = packetComp->service;
-  const char * serviceName = service->label;
-  if (packetComp->componentNr == 0)  // otherwise sub component
-    addtoEnsemble(serviceName, service->SId);
-
+  serviceId *svc = packetComp->service;
   packetComp->is_madePublic = true;
   packetComp->subchannelId = SubChId;
   packetComp->DSCTy = DSCTy;
   packetComp->DGflag = DGflag;
   packetComp->packetAddress = packetAddress;
+
+  if ( svc && svc->numSubChId < 4 && !existsInTab(svc->numSubChId, svc->SubChId, SubChId) )
+    svc->SubChId[svc->numSubChId++] = SubChId;
+
+  if (packetComp->componentNr == 0)  // otherwise sub component
+    addtoEnsemble(svc->label, svc->abbr, svc->SId);
+
   return used;
 }
 //
@@ -575,11 +635,13 @@ int16_t fib_processor::HandleFIG0Extension5(const uint8_t *d, uint8_t CN_bit,
       subChId = getBits_6(d, loffset + 2);
       language = getBits_8(d, loffset + 8);
       subChannels[subChId].language = language;
+      fprintf(stderr, "FIG0Ext5: Short, SubChId %d, language %d\n", (int)subChId, (int)language);
     }
     loffset += 16;
   } else {  // long form
     serviceComp = getBits(d, loffset + 4, 12);
     language = getBits_8(d, loffset + 16);
+    fprintf(stderr, "FIG0Ext5: Long, serviceComp %d, language %d\n", (int)serviceComp, (int)language);
     loffset += 24;
   }
   (void)serviceComp;
@@ -618,7 +680,7 @@ int16_t fib_processor::HandleFIG0Extension8(const uint8_t *d, int16_t used,
   int16_t lOffset = used * 8;
   uint32_t SId = getLBits(d, lOffset, pdBit == 1 ? 32 : 16);
   uint8_t lsFlag;
-  uint16_t SCIds;
+  int16_t SCIds;
   int16_t SCid;
   int16_t MSCflag;
   int16_t SubChId;
@@ -630,10 +692,16 @@ int16_t fib_processor::HandleFIG0Extension8(const uint8_t *d, int16_t used,
   SCIds = getBits_4(d, lOffset + 4);
   lOffset += 8;
 
+  serviceId *svc = findServiceId(SId);
+  if ( svc && svc->numSCIds < 4 && !existsInTab(svc->numSCIds, svc->SCIds, SCIds) )
+    svc->SCIds[svc->numSCIds++] = SCIds;
+
   lsFlag = getBits_1(d, lOffset);
   if (lsFlag == 1) {
     SCid = getBits(d, lOffset + 4, 12);
     lOffset += 16;
+    if ( svc && svc->numSCid < 4 && !existsInTab(svc->numSCid, svc->SCid, SCid) )
+      svc->SCid[svc->numSCid++] = SCid;
     //           if (find_packetComponent ((SCIds << 4) | SCid) != nullptr) {
     //              fprintf (stderr, "packet component bestaat !!\n");
     //           }
@@ -641,6 +709,8 @@ int16_t fib_processor::HandleFIG0Extension8(const uint8_t *d, int16_t used,
     MSCflag = getBits_1(d, lOffset + 1);
     SubChId = getBits_6(d, lOffset + 2);
     lOffset += 8;
+    if ( svc && svc->numSubChId < 4 && !existsInTab(svc->numSubChId, svc->SubChId, SubChId) )
+      svc->SubChId[svc->numSubChId++] = SubChId;
   }
   if (extensionFlag) lOffset += 8;  // skip Rfa
   (void)SId;
@@ -743,22 +813,21 @@ int16_t fib_processor::HandleFIG0Extension13(const uint8_t *d, int16_t used,
                                              uint8_t pdBit) {
   int16_t lOffset = used * 8;
   uint32_t SId = getLBits(d, lOffset, pdBit == 1 ? 32 : 16);
-  uint16_t SCIdS;
-  int16_t NoApplications;
-  int16_t i;
-  int16_t appType;
 
   lOffset += pdBit == 1 ? 32 : 16;
-  SCIdS = getBits_4(d, lOffset);
-  NoApplications = getBits_4(d, lOffset + 4);
+  int16_t SCIds = getBits_4(d, lOffset);
+  int16_t NoApplications = getBits_4(d, lOffset + 4);
   lOffset += 8;
 
-  for (i = 0; i < NoApplications; i++) {
-    appType = getBits(d, lOffset, 11);
+  for (int16_t i = 0; i < NoApplications; i++) {
+    int16_t appType = getBits(d, lOffset, 11);
     int16_t length = getBits_5(d, lOffset + 11);
     lOffset += (11 + 5 + 8 * length);
-    serviceComponent *packetComp = find_serviceComponent(SId, SCIdS);
-    if (packetComp != nullptr) packetComp->appType = appType;
+    serviceComponent *packetComp = find_serviceComponent(SId, SCIds);
+    if (packetComp != nullptr) {
+      packetComp->SCIds = SCIds;
+      packetComp->appType = appType;
+    }
   }
 
   return lOffset / 8;
@@ -802,8 +871,7 @@ bool fib_processor::FIG0Extension16(const uint8_t *d) {
       uint8_t PNum = getBits(d, offset + 16, 16);
       s->pNum = PNum;
       s->hasPNum = true;
-      //	      fprintf (stderr, "Program number info SId = %.8X, PNum =
-      //%d\n", 	      	                               SId, PNum);
+      fprintf(stderr, "FIG0Ext16: Program number info for SID %08X, PNum %d\n", SId, (int)PNum);
     }
     offset += 72;
   }
@@ -1028,6 +1096,44 @@ bool fib_processor::FIG0Extension26(const uint8_t *d) {
   return false;
 }
 
+
+static void writeLabel( const uint8_t *d, int16_t offset, char *label, char *abbrev
+, uint32_t SId, int subID, const char * labelId, int printToConsole = 0 )
+{
+  for ( int16_t i = 0; i < 16; ++i )
+    label[i] = getBits_8(d, offset + 8 * i);
+
+  uint32_t char_flagfield = getLBits(d, offset + 16*8, 16);
+  int16_t abbrLen = 0;
+#if 1
+  for ( int16_t i = 0; i < 16; ++i ) {
+    if ( char_flagfield & CHAR_POS_MASK(i) )
+      abbrev[abbrLen++] = ABBR_CHAR(i,label);
+  }
+  abbrev[abbrLen++] = 0;
+#else
+  char abbrCt[32];
+
+  for ( int16_t i = 0; i < 16; ++i ) {
+    if ( char_flagfield & CHAR_POS_MASK(i) ) {
+      abbrev[abbrLen] = ABBR_POS_CHAR(i,label);
+      abbrCt[abbrLen++] = ABBR_CHAR(i,label);
+    }
+  }
+  abbrCt[abbrLen] = 0;
+  abbrev[abbrLen++] = '#';
+  abbrev[abbrLen] = hexTab[abbrLen-1];
+  abbrev[++abbrLen] = '_';
+  abbrev[++abbrLen] = 0;
+  strcat(abbrev, abbrCt);
+#endif
+
+  if ( printToConsole ) {
+    fprintf(stderr, "LABEL SID %08X: subID %d: decoded %s: '%s' / '%s'\n", SId, subID, labelId, label, abbrev);
+  }
+}
+
+
 //      FIG 1 - Cover the different possible labels, section 5.2
 //
 void fib_processor::process_FIG1(const uint8_t *d) {
@@ -1036,72 +1142,64 @@ void fib_processor::process_FIG1(const uint8_t *d) {
   uint8_t Rfu;
   int16_t offset = 0;
   serviceId *myIndex;
-  int16_t i;
   uint8_t pd_flag;
   uint8_t SCidS;
   uint8_t XPAD_aid;
-  uint8_t flagfield;
   uint8_t region_id;
-  char label[17];
+  char abbrev[64];
+  char label[32];
   //
   //	from byte 1 we deduce:
   charSet = getBits_4(d, 8);
   Rfu = getBits_1(d, 8 + 4);  // == OE = Other Ensemble
   extension = getBits_3(d, 8 + 5);
   label[16] = 0;
+  abbrev[0] = 0;
   (void)Rfu;
   switch (extension) {
-      /*
-                 default:
-                    return;
-       */
+      /* default: return; */
     case 0:  // ensemble label
       SId = getBits(d, 16, 16);
       offset = 32;
       if ((charSet <= 16)) {  // EBU Latin based repertoire
 
-        for (i = 0; i < 16; i++) {
-          label[i] = getBits_8(d, offset + 8 * i);
+        writeLabel( d, offset,  label, abbrev, SId, -1, "ext0: ensemble label", 0 & OUT_ALL_LABELS );
+        // fprintf (stderr, "Ensemblename: %16s\n", label);
+        if (UnicodeUcs2 == (CharacterSet)charSet)
+          fprintf(stderr,
+                  "warning: ignoring ensemble name cause of "
+                  "unimplemented Ucs2 conversion\n");
+        else {
+          std::string name = toStringUsingCharset(label, (CharacterSet)charSet);
+          std::string abbr = toStringUsingCharset(abbrev, (CharacterSet)charSet);
+          // without idofEnsemble: just report one name
+          if (ensembleidHandler != nullptr || firstTimeEName)
+            nameofEnsemble(SId, name, abbr);
+          firstTimeEName = false;
         }
-        //	         fprintf (stderr, "Ensemblename: %16s\n", label);
-        {
-          if (UnicodeUcs2 == (CharacterSet)charSet)
-            fprintf(stderr,
-                    "warning: ignoring ensemble name cause of "
-                    "unimplemented Ucs2 conversion\n");
-          else {
-            std::string name = toStringUsingCharset(label,
-                                                    (CharacterSet)charSet);
-            // without idofEnsemble: just report one name
-            if (ensembleidHandler != nullptr || firstTimeEName)
-              nameofEnsemble(SId, name);
-            firstTimeEName = false;
-          }
-          isSynced = true;
-        }
+        isSynced = true;
       }
-      //	      fprintf (stderr,
-      //	               "charset %d is used for ensemblename\n",
-      // charSet);
+      // fprintf (stderr, "charset %d is used for ensemblename\n", charSet);
       break;
 
-    case 1:  // 16 bit Identifier field for service label 8.1.14.1
+    case 1:  // 16 bit Identifier field for service label 8.1.14.1 Programme service label
       SId = getBits(d, 16, 16);
       offset = 32;
       myIndex = findServiceId(SId);
-      if ((!myIndex->hasName) && (charSet <= 16)) {
-        for (i = 0; i < 16; i++) {
-          label[i] = getBits_8(d, offset + 8 * i);
-        }
+      if ( myIndex && (!myIndex->hasName) && (charSet <= 16)) {
+
+        writeLabel( d, offset,  label, abbrev, SId, -1, "ext1: programme name", 0 & OUT_ALL_LABELS );
 
         if (UnicodeUcs2 == (CharacterSet)charSet)
           fprintf(stderr,
                   "warning: ignoring service label cause of "
                   "unimplemented Ucs2 conversion\n");
         else {
-          std::string appStr = toStringUsingCharset((const char *)label, (CharacterSet)charSet);
+          std::string appStr = toStringUsingCharset(label, (CharacterSet)charSet);
+          std::string abbr = toStringUsingCharset(abbrev, (CharacterSet)charSet);
           strcat(myIndex->label, appStr.c_str());
-          //	         fprintf (stderr, "FIG1/1: SId = %4x\t%s\n", SId, label);
+          strcat(myIndex->abbr, abbr.c_str());
+          // fprintf (stderr, "FIG1/1: SId = %4x\t%s\n", SId, label);
           myIndex->hasName = true;
         }
       }
@@ -1112,12 +1210,11 @@ void fib_processor::process_FIG1(const uint8_t *d) {
       region_id = getBits_6(d, 16 + 2);
       (void)region_id;
       offset = 24;
-      for (i = 0; i < 16; i++) label[i] = getBits_8(d, offset + 8 * i);
-
+      writeLabel( d, offset,  label, abbrev, SId, region_id, "ext3: region", OUT_ALL_LABELS );
       // fprintf (stderr, "FIG1/3: RegionID = %2x\t%s\n", region_id, label);
       break;
 
-    case 4:  // service component label 8.1.14.3
+    case 4:  // service component label 8.1.14.3 Service component label
       pd_flag = getLBits(d, 16, 1);
       SCidS = getLBits(d, 20, 4);
       if (pd_flag) {  // 32 bit identifier field for service component label
@@ -1128,34 +1225,46 @@ void fib_processor::process_FIG1(const uint8_t *d) {
         offset = 40;
       }
 
-      flagfield = getLBits(d, offset + 128, 16);
-      for (i = 0; i < 16; i++) label[i] = getBits_8(d, offset + 8 * i);
+      writeLabel( d, offset,  label, abbrev, SId, SCidS, "ext4: service component", 0 && OUT_ALL_LABELS );
       //fprintf (stderr, "FIG1/4: Sid = %8x\tp/d=%d\tSCidS=%1X\tflag=%8X\t%s\n", SId, pd_flag, SCidS, flagfield, label);
+
+      if ((charSet <= 16) && UnicodeUcs2 != (CharacterSet)charSet ) {
+        // EBU Latin based repertoire
+        serviceComponent *packetComp = find_serviceComponentNr(SId, SCidS);
+        if ( packetComp && !packetComp->hasLabel ) {
+          std::string name = toStringUsingCharset(label, (CharacterSet)charSet);
+          std::string abbr = toStringUsingCharset(abbrev, (CharacterSet)charSet);
+          strcpy( packetComp->label, name.c_str() );
+          strcpy( packetComp->abbr, abbr.c_str() );
+          packetComp->hasLabel = true;
+        }
+      }
       break;
 
-    case 5:  // Data service label - 32 bits 8.1.14.2
+    case 5:  // Data service label - 32 bits 8.1.14.2 Data service label
       SId = getLBits(d, 16, 32);
       offset = 48;
       myIndex = findServiceId(SId);
-      if ((!myIndex->hasName) && (charSet <= 16)) {
-        for (i = 0; i < 16; i++) {
-          label[i] = getBits_8(d, offset + 8 * i);
-        }
+      if ( myIndex && (!myIndex->hasName) && (charSet <= 16)) {
+
+        writeLabel( d, offset,  label, abbrev, SId, -1, "ext5: data service", 0 && OUT_ALL_LABELS );
+
         if (UnicodeUcs2 == (CharacterSet)charSet)
           fprintf(stderr,
                   "warning: ignoring service name/label cause of "
                   "unimplemented Ucs2 conversion\n");
         else {
-          std::string appStr = toStringUsingCharset((const char *)label, (CharacterSet)charSet);
+          std::string appStr = toStringUsingCharset(label, (CharacterSet)charSet);
+          std::string abbr = toStringUsingCharset(abbrev, (CharacterSet)charSet);
           strcat(myIndex->label, appStr.c_str());
-          strcat(myIndex->label, " (data)");
+          strcat(myIndex->abbr, abbr.c_str());
           myIndex->hasName = true;
-          addtoEnsemble(myIndex->label, SId);
+          addtoEnsemble(myIndex->label, myIndex->abbr, SId);
         }
       }
       break;
 
-    case 6:  // XPAD label - 8.1.14.4
+    case 6:  // XPAD label - 8.1.14.4 X-PAD user application label
       pd_flag = getLBits(d, 16, 1);
       SCidS = getLBits(d, 20, 4);
       if (pd_flag) {  // 32 bits identifier for XPAD label
@@ -1168,9 +1277,8 @@ void fib_processor::process_FIG1(const uint8_t *d) {
         offset = 48;
       }
 
-      for (i = 0; i < 16; i++) label[i] = getBits_8(d, offset + 8 * i);
-
-      //	      fprintf (stderr, "FIG1/6: SId = %8x\tp/d = %d\t SCidS =
+      writeLabel( d, offset,  label, abbrev, SId, XPAD_aid, "ext6: XPAD", OUT_ALL_LABELS );
+      // fprintf (stderr, "FIG1/6: SId = %8x\tp/d = %d\t SCidS =
       //%1X\tXPAD_aid = %2u\t%s\n", 		       SId, pd_flag, SCidS,
       // XPAD_aid, label);
       break;
@@ -1181,7 +1289,6 @@ void fib_processor::process_FIG1(const uint8_t *d) {
   }
   (void)SCidS;
   (void)XPAD_aid;
-  (void)flagfield;
 }
 
 #define FULL_MATCH 0100
@@ -1210,22 +1317,22 @@ static int compareNames(std::string in, std::string ref) {
 serviceId *fib_processor::findServiceId(int32_t serviceId) {
   int16_t i;
 
-  for (i = 0; i < 64; i++)
+  for (i = 0; i < 64; i++) {
     if ((listofServices[i].inUse) &&
         (listofServices[i].SId == serviceId))
       return &listofServices[i];
+  }
 
-  for (i = 0; i < 64; i++)
+  for (i = 0; i < 64; i++) {
     if (!listofServices[i].inUse) {
       listofServices[i].inUse = true;
-      listofServices[i].label[0] = 0;
-      listofServices[i].hasName = false;
       listofServices[i].SId = serviceId;
-      listofServices[i].language = -1;
       return &listofServices[i];
     }
+  }
 
-  return &listofServices[0];  // should not happen
+  listofServices[64].inUse = false;
+  return &listofServices[64];  // should not happen
 }
 //
 //	since some servicenames are long, we allow selection of a
@@ -1255,13 +1362,15 @@ serviceId *fib_processor::findServiceId(std::string serviceName, bool fullMatchO
                                   : nullptr;
 }
 
-serviceComponent *fib_processor::find_packetComponent(int16_t SCId) {
+serviceComponent *fib_processor::find_packetComponent(int16_t SubChId, int16_t SCId) {
   int16_t i;
 
   for (i = 0; i < 64; i++) {
     if (!ServiceComps[i].inUse) continue;
     if (ServiceComps[i].TMid != 03) continue;
-    if (ServiceComps[i].SCId == SCId) return &ServiceComps[i];
+    //if (ServiceComps[i].subchannelId == SubChId && ServiceComps[i].SCId == SCId)
+    if (ServiceComps[i].SCId == SCId)
+      return &ServiceComps[i];
   }
   return nullptr;
 }
@@ -1274,13 +1383,37 @@ serviceComponent *fib_processor::find_serviceComponent(int32_t SId,
   for (i = 0; i < 64; i++) {
     if (!ServiceComps[i].inUse) continue;
 
-    if ((findServiceId(SId) == ServiceComps[i].service)) {
+    if ( ServiceComps[i].service
+      && ServiceComps[i].service->inUse
+      && ServiceComps[i].service->SId == SId )
+    {
       return &ServiceComps[i];
     }
   }
 
   return nullptr;
 }
+
+serviceComponent *fib_processor::find_serviceComponentNr(int32_t SId,
+                                                int16_t componentNr) {
+  int16_t i;
+
+  for (i = 0; i < 64; i++) {
+    if (!ServiceComps[i].inUse) continue;
+
+    if ( ServiceComps[i].componentNr == componentNr
+      && ServiceComps[i].service
+      && ServiceComps[i].service->inUse
+      && ServiceComps[i].service->SId == SId )
+    {
+      return &ServiceComps[i];
+    }
+  }
+
+  return nullptr;
+}
+
+serviceComponent *find_serviceComponentNr(int32_t SId, int16_t componentNr);
 
 //	bind_audioService is the main processor for - what the name suggests -
 //	connecting the description of audioservices to a SID
@@ -1305,10 +1438,10 @@ void fib_processor::bind_audioService(int8_t TMid, uint32_t SId, int16_t compnr,
       return;
   }
 
-  std::string dataName = s->label;
-  addtoEnsemble(dataName, s->SId);
+  addtoEnsemble(s->label, s->abbr, s->SId);
 
   ServiceComps[firstFree].inUse = true;
+  ServiceComps[firstFree].compType = 'A';
   ServiceComps[firstFree].TMid = TMid;
   ServiceComps[firstFree].componentNr = compnr;
   ServiceComps[firstFree].service = s;
@@ -1329,8 +1462,8 @@ void fib_processor::bind_packetService(int8_t TMid, uint32_t SId,
 
   // no need to wait for serviceLabel
   // Jan: if (!ensemble -> services [serviceIndex]. hasName)  - with class ensembleDescriptor * ensemble
-  //if (!s->hasName)  // wait until we have a name
-  //  return;
+  if (!s || !s->hasName)  // wait until we have a name
+    return;
 
   for (i = 0; i < 64; i++) {
     if ( ServiceComps[i].inUse
@@ -1346,36 +1479,25 @@ void fib_processor::bind_packetService(int8_t TMid, uint32_t SId,
   }
 
   ServiceComps[firstFree].inUse = true;
+  ServiceComps[firstFree].compType = 'P';
   ServiceComps[firstFree].TMid = TMid;
   ServiceComps[firstFree].service = s;
   ServiceComps[firstFree].componentNr = compnr;
   ServiceComps[firstFree].SCId = SCId;
   ServiceComps[firstFree].PS_flag = ps_flag;
   ServiceComps[firstFree].CAflag = CAflag;
-  ServiceComps[firstFree].is_madePublic = false;
-}
-
-void fib_processor::setupforNewFrame(void) {
-  int16_t i;
-  isSynced = false;
-  for (i = 0; i < 64; i++) ServiceComps[i].inUse = false;
 }
 
 void fib_processor::clearEnsemble(void) {
   int16_t i;
-
-  setupforNewFrame();
+  isSynced = false;
   coordinates.cleanUp();
-  memset(ServiceComps, 0, sizeof(ServiceComps));
-  memset(subChannels, 0, sizeof(subChannels));
-  for (i = 0; i < 64; i++) {
-    listofServices[i].inUse = false;
-    listofServices[i].SId = -1;
-    listofServices[i].label[0] = 0;
-    listofServices[i].hasName = false;
-    ServiceComps[i].inUse = false;
-    subChannels[i].inUse = false;
-  }
+  for (i = 0; i < 64; i++)
+    listofServices[i].clear();
+  for (i = 0; i < 64; i++)
+    ServiceComps[i].clear();
+  for (i = 0; i < 64; i++)
+    subChannels[i].clear();
   firstTimeEId = true;
   firstTimeEName = true;
 }
@@ -1545,27 +1667,57 @@ void fib_processor::dataforDataService(int SId, packetdata *d,
 void fib_processor::dataforDataService(serviceId *selectedService, packetdata *d,
                                        int16_t compnr) {
   int16_t j;
+  //const int16_t SCid = ( selectedService && selectedService->numSCid > 0 ) ? selectedService->SCid[0] : -1;
+
   for (j = 0; j < 64; j++) {
-    int16_t subchId;
     if ((!ServiceComps[j].inUse) || (ServiceComps[j].TMid != 03)) continue;
 
     if (ServiceComps[j].componentNr != compnr) continue;
 
     if (selectedService != ServiceComps[j].service) continue;
 
-    subchId = ServiceComps[j].subchannelId;
-    d->subchId = subchId;
-    d->startAddr = subChannels[subchId].StartAddr;
-    d->shortForm = subChannels[subchId].shortForm;
-    d->protLevel = subChannels[subchId].protLevel;
-    d->length = subChannels[subchId].Length;
-    d->bitRate = subChannels[subchId].BitRate;
-    d->FEC_scheme = subChannels[subchId].FEC_scheme;
+    const int16_t subchId = ServiceComps[j].subchannelId;
+
+    int16_t subChanIdx = -1;
+    if ( 0 <= subchId && subchId < 64 )
+      subChanIdx = subchId;
+
+    d->subchId = subChanIdx;
+
+    d->startAddr = -1;
+    d->shortForm = false;
+    d->protLevel = -1;
+    d->length = -1;
+    d->subChanSize = -1;
+    d->bitRate = -1;
+    d->FEC_scheme = -1;
+    d->protIdxOrCase = -1;
+
+    if ( 0 <= subChanIdx && subChanIdx < 64 ) {
+      d->startAddr = subChannels[subChanIdx].StartAddr;
+      d->shortForm = subChannels[subChanIdx].shortForm;
+      d->protLevel = subChannels[subChanIdx].protLevel;
+      d->length = subChannels[subChanIdx].Length;
+      d->subChanSize = subChannels[subChanIdx].subChanSize;
+      d->bitRate = subChannels[subChanIdx].BitRate;
+      d->FEC_scheme = subChannels[subChanIdx].FEC_scheme;
+      d->protIdxOrCase = subChannels[subChanIdx].protIdxOrCase;
+    }
+    d->componentNr = ServiceComps[j].componentNr;
     d->DSCTy = ServiceComps[j].DSCTy;
     d->DGflag = ServiceComps[j].DGflag;
     d->packetAddress = ServiceComps[j].packetAddress;
     d->appType = ServiceComps[j].appType;
     d->defined = true;
+
+    d->componentHasLabel = ServiceComps[j].hasLabel;
+    if ( ServiceComps[j].hasLabel ) {
+      strcpy( d->componentLabel, ServiceComps[j].label );
+      strcpy( d->componentAbbr, ServiceComps[j].abbr );
+    } else {
+      d->componentLabel[0] = 0;
+      d->componentAbbr[0] = 0;
+    }
     break;
   }
 }
@@ -1618,32 +1770,147 @@ void fib_processor::dataforAudioService(serviceId *selectedService, audiodata *d
     if (selectedService != ServiceComps[j].service) continue;
 
     subchId = ServiceComps[j].subchannelId;
+    if ( !(0 <= subchId && subchId < 64) )
+      continue;
+
     d->subchId = subchId;
     d->startAddr = subChannels[subchId].StartAddr;
     d->shortForm = subChannels[subchId].shortForm;
     d->protLevel = subChannels[subchId].protLevel;
     d->length = subChannels[subchId].Length;
+    d->subChanSize = subChannels[subchId].subChanSize;
     d->bitRate = subChannels[subchId].BitRate;
+    d->protIdxOrCase = subChannels[subchId].protIdxOrCase;
+    d->componentNr = ServiceComps[j].componentNr;
     d->ASCTy = ServiceComps[j].ASCTy;
     d->language = selectedService->language;
     d->programType = selectedService->programType;
     d->defined = true;
+
+    d->componentHasLabel = ServiceComps[j].hasLabel;
+    if ( ServiceComps[j].hasLabel ) {
+      strcpy( d->componentLabel, ServiceComps[j].label );
+      strcpy( d->componentAbbr, ServiceComps[j].abbr );
+    } else {
+      d->componentLabel[0] = 0;
+      d->componentAbbr[0] = 0;
+    }
     break;
   }
 }
+
+void fib_processor::printAll_metaInfo(FILE *out) {
+  fprintf(out, "all meta info of fib_processor:\n");
+
+  fprintf(out, "services:\n");
+  int num = 0;
+  for (int k = 0; k < 64; ++k) {
+    const serviceId &e = listofServices[k];
+    if (!e.inUse)
+      continue;
+    ++num;
+    fprintf(out, "%2d(%2d): SID %08X, lang %2d, PTy %2d, pNum %2d, #SCIds %d =[",
+      k, num,
+      e.SId,
+      e.hasLanguage ? (int)e.language : -1,
+      (int)e.programType,
+      e.hasPNum ? (int)e.pNum : -1,
+      (int)e.numSCIds
+      );
+    for (int i=0; i < e.numSCIds; ++i)
+      fprintf(stderr, "%d,", (int)e.SCIds[i]);
+    fprintf(out, "], #SCId %d =[", (int)e.numSCid);
+    for (int i=0; i < e.numSCid; ++i)
+      fprintf(stderr, "%d,", (int)e.SCid[i]);
+    fprintf(out, "], #SubChId %d =[", (int)e.numSubChId);
+    for (int i=0; i < e.numSubChId; ++i)
+      fprintf(stderr, "%d,", (int)e.SubChId[i]);
+    fprintf(out, "], label %d '%s' / '%s'\n",
+      e.hasName ? 1 : 0,
+      e.label,
+      e.abbr
+      );
+  }
+
+  fprintf(out, "components:\n");
+  num = 0;
+  int nA = 0;
+  int nP = 0;
+  for (int k = 0; k < 64; ++k) {
+    const serviceComponent &e = ServiceComps[k];
+    if (!e.inUse)
+      continue;
+    ++num;
+    if (e.compType == 'A')
+      ++nA;
+    else if (e.compType == 'P')
+      ++nP;
+    fprintf(out, "%2d(%2d): %c(%2d) TMid %d, SID %08X, componentNr %2d, ASCTy %2d, PS %d, subChID %4d, SCId %2d, CA %d, appType %2d, SCIds %d, madePub %d",
+      k, num,
+      e.compType, ( e.compType == 'A' ? nA : ( e.compType == 'P' ? nP : -1 )  ),
+      (int)e.TMid,
+      e.service ? e.service->SId : -1,
+      (int)e.componentNr,
+      (int)e.ASCTy,
+      (int)e.PS_flag,
+      (int)e.subchannelId,
+      (int)e.SCId,
+      (int)e.CAflag,
+      (int)e.appType,
+      (int)e.SCIds,
+      (int)e.is_madePublic ? 1 : 0
+      );
+    if ( e.hasLabel )
+      fprintf(out, ", '%s' / '%s'", e.label, e.abbr);
+    else
+      fprintf(out, ", '' / ''");
+    if ( e.is_madePublic )
+      fprintf(out, ", DSCTy %2d, DG %d, addr %3d\n",
+        (int)e.DSCTy,
+        (int)e.DGflag,
+        (int)e.packetAddress
+        );
+    else
+      fprintf(out, "\n");
+  }
+
+  fprintf(out, "subChannels:\n");
+  num = 0;
+  for (int k = 0; k < 64; ++k) {
+    const channelMap &e = subChannels[k];
+    if (!e.inUse)
+      continue;
+    ++num;
+    fprintf(out, "%2d(%2d): subChID %4d, startAddr %3d, len %3d, sz %3d, %s, idxOrCase %3d, tabIdx %2d, protLevel %d, bitRate %3d, lang %d, FEC %d\n",
+      k, num,
+      (int)e.SubChId,
+      (int)e.StartAddr,
+      (int)e.Length,
+      (int)e.subChanSize,
+      e.shortForm ? "short" : "long",
+      e.protIdxOrCase,
+      e.protTabIdx,
+      e.protLevel,
+      e.BitRate,
+      (int)e.language,
+      (int)e.FEC_scheme
+      );
+  }
+}
+
 //
 //	and now for the would-be signals
 //	Note that the main program may decide to execute calls
 //	in the fib structures, so release the lock
-void fib_processor::addtoEnsemble(const std::string &s, int32_t SId) {
+void fib_processor::addtoEnsemble(const std::string &s, const std::string &abbr, int32_t SId) {
   fibLocker.unlock();
-  if (programnameHandler != nullptr) programnameHandler(s, SId, userData);
+  if (programnameHandler != nullptr) programnameHandler(s, abbr, SId, userData);
   fibLocker.lock();
 }
 
-void fib_processor::nameofEnsemble(int id, const std::string &s) {
+void fib_processor::nameofEnsemble(int id, const std::string &s, const std::string &abbr) {
   fibLocker.unlock();
-  if (ensemblenameHandler != nullptr) ensemblenameHandler(s, id, userData);
+  if (ensemblenameHandler != nullptr) ensemblenameHandler(s, abbr, id, userData);
   fibLocker.lock();
   isSynced = true;
 }

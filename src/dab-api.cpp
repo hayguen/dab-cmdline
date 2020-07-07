@@ -146,3 +146,8 @@ int32_t dab_getSId(void *Handle, const char *c_s) {
 std::string dab_getserviceName(void *Handle, int32_t SId) {
   return ((dabProcessor *)Handle)->get_serviceName(SId);
 }
+
+void dab_printAll_metaInfo(void *Handle, FILE* out) {
+  ((dabProcessor *)Handle)->printAll_metaInfo(out);
+}
+
