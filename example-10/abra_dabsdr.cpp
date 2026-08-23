@@ -164,6 +164,7 @@ struct AppState {
   std::map<uint32_t, std::vector<PacketComponentInfo>> packetComponents;
   std::unordered_map<uint64_t, uint16_t> userAppTypeByComp;
   std::unordered_map<uint64_t, AudioProbeInfo> audioProbe;
+  std::unordered_map<uint64_t, bool> audioProbeSelectionOk;
   std::map<int, TiiInfo> tiiById;
   int snrMin{9999};
   int snrMax{-9999};
@@ -405,9 +406,12 @@ static const char *normalizeUserAppText(uint16_t appType) {
   return getUserApplicationType(static_cast<int16_t>(appType));
 }
 
-static std::string codecDescription(uint8_t ascty, const AudioProbeInfo *probe) {
+static std::string codecDescription(uint8_t ascty, const AudioProbeInfo *probe, bool selectionOk) {
   if (ascty == 63) {
     if (probe == nullptr || probe->frames == 0) {
+      if (selectionOk) {
+        return "DAB+/no audio";
+      }
       return "DAB+/too weak audio";
     }
     // With a few frames available, prefer a stable generic label over
@@ -424,13 +428,16 @@ static std::string codecDescription(uint8_t ascty, const AudioProbeInfo *probe) 
     return (probe->aacChannelMode == 1) ? "DAB+/AAC-LC Stereo" : "DAB+/AAC-LC Mono";
   }
   if (ascty == 0) {
-    return (probe != nullptr && probe->frames > 0) ? "DAB/MP2" : "DAB/too weak audio";
+    if (probe != nullptr && probe->frames > 0) {
+      return "DAB/MP2";
+    }
+    return selectionOk ? "DAB/no audio" : "DAB/too weak audio";
   }
   return "unknown";
 }
 
-static std::string codecDescriptionWithRate(uint8_t ascty, const AudioProbeInfo *probe) {
-  std::string codec = codecDescription(ascty, probe);
+static std::string codecDescriptionWithRate(uint8_t ascty, const AudioProbeInfo *probe, bool selectionOk) {
+  std::string codec = codecDescription(ascty, probe, selectionOk);
   if (probe == nullptr || probe->frames < kMinReliableAudioFrames) {
     return codec;
   }
@@ -843,6 +850,7 @@ static void probeAudioDetails(AppState &app) {
         app.activeProbeSelectionSeen = false;
         app.activeProbeSelectionOk = false;
         app.audioProbe[makeSidScidsKey(sid, comp.scids)] = AudioProbeInfo{};
+        app.audioProbeSelectionOk[makeSidScidsKey(sid, comp.scids)] = false;
       }
 
       const uint64_t probeKey = makeSidScidsKey(sid, comp.scids);
@@ -1251,6 +1259,9 @@ static void notificationCallback(dabsdrNotificationCBData_t *p, void *ctx) {
 
         if (p->status == DABSDR_NSTAT_SUCCESS) {
           app->serviceSelSuccessCount += 1;
+          if (app->activeProbeSid != 0) {
+            app->audioProbeSelectionOk[makeSidScidsKey(app->activeProbeSid, app->activeProbeScids)] = true;
+          }
         } else if (p->status == DABSDR_NSTAT_SERVICE_NOT_READY) {
           app->serviceSelNotReadyCount += 1;
         } else {
@@ -1278,6 +1289,11 @@ static void notificationCallback(dabsdrNotificationCBData_t *p, void *ctx) {
 
       if (p->status == DABSDR_NSTAT_SUCCESS) {
         app->serviceSelSuccessCount += 1;
+        if (app->activeProbeSid == sel->SId &&
+            app->activeProbeScids == sel->SCIdS &&
+            app->activeProbeDecoder == sel->id) {
+          app->audioProbeSelectionOk[makeSidScidsKey(sel->SId, sel->SCIdS)] = true;
+        }
       } else if (p->status == DABSDR_NSTAT_SERVICE_NOT_READY) {
         app->serviceSelNotReadyCount += 1;
       } else {
@@ -1794,6 +1810,7 @@ int main(int argc, char **argv) {
   std::map<uint32_t, std::vector<PacketComponentInfo>> packetComponents;
   std::unordered_map<uint64_t, uint16_t> userAppTypeByComp;
   std::unordered_map<uint64_t, AudioProbeInfo> audioProbe;
+  std::unordered_map<uint64_t, bool> audioProbeSelectionOk;
   std::map<int, TiiInfo> tiiById;
   std::string ensembleLabel;
   std::string ensembleShortLabel;
@@ -1835,6 +1852,7 @@ int main(int argc, char **argv) {
     packetComponents = app.packetComponents;
     userAppTypeByComp = app.userAppTypeByComp;
     audioProbe = app.audioProbe;
+    audioProbeSelectionOk = app.audioProbeSelectionOk;
     tiiById = app.tiiById;
     ensembleLabel = app.ensembleLabel;
     ensembleShortLabel = app.ensembleShortLabel;
@@ -2067,9 +2085,17 @@ int main(int argc, char **argv) {
         const uint64_t key = makeSidScidsKey(svc.first, comp.scids);
         const auto it = audioProbe.find(key);
         const AudioProbeInfo *probe = (it != audioProbe.end()) ? &it->second : nullptr;
+        const auto selIt = audioProbeSelectionOk.find(key);
+        const bool selectionOk = (selIt != audioProbeSelectionOk.end() && selIt->second);
         const std::string codec = (csvGenericCodecMode || noDecoderAudioCallbacks)
                                       ? codecDescriptionCsvScanFallback(comp.ascty)
-                                      : codecDescriptionWithRate(comp.ascty, probe);
+                    : codecDescriptionWithRate(comp.ascty, probe, selectionOk);
+        const uint32_t frames = (probe != nullptr) ? probe->frames : 0;
+        // Debug: log frame count for services without full codec detection
+        if (frames < kMinReliableAudioFrames) {
+          fprintf(stderr, "AUDIO_FRAMES: SId=%04X frames=%u selectionOk=%d codec=\"%s\"\n",
+                  static_cast<unsigned>(svc.first), frames, selectionOk ? 1 : 0, codec.c_str());
+        }
         bool shortForm = false;
         int16_t protLevel = 0;
         decodeProtection(comp.protectionLevel, comp.uepIdx, comp.bitrate, comp.subchSize,
@@ -2183,9 +2209,11 @@ int main(int argc, char **argv) {
         const uint64_t key = makeSidScidsKey(svc.first, comp.scids);
         const auto it = audioProbe.find(key);
         const AudioProbeInfo *probe = (it != audioProbe.end()) ? &it->second : nullptr;
+        const auto selIt = audioProbeSelectionOk.find(key);
+        const bool selectionOk = (selIt != audioProbeSelectionOk.end() && selIt->second);
         const std::string codec = (csvGenericCodecMode || noDecoderAudioCallbacks)
                                       ? codecDescriptionCsvScanFallback(comp.ascty)
-                                      : codecDescriptionWithRate(comp.ascty, probe);
+                    : codecDescriptionWithRate(comp.ascty, probe, selectionOk);
         bool shortForm = false;
         int16_t protLevel = 0;
         decodeProtection(comp.protectionLevel, comp.uepIdx, comp.bitrate, comp.subchSize,
