@@ -40,6 +40,7 @@ class rawFiles : public deviceHandler {
   int32_t Samples(void);
   bool restartReader(int32_t);
   void stopReader(void);
+  void setVerbose(bool enabled);
   double currentOffset() const;
   bool rewindToStart(void) override;
   bool seekToSeconds(double seconds) override;
@@ -59,6 +60,7 @@ class rawFiles : public deviceHandler {
   std::atomic<bool> running;
   int64_t currPos;
   bool noRealtime;
+  bool verboseLogs;
 };
 
 #endif

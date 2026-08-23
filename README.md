@@ -217,6 +217,92 @@ This produces one backend-specific binary name, depending on the enabled input:
 
 If no input backend is selected explicitly, the build system falls back to `RTLSDR`.
 
+### Optional: AbracaDABra `libdabsdr` probe
+
+For integration experiments, this repository can build a small probe binary linked
+against AbracaDABra's prebuilt `libdabsdr`.
+
+The required AbracaDABra SDK files are expected under platform-specific paths,
+for example:
+
+- `third_party/abracadabra/lib/linux_x86_64/`
+- `third_party/abracadabra/lib/linux_aarch64/`
+- `third_party/abracadabra/lib/windows_amd64/`
+- `third_party/abracadabra/lib/darwin_x86_64/`
+- `third_party/abracadabra/lib/darwin_arm64/`
+
+Build the probe from `example-10/build` with:
+
+```sh
+cmake .. -DABRA_DABSDR_PROBE=ON
+make abra-dabsdr-probe
+```
+
+Run `abra-dabsdr-probe` to verify that `libdabsdr` loads and initializes.
+
+To compare detection on the same IQ recording, build the optional raw scanner:
+
+```sh
+cmake .. -DABRA_RAW=ON
+make abra-raw
+```
+
+To build the live RTL-SDR variant with the same ABRA_* output format:
+
+```sh
+cmake .. -DABRA_RTLSDR=ON
+make
+```
+
+This produces `abra-rtlsdr` as part of the default build when `ABRA_RTLSDR=ON`.
+It does not auto-enable the legacy `dab-rtlsdr` fallback target.
+
+Example run (8-bit unsigned raw IQ, interleaved I/Q):
+
+```sh
+./abra-raw --file ./sample.raw --channel 11C --seconds 20
+```
+
+If `--channel` is omitted, `abra-raw` tries to auto-detect the channel
+from the input filename (for example `..._8B_...raw`).
+
+Detailed audio analysis (dab-raw-like) can be enabled with:
+
+```sh
+./abra-raw --file ./sample.raw --audio-details --rewind --log ./abra-scan.log
+```
+
+Useful options for that mode:
+
+- `--audio-details` print per-component audio details (`ABRA_AUDIO` lines)
+- `--rewind` rewind file before probing each audio service
+- `--rewind-offset <sec>` seek to offset before each probe (default `0`)
+- `--probe-ms <ms>` probe duration per audio component (default `1800`)
+- `--log <file>` mirror tool output into a log file
+
+`abra-raw` also accepts common `dab-raw` compatible short options,
+so existing scripts can switch with minimal changes:
+
+- `-F -C -B -D -Y -o -X -S -c -E -n`
+- plus compatibility no-op acceptance for: `-W -A -P -p -T -M -t -a -r -z -G -H -I -O -Q -R -x -v -f`
+
+The tool prints one summary line:
+
+- `ABRA_SCAN_RESULT channel=... sync=... serviceList=... services=... ensemble="..." ...`
+
+and one line per detected service:
+
+- `ABRA_SERVICE sid=... label="..."`
+
+With `--audio-details`, it additionally prints:
+
+- `ABRA_AUDIO sid=... scids=... ascty=... bitrate=... codec="..." ...`
+
+When using CSV scan mode (`-c`) without selecting a single SID (`-S`),
+the `CSV_AUDIO` codec field keeps dab-rtlsdr-compatible generic labels.
+If you also pass `--emit-abra`, the tool still performs deep probing for
+`ABRA_AUDIO` lines, so detailed codec metadata remains available there.
+
 ### Configure with `ccmake`
 
 You can also configure interactively with `ccmake`:
@@ -240,6 +326,12 @@ Then press `c` to configure, adjust remaining options if needed, press `c` again
 ```sh
 make
 ```
+
+For ABRA-only builds in `ccmake`, you can keep `RTLSDR`, `RTL_TCP`, `WAVFILES`, and `RAWFILES` set to `OFF` and enable one or more of:
+
+- `ABRA_DABSDR_PROBE`
+- `ABRA_RAW`
+- `ABRA_RTLSDR`
 
 ### Install
 

@@ -47,6 +47,7 @@ rawFiles::rawFiles(std::string f, bool repeater, bool noRealtime) {
   fileName = f;
   (void)repeater;
   this->noRealtime = noRealtime;
+  this->verboseLogs = true;
   _I_Buffer = new RingBuffer<std::complex<float>>(__BUFFERSIZE);
   if ( !strcmp(f.c_str(), "-" ) ) {
     filePointer = stdin;
@@ -73,6 +74,7 @@ rawFiles::rawFiles(std::string f, double fileOffsetInSeconds,
                    bool noRealtime) {
   fileName = f;
   this->noRealtime = noRealtime;
+  this->verboseLogs = true;
   _I_Buffer = new RingBuffer<std::complex<float>>(__BUFFERSIZE);
   if ( !strcmp(f.c_str(), "-" ) ) {
     filePointer = stdin;
@@ -117,6 +119,10 @@ bool rawFiles::restartReader(int32_t frequency) {
 void rawFiles::stopReader(void) {
   if (running.load()) running.store(false);
   if (workerHandle.joinable()) workerHandle.join();
+}
+
+void rawFiles::setVerbose(bool enabled) {
+  verboseLogs = enabled;
 }
 
 bool rawFiles::rewindToStart(void) {
@@ -171,8 +177,10 @@ void rawFiles::run(void) {
 
   running.store(true);
   period = ((int64_t)32768 * 1000) / 2048;  // full IQs read
-  fprintf(stderr, "Period = %" PRId64 "\n", period);
-  if (noRealtime) fprintf(stderr, "File input pacing disabled (-X)\n");
+  if (verboseLogs) {
+    fprintf(stderr, "Period = %" PRId64 "\n", period);
+    if (noRealtime) fprintf(stderr, "File input pacing disabled (-X)\n");
+  }
   bi = new std::complex<float>[bufferSize];
   nextStop = getMyTime();
   while (running.load()) {
@@ -197,7 +205,9 @@ void rawFiles::run(void) {
     if (!noRealtime)
       while (nextStop - getMyTime() > 0) usleep(nextStop - getMyTime());
   }
-  fprintf(stderr, "taak voor replay eindigt hier\n");
+  if (verboseLogs) {
+    fprintf(stderr, "raw file replay thread ended\n");
+  }
 }
 /*
  *	length is number of uints that we read.
