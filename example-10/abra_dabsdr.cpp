@@ -1347,8 +1347,13 @@ static void notificationCallback(dabsdrNotificationCBData_t *p, void *ctx) {
       const auto *pty = static_cast<const dabsdrNtfPTy_t *>(p->pData);
       std::lock_guard<std::mutex> lk(app->mtx);
       auto &svc = app->serviceInfoBySid[pty->SId];
-      svc.ptyS = pty->s;
-      svc.ptyD = pty->d;
+      // Keep previously learned PTY when notification carries unknown 0xFF.
+      if (pty->s != 0xFF) {
+        svc.ptyS = pty->s;
+      }
+      if (pty->d != 0xFF) {
+        svc.ptyD = pty->d;
+      }
       break;
     }
     case DABSDR_NID_TII: {
@@ -2082,6 +2087,7 @@ int main(int argc, char **argv) {
       }
       const SidView sidView = resolveSidView(svc.first, ecc);
       const uint8_t pty = effectivePty(si);
+      const uint8_t ptyOut = (pty == 0xFF) ? static_cast<uint8_t>(0) : pty;
       const uint8_t ctry = sidView.countryId;
       const uint8_t effectiveEcc = sidView.effectiveEcc;
       const char *countryName = getCountry(effectiveEcc, ctry);
@@ -2129,8 +2135,8 @@ int main(int argc, char **argv) {
         outLine += "," + csvQuote(countryName != nullptr ? countryName : "unknown");
         outLine += "," + std::string(langUnknown ? "-1" : std::to_string(static_cast<int>(comp.lang)));
         outLine += "," + csvQuote(langUnknown ? "unknown (Lang.)" : getLanguage(comp.lang));
-        outLine += "," + std::to_string(static_cast<unsigned>(pty));
-        outLine += "," + csvQuote(getProgramType(gotInterTable, intTable, pty));
+        outLine += "," + std::to_string(static_cast<unsigned>(ptyOut));
+        outLine += "," + csvQuote(getProgramType(gotInterTable, intTable, ptyOut));
         outLine += "," + std::to_string(static_cast<unsigned>(comp.subchSize));
         outLine += "," + std::to_string(static_cast<unsigned>(comp.subchId));
         outLine += "," + csvQuote(shortLabel);
