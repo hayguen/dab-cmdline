@@ -407,17 +407,19 @@ static const char *normalizeUserAppText(uint16_t appType) {
 }
 
 static std::string codecDescription(uint8_t ascty, const AudioProbeInfo *probe, bool selectionOk) {
+  (void)selectionOk;
   if (ascty == 63) {
     if (probe == nullptr || probe->frames == 0) {
-      if (selectionOk) {
-        return "DAB+/no audio";
-      }
-      return "DAB+/too weak audio";
+      return "DAB+/too weak or no audio";
     }
-    // With a few frames available, prefer a stable generic label over
-    // false weak-audio classification.
+    // With too few frames available, mark as unresolved.
     if (probe->frames < kMinReliableAudioFrames) {
-      return "DAB+/audio";
+      return "DAB+/too weak or no audio";
+    }
+    // Enough frames decoded, but codec parameters not reliably detected (flags still -1).
+    // This can happen with weak signals where frame data is corrupted.
+    if (probe->sbrFlag < 0 || probe->aacChannelMode < 0) {
+      return "DAB+/too weak or no audio";
     }
     if (probe->sbrFlag == 1 && probe->psFlag == 1) {
       return "DAB+/HE-AAC v2 Parametric Stereo";
@@ -431,7 +433,7 @@ static std::string codecDescription(uint8_t ascty, const AudioProbeInfo *probe, 
     if (probe != nullptr && probe->frames > 0) {
       return "DAB/MP2";
     }
-    return selectionOk ? "DAB/no audio" : "DAB/too weak audio";
+    return "DAB/too weak or no audio";
   }
   return "unknown";
 }
@@ -447,6 +449,9 @@ static std::string codecDescriptionWithRate(uint8_t ascty, const AudioProbeInfo 
     } else if (probe->dacRateFlag == 0) {
       codec += " 32kHz";
     }
+  }
+  if (codec == "DAB+/AAC-LC Mono 32kHz") {
+    return "DAB+/too weak or no audio";
   }
   return codec;
 }

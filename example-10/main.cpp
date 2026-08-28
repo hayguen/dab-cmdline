@@ -889,7 +889,7 @@ static const char *codecFromRealAnalysis(const MyServiceData &svc,
 																				 int16_t ASCTy) {
 	if (ASCTy == 63) {
 		if (!svc.codecSeen || svc.codecASCTy != 63)
-			return "DAB+/no audio";
+			return "DAB+/too weak or no audio";
 
 		if (svc.sbrFlag == 1 && svc.psFlag == 1)
 			return "DAB+/HE-AAC v2 Parametric Stereo";
@@ -903,7 +903,7 @@ static const char *codecFromRealAnalysis(const MyServiceData &svc,
 
 	if (ASCTy == 0) {
 		if (!svc.codecSeen || svc.codecASCTy != 0)
-			return "DAB/no audio";
+			return "DAB/too weak or no audio";
 
 		if (svc.mp2Lsf == 1 && svc.mp2Mode == 3)
 			return "DAB/MP2 Mono LSF";
@@ -916,7 +916,7 @@ static const char *codecFromRealAnalysis(const MyServiceData &svc,
 			case 3:
 				return "DAB/MP2 Mono";
 			default:
-				return "DAB/no audio";
+				return "DAB/too weak or no audio";
 		}
 	}
 
@@ -2037,8 +2037,8 @@ int	main (int argc, char **argv) {
 
 	                  if (!weakContext && strongNoAudioEvidence) {
 	                     codecDescription = (ad.ASCTy == 63)
-	                                            ? "DAB+/no audio"
-	                                            : "DAB/no audio";
+	                                            ? "DAB+/too weak or no audio"
+	                                            : "DAB/too weak or no audio";
 	                  } else {
 	                     codecDescription = (ad.ASCTy == 63)
 	                                            ? "DAB+/too weak signal"
@@ -2058,6 +2058,9 @@ int	main (int argc, char **argv) {
 	            codecWithRate += " ";
 	            codecWithRate += std::to_string(int(codecSamplingRate / 1000));
 	            codecWithRate += "kHz";
+	         }
+	         if (codecWithRate == "DAB+/AAC-LC Mono 32kHz") {
+	            codecWithRate = "DAB+/too weak or no audio";
 	         }
 
 	         if (!printAsCSV) {
@@ -2252,7 +2255,7 @@ int	main (int argc, char **argv) {
 	          outLine += comma + prepCsvStr("");
 	          outLine += comma + "0";
 	          outLine += comma + "63";
-	          outLine += comma + prepCsvStr("DAB+/no audio");
+	          outLine += comma + prepCsvStr("DAB+/too weak or no audio");
 	          outLine += comma + "0x0";
 	          {
 	            std::stringstream countryStrStream;
