@@ -277,6 +277,14 @@ static const char *channelModeText(const AudioProbeInfo *probe, uint8_t ascty) {
   return "unknown";
 }
 
+static uint8_t effectiveProgramTypeTable(uint8_t intTable, uint8_t ensembleEcc) {
+  // DAB Europe uses table 1; some decoder notifications leave Int. Table Id at zero.
+  if (intTable == 0 && ensembleEcc != 0xA4) {
+    return 1;
+  }
+  return intTable;
+}
+
 static std::string csvQuote(const std::string &value) {
   std::string out;
   out.reserve(value.size() + 2);
@@ -2113,7 +2121,8 @@ int main(int argc, char **argv) {
              &shortForm, &protLevel);
         const char *protTxt = getProtectionLevel(shortForm, protLevel);
         const char *codeRateTxt = getCodeRate(shortForm, protLevel);
-        const bool gotInterTable = (intTable != 0);
+        const uint8_t effectiveIntTable = effectiveProgramTypeTable(intTable, ecc);
+        const bool gotInterTable = (effectiveIntTable != 0);
         const std::string shortLabel = (si != nullptr && !si->shortLabel.empty()) ? si->shortLabel : "";
         const bool langUnknown = (comp.lang == 0);
         std::string outLine = std::to_string(secsEpoch);
@@ -2136,7 +2145,7 @@ int main(int argc, char **argv) {
         outLine += "," + std::string(langUnknown ? "-1" : std::to_string(static_cast<int>(comp.lang)));
         outLine += "," + csvQuote(langUnknown ? "unknown (Lang.)" : getLanguage(comp.lang));
         outLine += "," + std::to_string(static_cast<unsigned>(ptyOut));
-        outLine += "," + csvQuote(getProgramType(gotInterTable, intTable, ptyOut));
+        outLine += "," + csvQuote(getProgramType(gotInterTable, effectiveIntTable, ptyOut));
         outLine += "," + std::to_string(static_cast<unsigned>(comp.subchSize));
         outLine += "," + std::to_string(static_cast<unsigned>(comp.subchId));
         outLine += "," + csvQuote(shortLabel);
