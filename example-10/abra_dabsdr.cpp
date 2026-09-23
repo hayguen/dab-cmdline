@@ -1755,6 +1755,7 @@ int main(int argc, char **argv) {
 
   const auto tEnd = std::chrono::steady_clock::now() + std::chrono::seconds(app.runSeconds);
   auto nextDiscoveryRetry = std::chrono::steady_clock::now() + std::chrono::milliseconds(300);
+  auto nextServiceListRefresh = std::chrono::steady_clock::now() + std::chrono::milliseconds(500);
   while (std::chrono::steady_clock::now() < tEnd) {
     const auto now = std::chrono::steady_clock::now();
     if (now >= nextDiscoveryRetry && app.gotSync.load()) {
@@ -1771,7 +1772,17 @@ int main(int argc, char **argv) {
       nextDiscoveryRetry = now + std::chrono::milliseconds(300);
     }
 
+    if (now >= nextServiceListRefresh && app.gotSync.load()) {
+      dabsdrRequest_GetServiceList(app.handle);
+      nextServiceListRefresh = now + std::chrono::milliseconds(500);
+    }
+
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  }
+
+  if (app.gotSync.load()) {
+    dabsdrRequest_GetServiceList(app.handle);
+    std::this_thread::sleep_for(std::chrono::milliseconds(250));
   }
 
   if (app.gotSync.load()) {
