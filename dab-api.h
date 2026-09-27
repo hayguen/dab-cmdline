@@ -61,6 +61,7 @@ typedef struct {
   int16_t protIdxOrCase;
   int16_t protTabIdx;
   int16_t subChanSize;
+  uint8_t countryId;
   bool is_madePublic;
   bool componentHasLabel;
   char componentLabel[32];
@@ -69,24 +70,26 @@ typedef struct {
 
 //
 typedef struct {
-  bool defined;
-  int16_t componentNr;  // 0 == main component
-  int16_t subchId;
-  int16_t startAddr;
-  bool shortForm;
-  int16_t protLevel;
-  int16_t length; /* CUs */
-  int16_t bitRate;
-  int16_t ASCTy;
-  int16_t language;
-  int16_t programType;
-  int16_t protIdxOrCase;
-  int16_t protTabIdx;
-  int16_t subChanSize;
-  bool is_madePublic;
-  bool componentHasLabel;
-  char componentLabel[32];
-  char componentAbbr[32];
+	bool defined;
+	int16_t componentNr;  // 0 == main component
+	int16_t subchId;
+	int16_t startAddr;
+	uint8_t	ecc;
+	bool shortForm;
+	int16_t protLevel;
+	int16_t length; /* CUs */
+	int16_t bitRate;
+	int16_t ASCTy;
+	int16_t language;
+	int16_t programType;
+	int16_t protIdxOrCase;
+	int16_t protTabIdx;
+	int16_t subChanSize;
+	uint8_t countryId;
+	bool is_madePublic;
+	bool componentHasLabel;
+	char componentLabel[32];
+	char componentAbbr[32];
 } audiodata;
 
 //////////////////////// C A L L B A C K F U N C T I O N S ///////////////
@@ -144,6 +147,20 @@ typedef void (*bytesOut_t)(uint8_t *, int16_t, uint8_t, void *);
 //	percentage of packages passing the Reed Solomon correction,
 //	and the third number gives the percentage of valid AAC frames
 typedef void (*programQuality_t)(int16_t, int16_t, int16_t, void *);
+
+//	reports real decoded audio stream metadata for the active audio handler.
+//	For DAB+ (ASCTy=63):
+//		aacChannelMode: 0 mono core, 1 stereo core
+//		sbrFlag: 0/1, psFlag: 0/1
+//		mp2Mode/mp2Lsf are -1
+//	For DAB (ASCTy=0):
+//		mp2Mode: 0 stereo, 1 joint stereo, 2 dual channel, 3 mono
+//		mp2Lsf: 1 for MPEG-2 LSF, else 0
+//		aacChannelMode/sbrFlag/psFlag are -1
+typedef void (*audioCodec_t)(int16_t ASCTy, int16_t aacChannelMode,
+                             int16_t sbrFlag, int16_t psFlag,
+                             int16_t mp2Mode, int16_t mp2Lsf,
+                             int32_t samplingRate, void *);
 
 //	immediate report of program errors - to allow early abortion
 //	1st number is error type:
@@ -290,6 +307,9 @@ void dab_setError_handler(void *, decodeErrorReport_t err_Handler);
 // save binary FIC data (all FIBs) to following file, saveFile is closed at end
 // of DAB decoding
 void dab_setFIB_handler(void *Handle, fibdata_t fib_Handler);
+
+//	set/activate reporting of real decoded audio codec metadata
+void dab_setAudioCodec_handler(void *Handle, audioCodec_t audioCodec_Handler);
 
 void dab_printAll_metaInfo(void *Handle, FILE* out);
 

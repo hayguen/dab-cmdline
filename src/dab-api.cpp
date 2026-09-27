@@ -93,6 +93,11 @@ void dab_setFIB_handler(void *Handle, fibdata_t fib_Handler) {
   return ((dabProcessor *)Handle)->setFIB_handler(fib_Handler);
 }
 
+void dab_setAudioCodec_handler(void *Handle,
+                               audioCodec_t audioCodec_Handler) {
+  return ((dabProcessor *)Handle)->setAudioCodec_handler(audioCodec_Handler);
+}
+
 //	functions contributed by Hayati Ayguen
 //	mainId < 0 (-1) => don't check mainId
 //	subId == -1 => deliver first available offset

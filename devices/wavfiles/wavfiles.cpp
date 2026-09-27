@@ -38,11 +38,12 @@ static inline int64_t getMyTime(void) {
 
 #define __BUFFERSIZE 8 * 32768
 
-wavFiles::wavFiles(std::string f, bool repeater) {
+wavFiles::wavFiles(std::string f, bool repeater, bool noRealtime) {
   SF_INFO *sf_info;
 
   fileName = f;
   this->repeater = repeater;
+  this->noRealtime = noRealtime;
   this->eofHandler = nullptr;
   this->userData = nullptr;
 
@@ -67,11 +68,13 @@ wavFiles::wavFiles(std::string f, bool repeater) {
 }
 
 wavFiles::wavFiles(std::string f, double fileOffsetInSeconds,
-                   device_eof_callback_t eofHandler, void *userData) {
+                   device_eof_callback_t eofHandler, void *userData,
+                   bool noRealtime) {
   SF_INFO *sf_info;
 
   fileName = f;
   repeater = false;
+  this->noRealtime = noRealtime;
   this->eofHandler = eofHandler;
   this->userData = userData;
   _I_Buffer = new RingBuffer<std::complex<float>>(__BUFFERSIZE);
@@ -92,6 +95,7 @@ wavFiles::wavFiles(std::string f, double fileOffsetInSeconds,
   }
   currPos = (int64_t)(fileOffsetInSeconds * 2048000.0);
   sf_seek(filePointer, (sf_count_t)currPos, SEEK_SET);
+  currPos = 0;
   running.store(false);
 }
 
@@ -116,6 +120,29 @@ void wavFiles::stopReader(void) {
   }
   running.store(false);
 }
+
+bool wavFiles::rewindToStart(void) {
+  return seekToSeconds(0.0);
+}
+
+bool wavFiles::seekToSeconds(double seconds) {
+  if (filePointer == nullptr) return false;
+  if (seconds < 0.0) seconds = 0.0;
+
+  const bool wasRunning = running.load();
+  if (wasRunning) stopReader();
+
+  _I_Buffer->FlushRingBuffer();
+  const int64_t targetPos = (int64_t)(seconds * 2048000.0);
+  sf_seek(filePointer, (sf_count_t)targetPos, SEEK_SET);
+  currPos = 0;
+
+  if (wasRunning) {
+    workerHandle = std::thread(&wavFiles::run, this);
+    running.store(true);
+  }
+  return true;
+}
 //
 //	size is in I/Q pairs
 int32_t wavFiles::getSamples(std::complex<float> *V, int32_t size) {
@@ -126,8 +153,11 @@ int32_t wavFiles::getSamples(std::complex<float> *V, int32_t size) {
   while (_I_Buffer->GetRingBufferReadAvailable() < (int32_t)size) usleep(100);
 
   amount = _I_Buffer->getDataFromBuffer(V, size);
+  currPos += amount;
   return amount;
 }
+
+double wavFiles::currentOffset() const { return (currPos / 2048000.0); }
 
 int32_t wavFiles::Samples(void) {
   return _I_Buffer->GetRingBufferReadAvailable();
@@ -146,6 +176,7 @@ void wavFiles::run(void) {
   running.store(true);
   period = ((int64_t)32768 * 1000) / 2048;  // full IQs read
   fprintf(stderr, "Period = %" PRId64 "\n", period);
+  if (noRealtime) fprintf(stderr, "File input pacing disabled (-X)\n");
   bi = new std::complex<float>[bufferSize];
   nextStop = getMyTime();
   while (running.load()) {
@@ -166,7 +197,8 @@ void wavFiles::run(void) {
       if (eofHandler != nullptr) eofHandler(userData);
       eofReached = false;
     }
-    while (nextStop - getMyTime() > 0) usleep(nextStop - getMyTime());
+    if (!noRealtime)
+      while (nextStop - getMyTime() > 0) usleep(nextStop - getMyTime());
   }
   fprintf(stderr, "taak voor replay eindigt hier\n");
   delete[] bi;

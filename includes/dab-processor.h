@@ -82,6 +82,7 @@ class dabProcessor {
   void setEId_handler(ensembleid_t EId_Handler);
   void setError_handler(decodeErrorReport_t err_Handler);
   void setFIB_handler(fibdata_t fib_Handler);
+  void setAudioCodec_handler(audioCodec_t audioCodec_Handler);
 
   std::complex<float> get_coordinates(int16_t, int16_t, bool *);
   std::complex<float> get_coordinates(int16_t, int16_t, bool *,
@@ -108,6 +109,7 @@ class dabProcessor {
   ofdmDecoder my_ofdmDecoder;
   ficHandler my_ficHandler;
   mscHandler my_mscHandler;
+  audioCodec_t audioCodecHandler;
   syncsignal_t syncsignalHandler;
   decodeErrorReport_t errorReportHandler;
   systemdata_t systemdataHandler;

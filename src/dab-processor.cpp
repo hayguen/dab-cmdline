@@ -59,6 +59,7 @@ dabProcessor::dabProcessor(
   this->inputDevice = inputDevice;
   this->syncsignalHandler = syncsignalHandler;
   this->errorReportHandler = nullptr;
+  this->audioCodecHandler = nullptr;
   this->systemdataHandler = systemdataHandler;
   this->userData = userData;
   this->T_null = params.get_T_null();
@@ -379,6 +380,11 @@ void dabProcessor::setError_handler(decodeErrorReport_t err_Handler) {
 
 void dabProcessor::setFIB_handler(fibdata_t fib_Handler) {
   my_ficHandler.setFIB_handler(fib_Handler);
+}
+
+void dabProcessor::setAudioCodec_handler(audioCodec_t audioCodec_Handler) {
+  audioCodecHandler = audioCodec_Handler;
+  my_mscHandler.setAudioCodec_handler(audioCodec_Handler);
 }
 
 std::complex<float> dabProcessor::get_coordinates(int16_t mainId, int16_t subId,

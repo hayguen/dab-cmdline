@@ -32,15 +32,18 @@ typedef void (*device_eof_callback_t)(void *userData);
  */
 class rawFiles : public deviceHandler {
  public:
-  rawFiles(std::string, bool);
+  rawFiles(std::string, bool, bool noRealtime = false);
   rawFiles(std::string, double fileOffset, device_eof_callback_t eofHandler,
-           void *userData);
+           void *userData, bool noRealtime = false);
   ~rawFiles(void);
   int32_t getSamples(std::complex<float> *, int32_t);
   int32_t Samples(void);
   bool restartReader(int32_t);
   void stopReader(void);
+  void setVerbose(bool enabled);
   double currentOffset() const;
+  bool rewindToStart(void) override;
+  bool seekToSeconds(double seconds) override;
 
  private:
   std::string fileName;
@@ -56,6 +59,8 @@ class rawFiles : public deviceHandler {
   FILE *filePointer;
   std::atomic<bool> running;
   int64_t currPos;
+  bool noRealtime;
+  bool verboseLogs;
 };
 
 #endif

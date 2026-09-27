@@ -28,6 +28,8 @@
 #include "rtlsdr-handler.h"
 #include "rtl-sdr.h"
 
+#include <chrono>
+
 #ifdef __MINGW32__
 #define GETPROCADDRESS GetProcAddress
 #else
@@ -35,6 +37,26 @@
 #endif
 
 #define READLEN_DEFAULT 8192
+
+static int gainPercentToIndex(int gainPercent, int gainsCount) {
+  if (gainsCount <= 0) {
+    return 0;
+  }
+  if (gainPercent < 0) {
+    gainPercent = 0;
+  } else if (gainPercent > 100) {
+    gainPercent = 100;
+  }
+
+  // Map 0..100 to valid 0..(gainsCount-1) without overflow.
+  int idx = (gainPercent * (gainsCount - 1) + 50) / 100;
+  if (idx < 0) {
+    idx = 0;
+  } else if (idx >= gainsCount) {
+    idx = gainsCount - 1;
+  }
+  return idx;
+}
 //
 //	For the callback, we do need some environment which
 //	is passed through the ctx parameter
@@ -161,10 +183,11 @@ rtlsdrHandler::rtlsdrHandler(bool openDevice, int32_t frequency,
   if (ppmCorrection != 0) rtlsdr_set_freq_correction(device, ppmCorrection);
   if (autogain) rtlsdr_set_agc_mode(device, 1);
   (void)(this->rtlsdr_set_center_freq(device, frequency));
-  fprintf(stderr, "effective gain: gain %d.%d\n",
-          gains[theGain * gainsCount / 100] / 10,
-          gains[theGain * gainsCount / 100] % 10);
-  rtlsdr_set_tuner_gain(device, gains[theGain * gainsCount / 100]);
+    const int gainIdx = gainPercentToIndex(theGain, gainsCount);
+    fprintf(stderr, "effective gain: gain %d.%d\n",
+      gains[gainIdx] / 10,
+      gains[gainIdx] % 10);
+    rtlsdr_set_tuner_gain(device, gains[gainIdx]);
 
   if (this->deviceOptions && rtlsdr_set_opt_string)
     rtlsdr_set_opt_string(device, deviceOptions, 1);
@@ -209,7 +232,8 @@ bool rtlsdrHandler::restartReader(int32_t frequency) {
   this->frequency = frequency;
   (void)(this->rtlsdr_set_center_freq(device, frequency));
   workerHandle = std::thread(controlThread, this);
-  rtlsdr_set_tuner_gain(device, gains[theGain * gainsCount / 100]);
+  const int gainIdx = gainPercentToIndex(theGain, gainsCount);
+  rtlsdr_set_tuner_gain(device, gains[gainIdx]);
   if (autogain) rtlsdr_set_agc_mode(device, 1);
   if (this->deviceOptions && rtlsdr_set_opt_string)
     rtlsdr_set_opt_string(device, deviceOptions, 1);
@@ -287,9 +311,17 @@ static float convTable[] = {
 //	uint8_t to DSPCOMPLEX *
 int32_t rtlsdrHandler::getSamples(std::complex<float> *V, int32_t size) {
   int32_t amount, i;
+  const int32_t requestedBytes = 2 * size;
   uint8_t *tempBuffer = (uint8_t *)alloca(2 * size * sizeof(uint8_t));
-  //
-  amount = _I_Buffer->getDataFromBuffer(tempBuffer, 2 * size);
+
+  // A zero or partial block becomes zero-padding in libdabsdr's input
+  // callback, breaking continuity needed by the audio and TII decoders.
+  // Match rawFiles behavior and wait until a complete IQ block is ready.
+  while (running && _I_Buffer->GetRingBufferReadAvailable() < requestedBytes) {
+    std::this_thread::sleep_for(std::chrono::microseconds(100));
+  }
+
+  amount = _I_Buffer->getDataFromBuffer(tempBuffer, requestedBytes);
   for (i = 0; i < amount / 2; i++)
     V[i] = std::complex<float>(convTable[tempBuffer[2 * i]],
                                convTable[tempBuffer[2 * i + 1]]);

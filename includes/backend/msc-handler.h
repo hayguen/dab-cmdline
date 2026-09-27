@@ -49,6 +49,7 @@ class mscHandler {
              motdata_t, void *);
   ~mscHandler(void);
   void setError_handler(decodeErrorReport_t err_Handler);
+  void setAudioCodec_handler(audioCodec_t audioCodec_Handler);
   void process_mscBlock(std::complex<float> *, int16_t);
   void set_audioChannel(audiodata *);
   void set_dataChannel(packetdata *);
@@ -66,6 +67,7 @@ class mscHandler {
   dataOut_t dataOut;
   bytesOut_t bytesOut;
   programQuality_t programQuality;
+  audioCodec_t audioCodecHandler;
   decodeErrorReport_t errorReportHandler;
   motdata_t motdata_Handler;
   void *userData;

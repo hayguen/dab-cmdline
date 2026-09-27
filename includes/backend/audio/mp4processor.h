@@ -39,8 +39,8 @@
 
 class mp4Processor : public backendBase {
  public:
-  mp4Processor(int16_t, audioOut_t, dataOut_t, programQuality_t, motdata_t,
-               void *);
+  mp4Processor(int16_t, audioOut_t, dataOut_t, programQuality_t,
+               audioCodec_t, motdata_t, void *);
   ~mp4Processor(void);
   virtual void setError_handler(decodeErrorReport_t err_Handler);
   void addtoFrame(uint8_t *);
@@ -50,6 +50,7 @@ class mp4Processor : public backendBase {
   audioOut_t soundOut;
   dataOut_t dataOut;
   programQuality_t mscQuality;
+  audioCodec_t audioCodecHandler;
   decodeErrorReport_t errorReportHandler;
   void *ctx;
   padHandler my_padHandler;

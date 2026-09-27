@@ -1,6 +1,27 @@
-cmake_minimum_required( VERSION 2.8.11 )
-set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-aligned-new -std=c++11 -flto")
-set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -flto")
+cmake_minimum_required( VERSION 3.10 )
+project(dab_cmdline_example10 LANGUAGES C CXX)
+option(ENABLE_LTO "Enable link-time optimization" ON)
+set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-aligned-new -Wno-stringop-overflow -std=c++11")
+
+# Raspberry Pi/ARM Linux builds often suffer from slow/fragile LTO link steps.
+# Disable LTO automatically on these platforms unless the project is adapted later.
+if (ENABLE_LTO AND UNIX AND NOT APPLE)
+	string(TOLOWER "${CMAKE_SYSTEM_PROCESSOR}" _cpu)
+	if (_cpu MATCHES "armv6|armv7|armv8|aarch64|arm64")
+		message(STATUS "Disabling ENABLE_LTO on ARM Linux (Raspberry Pi compatibility)")
+		set(ENABLE_LTO OFF)
+	endif()
+endif()
+
+if (ENABLE_LTO)
+	set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -flto")
+	set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -flto")
+else()
+	string(REPLACE " -flto" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+	string(REPLACE "-flto " "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+	string(REPLACE " -flto" "" CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS}")
+	string(REPLACE "-flto " "" CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS}")
+endif()
 if (CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
     set (CMAKE_INSTALL_PREFIX "/usr/local" CACHE PATH "default install path" FORCE )
 endif()
@@ -31,18 +52,24 @@ OPTION(SDRPLAY  "Input: SDRPlay"  OFF)
 OPTION(WAVFILES "Input: WAVFILES" OFF)
 OPTION(RAWFILES "Input: RAWFILES" OFF)
 OPTION(RTL_TCP  "Input: RTL_TCP"  OFF)
+OPTION(ABRA_DABSDR_PROBE "Build AbracaDABra libdabsdr probe tool" OFF)
+OPTION(ABRA_RAW "Enable abra-raw target" OFF)
+OPTION(ABRA_RTLSDR "Enable abra-rtlsdr target" OFF)
 
-if ( (NOT RTLSDR) AND (NOT AIRSPY) AND (NOT SDRPLAY) AND (NOT WAVFILES) AND (NOT RAWFILES) AND (NOT RTL_TCP) )
+if ( (NOT RTLSDR) AND (NOT AIRSPY) AND (NOT SDRPLAY) AND (NOT WAVFILES) AND (NOT RAWFILES) AND (NOT RTL_TCP) AND
+	  (NOT ABRA_DABSDR_PROBE) AND (NOT ABRA_RAW) AND (NOT ABRA_RTLSDR) )
    message("None of the Input Options selected. Using default RTLSDR")
    set(RTLSDR ON)
 endif ()
 
 set (objectName "")
+set (BUILD_CLASSIC_MAIN OFF)
 
 if(AIRSPY)
    if (objectName STREQUAL "")
      set(AIRSPY ON)
      set(objectName dab-airspy)
+		 set(BUILD_CLASSIC_MAIN ON)
   else()
     message("Ignoring 2nd input option AIRSPY")
   endif()
@@ -52,6 +79,7 @@ if(SDRPLAY)
    if (objectName STREQUAL "")
      set(SDRPLAY ON)
      set(objectName dab-sdrplay)
+		 set(BUILD_CLASSIC_MAIN ON)
   else()
     message("Ignoring 2nd input option SDRPLAY")
   endif()
@@ -61,6 +89,7 @@ if(RTLSDR)
    if (objectName STREQUAL "")
      set(RTLSDR ON)
      set(objectName dab-rtlsdr)
+		 set(BUILD_CLASSIC_MAIN ON)
   else()
     message("Ignoring 2nd input option RTLSDR")
   endif()
@@ -70,6 +99,7 @@ if(WAVFILES)
    if (objectName STREQUAL "")
      set(WAVFILES ON)
      set(objectName dab-files)
+		 set(BUILD_CLASSIC_MAIN ON)
   else()
     message("Ignoring 2nd input option WAVFILES")
   endif()
@@ -79,6 +109,7 @@ if(RAWFILES)
    if (objectName STREQUAL "")
      set(RAWFILES ON)
      set(objectName dab-raw)
+		 set(BUILD_CLASSIC_MAIN ON)
   else()
     message("Ignoring 2nd input option RAWFILES")
   endif()
@@ -88,6 +119,7 @@ if(RTL_TCP)
    if (objectName STREQUAL "")
      set(RTL_TCP ON)
      set(objectName dab-rtl_tcp)
+		 set(BUILD_CLASSIC_MAIN ON)
   else()
     message("Ignoring 2nd input option RTL_TCP")
   endif()
@@ -406,18 +438,22 @@ endif ()
 
 #####################################################################
 
-	add_executable (${objectName} 
-	                ${${objectName}_SRCS}
-	)
+	if (BUILD_CLASSIC_MAIN)
+		add_executable (${objectName} 
+		                ${${objectName}_SRCS}
+		)
 
-	target_link_libraries (${objectName}
-	                       ${FFTW3F_LIBRARIES}
-	                       ${extraLibs}
-	                       ${FAAD_LIBRARIES}
-	                       ${CMAKE_DL_LIBS}
-	)
+		target_link_libraries (${objectName}
+		                       ${FFTW3F_LIBRARIES}
+		                       ${extraLibs}
+		                       ${FAAD_LIBRARIES}
+		                       ${CMAKE_DL_LIBS}
+		)
 
-	INSTALL (TARGETS ${objectName} RUNTIME DESTINATION bin)  # install to default (bin)
+		INSTALL (TARGETS ${objectName} RUNTIME DESTINATION bin)  # install to default (bin)
+	else()
+		message(STATUS "No legacy dab-* input backend selected; skipping ${objectName} target")
+	endif()
 
 #####################################################################
 
@@ -438,3 +474,107 @@ configure_file(
 
 add_custom_target(uninstall
     COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)
+
+########################################################################
+# Optional: AbracaDABra libdabsdr probe
+########################################################################
+set(ABRA_DABSDR_PLATFORM "")
+if (WIN32)
+	set(ABRA_DABSDR_PLATFORM "windows_amd64")
+elseif (APPLE)
+	if (CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64")
+		set(ABRA_DABSDR_PLATFORM "darwin_arm64")
+	else()
+		set(ABRA_DABSDR_PLATFORM "darwin_x86_64")
+	endif()
+elseif (UNIX)
+	if (CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64|arm64")
+		set(ABRA_DABSDR_PLATFORM "linux_aarch64")
+	else()
+		set(ABRA_DABSDR_PLATFORM "linux_x86_64")
+	endif()
+endif()
+
+set(ABRA_DABSDR_CMAKE
+	"${CMAKE_SOURCE_DIR}/../third_party/abracadabra/lib/${ABRA_DABSDR_PLATFORM}/cmake/dabsdr.cmake")
+
+message(STATUS "ABRA_DABSDR_PROBE=${ABRA_DABSDR_PROBE}")
+message(STATUS "ABRA_RAW=${ABRA_RAW}")
+message(STATUS "ABRA_RTLSDR=${ABRA_RTLSDR}")
+message(STATUS "ABRA_DABSDR_PLATFORM=${ABRA_DABSDR_PLATFORM}")
+message(STATUS "ABRA_DABSDR_CMAKE=${ABRA_DABSDR_CMAKE}")
+
+if (ABRA_DABSDR_PROBE)
+	if (EXISTS "${ABRA_DABSDR_CMAKE}")
+		include("${ABRA_DABSDR_CMAKE}")
+		add_executable(abra-dabsdr-probe
+							./abra_dabsdr_probe.cpp)
+		target_link_libraries(abra-dabsdr-probe dabsdr::dabsdr)
+		INSTALL(TARGETS abra-dabsdr-probe RUNTIME DESTINATION bin)
+	else()
+		message(FATAL_ERROR "ABRA_DABSDR_PROBE=ON, but dabsdr.cmake was not found at ${ABRA_DABSDR_CMAKE} (platform='${ABRA_DABSDR_PLATFORM}'). Copy the matching AbracaDABra SDK folder into third_party/abracadabra/lib/ and reconfigure.")
+	endif()
+endif()
+
+if (ABRA_RAW)
+	if (EXISTS "${ABRA_DABSDR_CMAKE}")
+		include("${ABRA_DABSDR_CMAKE}")
+		add_executable(abra-raw
+						 ./abra_dabsdr.cpp
+						 ./dab_tables.cpp
+						 ../devices/device-handler.cpp
+						 ../devices/rawfiles/rawfiles.cpp
+						 ../src/backend/charsets.cpp
+						 ../src/support/band-handler.cpp)
+		set_target_properties(abra-raw PROPERTIES
+			INSTALL_RPATH "\$ORIGIN/../lib;${CMAKE_SOURCE_DIR}/../third_party/abracadabra/lib/${ABRA_DABSDR_PLATFORM}"
+			BUILD_RPATH "${CMAKE_SOURCE_DIR}/../third_party/abracadabra/lib/${ABRA_DABSDR_PLATFORM}")
+		target_include_directories(abra-raw PRIVATE
+								  ${CMAKE_SOURCE_DIR}
+								  ${CMAKE_SOURCE_DIR}/../
+								  ${CMAKE_SOURCE_DIR}/../devices
+								  ${CMAKE_SOURCE_DIR}/../devices/rawfiles
+								  ${CMAKE_SOURCE_DIR}/../includes
+								  ${CMAKE_SOURCE_DIR}/../includes/backend
+								  ${CMAKE_SOURCE_DIR}/../includes/support)
+		target_link_libraries(abra-raw dabsdr::dabsdr ${PTHREADS})
+		INSTALL(TARGETS abra-raw RUNTIME DESTINATION bin)
+	else()
+		message(FATAL_ERROR "ABRA_RAW=ON, but dabsdr.cmake was not found at ${ABRA_DABSDR_CMAKE} (platform='${ABRA_DABSDR_PLATFORM}'). Copy the matching AbracaDABra SDK folder into third_party/abracadabra/lib/ and reconfigure.")
+	endif()
+endif()
+
+if (ABRA_RTLSDR)
+	if (EXISTS "${ABRA_DABSDR_CMAKE}")
+		include("${ABRA_DABSDR_CMAKE}")
+		find_package(LibRTLSDR)
+		if (NOT LIBRTLSDR_FOUND)
+			message(FATAL_ERROR "ABRA_RTLSDR=ON, but librtlsdr was not found")
+		endif ()
+
+		add_executable(abra-rtlsdr
+						 ./abra_dabsdr.cpp
+						 ./dab_tables.cpp
+						 ../devices/device-handler.cpp
+						 ../devices/rtlsdr-handler/rtlsdr-handler.cpp
+						 ../src/backend/charsets.cpp
+						 ../src/support/band-handler.cpp)
+		set_target_properties(abra-rtlsdr PROPERTIES
+			INSTALL_RPATH "\$ORIGIN/../lib;${CMAKE_SOURCE_DIR}/../third_party/abracadabra/lib/${ABRA_DABSDR_PLATFORM}"
+			BUILD_RPATH "${CMAKE_SOURCE_DIR}/../third_party/abracadabra/lib/${ABRA_DABSDR_PLATFORM}")
+		target_compile_definitions(abra-rtlsdr PRIVATE ABRA_INPUT_RTLSDR HAVE_RTLSDR)
+		target_include_directories(abra-rtlsdr PRIVATE
+								  ${CMAKE_SOURCE_DIR}
+								  ${CMAKE_SOURCE_DIR}/../
+								  ${CMAKE_SOURCE_DIR}/../devices
+								  ${CMAKE_SOURCE_DIR}/../devices/rtlsdr-handler
+								  ${CMAKE_SOURCE_DIR}/../includes
+								  ${CMAKE_SOURCE_DIR}/../includes/backend
+								  ${CMAKE_SOURCE_DIR}/../includes/support
+								  ${LIBRTLSDR_INCLUDE_DIR})
+		target_link_libraries(abra-rtlsdr dabsdr::dabsdr ${PTHREADS} ${LIBRTLSDR_LIBRARIES})
+		INSTALL(TARGETS abra-rtlsdr RUNTIME DESTINATION bin)
+	else()
+		message(FATAL_ERROR "ABRA_RTLSDR=ON, but dabsdr.cmake was not found at ${ABRA_DABSDR_CMAKE} (platform='${ABRA_DABSDR_PLATFORM}'). Copy the matching AbracaDABra SDK folder into third_party/abracadabra/lib/ and reconfigure.")
+	endif()
+endif()

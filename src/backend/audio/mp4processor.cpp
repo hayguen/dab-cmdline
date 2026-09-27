@@ -43,6 +43,7 @@
 
 mp4Processor::mp4Processor(int16_t bitRate, audioOut_t soundOut,
                            dataOut_t dataOut, programQuality_t mscQuality,
+                           audioCodec_t audioCodecHandler,
                            motdata_t motdata_Handler, void *ctx)
     : my_padHandler(dataOut, motdata_Handler, ctx),
       my_rsDecoder(8, 0435, 0, 1, 10),
@@ -50,6 +51,7 @@ mp4Processor::mp4Processor(int16_t bitRate, audioOut_t soundOut,
   this->bitRate = bitRate;  // input rate
   this->soundOut = soundOut;
   this->mscQuality = mscQuality;  //
+  this->audioCodecHandler = audioCodecHandler;
   this->errorReportHandler = nullptr;
   this->ctx = ctx;
   superFramesize = 110 * (bitRate / 8);
@@ -165,6 +167,29 @@ bool mp4Processor::processSuperframe(uint8_t frameBytes[], int16_t base) {
   streamParameters.aacChannelMode = (outVector[2] >> 4) & 01;  // bit 19
   streamParameters.psFlag = (outVector[2] >> 3) & 01;          // bit 20
   streamParameters.mpegSurround = (outVector[2] & 07);         // bits 21 .. 23
+
+  if (audioCodecHandler != nullptr) {
+    int32_t samplingRate = 0;
+    switch (2 * streamParameters.dacRate + streamParameters.sbrFlag) {
+      case 0:
+        samplingRate = 32000; // for AAC-LC
+        break;
+      case 1:
+        samplingRate = 32000; // for HE-AAC (SBR)
+        break;
+      case 2:
+        samplingRate = 48000; // for AAC-LC
+        break;
+      case 3:
+        samplingRate = 48000; // for HE-AAC (SBR)
+        break;
+      default:
+        break;
+    }
+    audioCodecHandler(63, streamParameters.aacChannelMode,
+                      streamParameters.sbrFlag, streamParameters.psFlag, -1,
+                      -1, samplingRate, ctx);
+  }
 
   switch (2 * streamParameters.dacRate + streamParameters.sbrFlag) {
     default:  // cannot happen

@@ -127,7 +127,7 @@ static void fib_dataHandler(const uint8_t *fib) {
   }
 }
 
-int main(int argc, char **argv) {
+int main (int argc, char **argv) {
   const char *inpFileName = NULL;
   FILE *ficf = NULL;
   struct sigaction sigact;

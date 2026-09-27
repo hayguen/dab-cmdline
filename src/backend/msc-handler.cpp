@@ -50,6 +50,7 @@ mscHandler::mscHandler(uint8_t dabMode, audioOut_t soundOut, dataOut_t dataOut,
   this->dataOut = dataOut;
   this->bytesOut = bytesOut;
   this->programQuality = mscQuality;
+  this->audioCodecHandler = nullptr;
   this->errorReportHandler = nullptr;
   this->motdata_Handler = motdata_Handler;
   this->userData = userData;
@@ -80,6 +81,10 @@ void mscHandler::setError_handler(decodeErrorReport_t err_Handler) {
   for (auto &b : theBackends) {
     b->setError_handler(err_Handler);
   }
+}
+
+void mscHandler::setAudioCodec_handler(audioCodec_t audioCodec_Handler) {
+  audioCodecHandler = audioCodec_Handler;
 }
 
 void mscHandler::stop(void) {
@@ -172,7 +177,8 @@ void mscHandler::run(void) {
 void mscHandler::set_audioChannel(audiodata *d) {
   mutexer.lock();
   audioBackend *nbe = new audioBackend(d, soundOut, dataOut, programQuality,
-                                       motdata_Handler, userData);
+                                       audioCodecHandler, motdata_Handler,
+                                       userData);
   // we could assert here that theBackend == nullptr
   if (nbe) {
     nbe->setError_handler(errorReportHandler);

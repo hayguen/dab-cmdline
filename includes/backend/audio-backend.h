@@ -40,8 +40,8 @@ class audioSink;
 
 class audioBackend : public virtualBackend {
  public:
-  audioBackend(audiodata *, audioOut_t, dataOut_t, programQuality_t, motdata_t,
-               void *);
+  audioBackend(audiodata *, audioOut_t, dataOut_t, programQuality_t,
+               audioCodec_t, motdata_t, void *);
   ~audioBackend(void);
   virtual void setError_handler(decodeErrorReport_t err_Handler);
   int32_t process(int16_t *, int16_t);

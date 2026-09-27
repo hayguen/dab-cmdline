@@ -26,81 +26,92 @@
 
 #include "ensemble-handler.h"
 
-ensembleHandler::ensembleHandler(void) { ensembleFound = false; }
+	ensembleHandler::ensembleHandler () {
+	ensembleFound = false;
+}
 
-ensembleHandler::~ensembleHandler(void) {}
+	ensembleHandler::~ensembleHandler () {
+}
 
-std::list<std::string> ensembleHandler::data(void) { return stationList; }
+std::list<std::string>
+	ensembleHandler::data () {
+	return stationList;
+}
 
-int ensembleHandler::size(void) { return stationList.size(); }
+int	ensembleHandler::size () {
+	return stationList. size ();
+}
 
-void ensembleHandler::addtoEnsemble(const std::string &s, int32_t SId) {
-  uint16_t i;
+void	ensembleHandler::addtoEnsemble (const std::string &s, int32_t SId) {
 
-  for (i = 0; i < s.size() - 4; i++)
-    if (s.find("data", i) != std::string::npos) return;
-  locker.lock();
-  for (std::list<std::string>::iterator list_iter = stationList.begin();
-       list_iter != stationList.end(); list_iter++) {
-    if ((*list_iter).find(s, 0) != std::string::npos) {
-      locker.unlock();
-      return;
-    }
-  }
-  stationList.insert(stationList.cend(), s);
-  locker.unlock();
-  //	fprintf (stderr, "program (%d): %X %s in the list\n",
-  //	                                     stationList. size (),
-  //	                                     SId,
-  //	                                     s. c_str ());
+	for (uint16_t i = 0; i < s.size() - 4; i++)
+	   if (s. find ("data", i) != std::string::npos)
+	      return;
+
+	locker.lock();
+	for (std::list<std::string>::iterator list_iter = stationList.begin();
+	                      list_iter != stationList. end(); list_iter++) {
+	   if ((*list_iter).find(s, 0) != std::string::npos) {
+	      locker.unlock();
+	      return;
+	   }
+	}
+
+	stationList. insert (stationList.cend(), s);
+	locker.unlock();
 }
 
 ///	a slot, called by the fib processor
-void ensembleHandler::nameforEnsemble(int id, const std::string &s) {
-  (void)id;
-  if (ensembleName != s) {
-    ensembleName = s;
-  }
-  ensembleFound = true;
+void	ensembleHandler::nameforEnsemble(int id, const std::string &s) {
+	(void)id;
+	if (ensembleName != s) {
+	   ensembleName = s;
+	}
+	ensembleFound = true;
 }
 
-std::string ensembleHandler::nameofEnsemble(void) { return ensembleName; }
-
-bool ensembleHandler::ensembleExists(void) { return ensembleFound; }
-
-std::string ensembleHandler::findService(const std::string &s) {
-  std::string name;
-
-  locker.lock();
-  for (std::list<std::string>::iterator list_iter = stationList.begin();
-       list_iter != stationList.end(); list_iter++) {
-    if ((*list_iter).find(s, 0) != std::string::npos) {
-      name = *list_iter;
-      break;
-    }
-  }
-  locker.unlock();
-  return name;
+std::string ensembleHandler::nameofEnsemble () {
+	return ensembleName;
 }
 
-std::string ensembleHandler::getProgram(int16_t i) {
-  std::string name = "";
-
-  locker.lock();
-  for (std::list<std::string>::iterator list_iter = stationList.begin();
-       list_iter != stationList.end(); list_iter++) {
-    if (i == 0) {
-      name = *list_iter;
-      break;
-    }
-    i--;
-  }
-  locker.unlock();
-  return name;
+bool	ensembleHandler::ensembleExists () {
+	return ensembleFound;
 }
 
-void ensembleHandler::clearEnsemble(void) {
-  locker.lock();
-  stationList.clear();
-  locker.unlock();
+std::string ensembleHandler::findService (const std::string &s) {
+	std::string name;
+
+	locker.lock();
+	for (std::list<std::string>::iterator list_iter = stationList.begin();
+	   list_iter != stationList.end(); list_iter++) {
+	   if ((*list_iter).find(s, 0) != std::string::npos) {
+	      name = *list_iter;
+	      break;
+	   }
+	}
+	locker.unlock();
+	return name;
 }
+
+std::string ensembleHandler::getProgram (int16_t i) {
+std::string name = "";
+
+	locker.lock();
+	for (std::list<std::string>::iterator list_iter = stationList.begin();
+	        list_iter != stationList.end(); list_iter++) {
+	   if (i == 0) {
+	      name = *list_iter;
+	      break;
+	   }
+	   i--;
+	}
+	locker. unlock ();
+	return name;
+}
+
+void	ensembleHandler::clearEnsemble () {
+	locker. lock ();
+	stationList. clear ();
+	locker.unlock();
+}
+

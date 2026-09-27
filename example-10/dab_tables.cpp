@@ -209,7 +209,7 @@ static country_codes countryTable[] = {
     {0xE1, 0x6, "Finland"},
     {0xE1, 0x7, "Luxembourg"},
     {0xE1, 0x8, "Bulgaria"},
-    {0xE1, 0x9, "Faroe (Denmark)"},
+    {0xE1, 0x9, "Denmark and Faroe"}, // both use same ECC
     {0xE1, 0xA, "Gibraltar (UK)"},  // amended "(UK)"
     {0xE1, 0xB, "Iraq"},
     {0xE1, 0xC, "United Kingdom"},
@@ -217,7 +217,7 @@ static country_codes countryTable[] = {
     {0xE1, 0xE, "Romania"},
     {0xE1, 0xF, "France"},
 
-    {0xE2, 0x1, "Marocco"},
+    {0xE2, 0x1, "Morocco"},
     {0xE2, 0x2, "Czech Republic"},
     {0xE2, 0x3, "Poland"},
     {0xE2, 0x4, "Vatican"},

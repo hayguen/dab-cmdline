@@ -35,87 +35,91 @@
 #include "tii_table.h"
 
 //	from FIG1/2
-struct serviceId
-{
-  serviceId() {
-    inUse = false;
-    clear();
-  }
+struct serviceId {
+	serviceId	() {
+	   inUse = false;
+	   clear();
+	}
 
-  void clear() {
-    inUse = false;
-    SId = -1;
-    label[0] = 0;
-    abbr[0] = 0;
-    hasName = false;
-    hasPNum       = false;
-    hasLanguage   = false;
-    language      = -1;
-    programType   = -1;
-    pNum          = -1;
-    numSCIds      = 0;
-    numSCid       = 0;
-    numSubChId    = 0;
-    SCIds[0] = SCIds[1] = SCIds[2] = SCIds[3] = -1;
-    SCid[0] = SCid[1] = SCid[2] = SCid[3] = -1;
-    SubChId[0] = SubChId[1] = SubChId[2] = SubChId[3] = -1;
-  }
+	void clear() {
+	   inUse	= false;
+	   SId		= -1;
+	   label[0]	= 0;
+	   abbr[0]	= 0;
+	   ecc		= 0;
+	   countryId	= 0;
+	   hasName	= false;
+	   hasPNum       = false;
+	   hasLanguage   = false;
+	   language      = -1;
+	   programType   = -1;
+	   pNum          = -1;
+	   numSCIds      = 0;
+	   numSCid       = 0;
+	   numSubChId    = 0;
+	   for (int i = 0; i < 4; i ++) {
+	      SCIds [i] = 0;
+	      SCid  [i] = 0;
+	      SubChId [i] = 0;
+	   }
+	}
 
-  bool inUse;
-  int32_t SId;  // serviceId
-  char label[32];
-  char abbr[32];
-  bool hasName; // -> change to hasLabel ?
-  bool hasPNum;
-  bool hasLanguage;
-  int16_t language;
-  int16_t programType;
-  uint16_t pNum;
-  // following fields are filled from HandleFIG0Extension8()
-  int16_t numSCIds;
-  int16_t numSCid;
-  int16_t numSubChId;
-  int16_t SCIds[4];
-  int16_t SCid[4];
-  int16_t SubChId[4];
+	bool	inUse;
+	int32_t SId;  // serviceId
+	uint8_t	ecc;
+	uint8_t	countryId;
+	char	label[32];
+	char	abbr[32];
+	bool	hasName; // -> change to hasLabel ?
+	bool	hasPNum;
+	bool	hasLanguage;
+	int16_t language;
+	int16_t programType;
+	uint16_t pNum;
+// following fields are filled from HandleFIG0Extension8()
+	int16_t numSCIds;
+	int16_t numSCid;
+	int16_t numSubChId;
+	int16_t SCIds[4];
+	int16_t SCid[4];
+	int16_t SubChId[4];
 };
 
 //      The service component describes the actual service
 //      It really should be a union
-struct serviceComponent
-{
-  serviceComponent() {
-    inUse = false;
-    service = nullptr;
-    clear();
-  }
+struct serviceComponent {
+		serviceComponent() {
+	inUse = false;
+	service = nullptr;
+	clear();
+	}
 
-  void clear() {
-    inUse = false;
-    compType      = '?';
-    service       = nullptr;
-    TMid          = -1;
-    componentNr   = -1;
-    ASCTy         = -1;
-    PS_flag       = -1;
-    subchannelId  = -1;
-    SCId          = -1;
-    CAflag        = 0xff;
+	void clear() {
+	inUse		= false;
+	compType      = '?';
+	service       = nullptr;
+	TMid          = -1;
+	componentNr   = -1;
+	ASCTy         = -1;
+	PS_flag       = -1;
+	subchannelId  = -1;
+	SCId          = -1;
+	CAflag        = 0xff;
 
-    appType       = -1;
-    SCIds         = -1;
+	appType       = -1;
+	SCIds         = -1;
 
-    is_madePublic = false;
-    DSCTy         = -1;
-    DGflag        = 0xff;
-    packetAddress = -1;
+	is_madePublic = false;
+	DSCTy         = -1;
+	DGflag        = 0xff;
+	packetAddress = -1;
 
-    hasLabel      = false;
-    label[0] = 0;
-    abbr[0] = 0;
-  }
+	hasLabel      = false;
+	label [0] = 0;
+	abbr[0] = 0;
+}
 
-  bool inUse;           // just administration
+	bool inUse;           // just administration
   char compType;
   int8_t TMid;          // the transport mode
   serviceId *service;   // belongs to the service
@@ -178,18 +182,18 @@ struct channelMap {
 };
 
 class fib_processor {
- public:
-  fib_processor(ensemblename_t, programname_t, void *);
-  ~fib_processor(void);
+public:
+		fib_processor	(ensemblename_t, programname_t, void *);
+		~fib_processor	();
 
-  void process_FIB(const uint8_t *, uint16_t);
-  void clearEnsemble(void);
-  bool syncReached(void);
-  std::string nameFor(int32_t);
-  int32_t SIdFor(std::string &);
-  uint8_t kindofService(std::string &);
-  uint8_t kindofService(int32_t SId);
-  void dataforAudioService(std::string &, audiodata *);
+	void	process_FIB	(const uint8_t *, uint16_t);
+	void	clearEnsemble	();
+	bool	syncReached	();
+	std::string nameFor	(int32_t);
+	int32_t SIdFor		(std::string &);
+	uint8_t kindofService	(std::string &);
+	uint8_t kindofService	(int32_t SId);
+	void	dataforAudioService	(std::string &, audiodata *);
   void dataforDataService(std::string &, packetdata *);
   void dataforAudioService(std::string &, audiodata *, int16_t);
   void dataforDataService(std::string &, packetdata *, int16_t);
@@ -291,8 +295,9 @@ class fib_processor {
   mutex fibLocker;
   //
   //	these were signals
-  void addtoEnsemble(const std::string & label, const std::string & abbr, int32_t);
-  void nameofEnsemble(int, const std::string & label, const std::string & abbr);
+  void	addtoEnsemble (const std::string & label,
+	               const std::string & abbr, int32_t);
+void	nameofEnsemble(int, const std::string & label, const std::string & abbr);
   void idofEnsemble(int32_t);
   void changeinConfiguration(void);
 };

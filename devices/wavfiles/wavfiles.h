@@ -32,14 +32,17 @@ typedef void (*device_eof_callback_t)(void *userData);
 
 class wavFiles : public deviceHandler {
  public:
-  wavFiles(std::string, bool repeater = true);
+  wavFiles(std::string, bool repeater = true, bool noRealtime = false);
   wavFiles(std::string, double fileOffset, device_eof_callback_t eofHandler,
-           void *userData);
+           void *userData, bool noRealtime = false);
   ~wavFiles(void);
   int32_t getSamples(std::complex<float> *, int32_t);
   int32_t Samples(void);
   bool restartReader(int32_t);
   void stopReader(void);
+  double currentOffset() const override;
+  bool rewindToStart(void) override;
+  bool seekToSeconds(double seconds) override;
 
  private:
   std::string fileName;
@@ -56,6 +59,7 @@ class wavFiles : public deviceHandler {
   SNDFILE *filePointer;
   std::atomic<bool> running;
   int64_t currPos;
+  bool noRealtime;
 };
 
 #endif
